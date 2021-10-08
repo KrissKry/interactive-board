@@ -1,0 +1,4 @@
+export const chatTypes = {
+    SEND_MESSAGE: 'USER_SEND_MESSAGE',
+    RECEIVE_MESSAGE: 'USER_RECEIVE_MESSAGE',
+};
