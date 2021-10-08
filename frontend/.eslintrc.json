@@ -42,6 +42,12 @@
         "import/prefer-default-export": "off",
         // ponizej moze byc fakap
         "import/no-unresolved": "off",
-        "import/extensions": "off"
+        "import/extensions": "off",
+        "no-unused-vars": "warn"
+    },
+    "globals": {
+        "JSX": "readonly",
+        "React": "readonly",
+        "Promise": "readonly"
     }
 }
