@@ -4,5 +4,5 @@ export const initialFillColor : RGBColor = {
     r: 0,
     g: 255,
     b: 0,
-    a: 120,
+    a: 255,
 };
