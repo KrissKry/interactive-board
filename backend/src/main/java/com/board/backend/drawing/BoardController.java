@@ -3,7 +3,7 @@ package com.board.backend.drawing;
 import com.board.backend.drawing.dto.ChangedPixelsDTO;
 import com.board.backend.drawing.model.Color;
 import com.board.backend.drawing.model.Point;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -16,25 +16,25 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
-public class BoardServerController {
+@RequiredArgsConstructor
+public class BoardController
+{
 
-    @Autowired
-    private SimpUserRegistry simpUserRegistry;
+    private final SimpUserRegistry simpUserRegistry;
 
-    @Autowired
-    private BoardFacade boardFacade;
+    private final BoardFacade boardFacade;
 
     public Set<SimpUser> getUsers() {
         return simpUserRegistry.getUsers();
     }
 
-    @SubscribeMapping("/update")
+    @SubscribeMapping("/board/get")
     public Map<Point, Color> getBoard() {
         return boardFacade.getCurrentBoard();
     }
 
-    @MessageMapping("/updated")
-    @SendTo("/board/update")
+    @MessageMapping("/board/send")
+    @SendTo("/board/listen")
     public ChangedPixelsDTO addPixels(@Payload ChangedPixelsDTO pixels) {
         boardFacade.storePoints(pixels);
         return pixels;

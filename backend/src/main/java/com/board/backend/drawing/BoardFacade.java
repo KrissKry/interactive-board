@@ -1,7 +1,6 @@
 package com.board.backend.drawing;
 
 import com.board.backend.drawing.dto.ChangedPixelsDTO;
-import com.board.backend.drawing.mapper.MessageToPixelsMapper;
 import com.board.backend.drawing.model.Board;
 import com.board.backend.drawing.model.Color;
 import com.board.backend.drawing.model.Point;

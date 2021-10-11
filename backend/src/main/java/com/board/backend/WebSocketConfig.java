@@ -1,4 +1,4 @@
-package com.board.backend.drawing;
+package com.board.backend;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -19,14 +19,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
 {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/board");
-        config.setApplicationDestinationPrefixes("/app");
+        config.enableSimpleBroker("/board", "/chat");
+        config.setApplicationDestinationPrefixes("/api");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/board").setAllowedOrigins("http://localhost:3000");
+        registry.addEndpoint("/board").setAllowedOrigins("http://localhost:3000",
+                "http://localhost:8080").withSockJS();
+        registry.addEndpoint("/chat").setAllowedOrigins("http://localhost:3000",
+                "http://localhost:8080").withSockJS();
     }
-
-
 }
