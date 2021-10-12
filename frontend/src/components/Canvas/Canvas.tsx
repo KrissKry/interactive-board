@@ -2,55 +2,36 @@ import React from 'react';
 import { Socket } from 'socket.io';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
-import { Client, IFrame, Message } from '@stomp/stompjs';
+import { Client, IFrame, IMessage } from '@stomp/stompjs';
 
 import { initialFillColor } from '../../helpers/initial';
 import { RGBColor } from '../../interfaces/Canvas';
 
 interface CanvasProps {
     socket?: Socket;
+
+    color?: RGBColor;
+
+    radius?: number;
 }
 
-const Canvas = ({ socket } : CanvasProps) : JSX.Element => {
-    let color : RGBColor = initialFillColor;
+const Canvas = ({ socket, color, radius } : CanvasProps) : JSX.Element => {
+    const brushColor = color || initialFillColor;
     let isDrawing = false;
 
     const mousePressed = () => {
-        // console.log('clicked');
         isDrawing = true;
     };
 
     const mouseReleased = () => {
-        // console.log('released');
         isDrawing = false;
-    };
-
-    const changeColor = () => {
-        const newColor : RGBColor = {
-            r: 255,
-            g: 0,
-            b: 0,
-        };
-        // console.log(color, newColor);
-
-        color = newColor;
     };
 
     const setup = (p5: p5Types, canvasParentRef: Element) => {
         p5.createCanvas(500, 500).parent(canvasParentRef);
-        p5.strokeWeight(20);
         p5.background(200, 200, 200);
-        socket?.on('DRAWING', (data) => {
-            p5.strokeWeight(10);
-            p5.line(data.mouseX, data.mouseY, data.pmouseX, data.pmouseY);
-            // console.log(data);
-        });
+        p5.strokeWeight(20);
     };
-
-    // const draw = (p5: p5Types) => {
-    //     p5.fill(color.r, color.g, color.b);
-    //     p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-    // };
 
     // 1. rysuje lokalnie
     // 2. difference z synchronizowanym serwerową - wyciągnięcie kwadratu - małęgo obszaru
@@ -62,7 +43,7 @@ const Canvas = ({ socket } : CanvasProps) : JSX.Element => {
     const mouseDragged = (p5: p5Types) => {
         if (isDrawing) {
             // p5.fill(color.r, color.g, color.b);
-            p5.stroke(color.r, color.g, color.b);
+            p5.stroke(brushColor.r, brushColor.g, brushColor.b);
             p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
             // console.log(x.get(0, 0, 20, 20));
             const pixls = p5.get(0, 0, 10, 10);
@@ -88,43 +69,62 @@ const Canvas = ({ socket } : CanvasProps) : JSX.Element => {
     // });
     const client = new Client({
         brokerURL: 'ws://localhost:8080/board',
-        connectHeaders: {
-            chuj: 'xD',
+        onConnect: (frame: IFrame) => {
+            client.subscribe('/board/update', (message: IMessage) => {
+                console.log('mapa', JSON.parse(message.body));
+            });
+        },
+        onDisconnect: (frame: IFrame) => {
+
+        },
+        onStompError: (frame: IFrame) => {
+            console.log('Broker reported error: ', frame.headers.message);
+            console.log('Additional details: ', frame.body);
         },
     });
-    // client.brokerURL = 'ws://localhost:8080/board';
-
-    client.onConnect = (frame: IFrame) : void => {
-        console.log('hehe', frame);
-        const resp = client.subscribe('/board/update', (chuj: any) => {
-            console.log('mapa', chuj);
-        });
-        console.log('resp', resp);
-    };
-
-    client.onDisconnect = (frame: IFrame) => {
-        console.log('Disconnected!');
-    };
-
-    client.onStompError = (frame: IFrame) => {
-        console.log('Broker reported error: ', frame.headers.message);
-        console.log('Additional details: ', frame.body);
-    };
-
-    client.onWebSocketError = (evt: any) => {
-        console.log(evt);
-    };
-
-    client.beforeConnect = () => {
-        console.log('beforeConnect');
-    };
 
     client.activate();
 
-    const sendName = () : void => {
+    const normalizeByte = -128;
+    const testBody = {
+        color: {
+            red: 200 + normalizeByte,
+            green: 200 + normalizeByte,
+            blue: 150 + normalizeByte,
+        },
+        points: [
+            {
+                x: 2,
+                y: 2,
+            },
+            {
+                x: 3,
+                y: 2,
+            },
+            {
+                x: 4,
+                y: 2,
+            },
+            {
+                x: 5,
+                y: 2,
+            },
+            {
+                x: 6,
+                y: 2,
+            },
+            {
+                x: 7,
+                y: 2,
+            },
+        ],
+        userId: 123456,
+    };
+
+    const sendCoords = () : void => {
         client.publish({
             destination: '/app/updated',
-            body: 'CHUJ ALE PATRIOTA',
+            body: JSON.stringify(testBody),
             skipContentLengthHeader: true,
         });
     };
@@ -132,15 +132,16 @@ const Canvas = ({ socket } : CanvasProps) : JSX.Element => {
     return (
         <>
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
-            <button type="button" onClick={() => changeColor()}>Czerwony</button>
-            {/* <button type="button" onClick={() => getCanvas()}>Print kanvas</button> */}
-            <button type="button" onClick={() => sendName()}>Wyślij imie :DDD</button>
+            {/* <button type="button" onClick={() => changeColor()}>Czerwony</button> */}
+            <button type="button" onClick={() => sendCoords()}>Wyślij koordynaty</button>
         </>
     );
 };
 
 Canvas.defaultProps = {
     socket: undefined,
+    color: undefined,
+    radius: 1,
 };
 
 export default Canvas;
