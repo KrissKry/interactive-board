@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { BrushLine } from '../../interfaces/Canvas';
+import { PixelChanges } from '../../interfaces/Canvas';
 /**
  * @username string representing user who sent the message
  * @message string with the message
@@ -19,6 +19,11 @@ export interface meetingState {
      * Pixel array unique to the last canvas drawn
      */
     canvas: number[];
+
+    /**
+     * currently received changes from backend
+     */
+    currentChanges: PixelChanges;
 }
 
 const initialState : meetingState = {
@@ -26,6 +31,15 @@ const initialState : meetingState = {
     messages: [],
 
     canvas: [],
+
+    currentChanges: {
+        color: {
+            red: 0,
+            green: 0,
+            blue: 0,
+        },
+        pixels: [],
+    },
 
 };
 
@@ -37,6 +51,10 @@ const meetingSlice = createSlice({
             ...state,
             canvas: action.payload,
         }),
+        meetingCanvasChange: (state, action) => ({
+            ...state,
+            currentChanges: action.payload,
+        }),
         meetingAddMessage: (state, action) => ({
             ...state,
             messages: [...state.messages, action.payload],
@@ -46,19 +64,14 @@ const meetingSlice = createSlice({
 
 export default meetingSlice.reducer;
 
-const {
+export const {
     meetingCanvasUpdate,
+    meetingCanvasChange,
     meetingAddMessage,
 } = meetingSlice.actions;
 
-export const meetingCanvasChange = (
-    values: number[],
-    brush: BrushLine,
-
-) => (dispatch: any) => {
-    // const canvas = realCanvas.slice(); // shallow copy
-};
-
+// jedna funkcja na wysylanie, otrzymanie odpowiedzi
+// druga na odbieranie
 // export meetingCanvasSetup = ()
 // 1. zapisz koordynaty
 // 2. stwórz małą p5 z uwzględnieniem grubości
@@ -66,3 +79,9 @@ export const meetingCanvasChange = (
 // 4. spisz piksele zmienione
 // 5. do x,y dodaj położenie ich globalne
 // 6. prześlij do API
+
+// nowy plan
+// zapisz aktualny stan
+// narysuj u siebie
+// porownaj z poprzednim
+// wyslij do backendu
