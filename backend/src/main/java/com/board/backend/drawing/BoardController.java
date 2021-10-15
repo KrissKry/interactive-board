@@ -4,6 +4,7 @@ import com.board.backend.drawing.dto.ChangedPixelsDTO;
 import com.board.backend.drawing.model.Color;
 import com.board.backend.drawing.model.Point;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class BoardController
 {
 
@@ -37,6 +39,7 @@ public class BoardController
     @SendTo("/board/listen")
     public ChangedPixelsDTO addPixels(@Payload ChangedPixelsDTO pixels) {
         boardFacade.storePoints(pixels);
+        log.info(pixels.toString());
         return pixels;
     }
 }
