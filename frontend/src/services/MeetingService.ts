@@ -1,5 +1,6 @@
 import { Client, IFrame, IMessage } from '@stomp/stompjs';
 import { PixelChanges } from '../interfaces/Canvas';
+import { ChatMessageInterface } from '../interfaces/Meeting';
 
 export class MeetingService {
     private static instance: MeetingService;
@@ -10,7 +11,7 @@ export class MeetingService {
         this.client = new Client({
             brokerURL: 'ws://localhost:8080/board',
             onConnect: () => {
-                console.log('WS Connnected');
+                console.log('Client connected to ws://');
             },
             onStompError: (frame: IFrame) => {
                 console.log('Broker reported error: ', frame.headers.message);
@@ -19,7 +20,6 @@ export class MeetingService {
         });
 
         this.client.activate();
-        console.log('hehe');
     }
 
     static getInstance(): MeetingService {
@@ -37,6 +37,15 @@ export class MeetingService {
                 destination: '/api/board/send',
                 body: JSON.stringify(changes),
                 skipContentLengthHeader: true,
+            });
+        }
+    }
+
+    sendMessage(message: ChatMessageInterface) : void {
+        if (this.client.connected) {
+            this.client.publish({
+                destination: '/api/chat/send',
+                body: JSON.stringify(message),
             });
         }
     }

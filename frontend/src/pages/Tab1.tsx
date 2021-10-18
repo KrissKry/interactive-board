@@ -4,6 +4,7 @@ import {
 } from '@ionic/react';
 import './Tab1.css';
 import Canvas from '../components/Canvas';
+import ChatContainer from '../components/Chat/ChatContainer';
 
 const Tab1: React.FC = () => (
     <IonPage>
@@ -18,7 +19,11 @@ const Tab1: React.FC = () => (
                     <IonTitle size="large">Tab 1</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <Canvas brushWidth={1} />
+
+            <div className="ee-generic-row">
+                <Canvas brushWidth={1} />
+                <ChatContainer />
+            </div>
         </IonContent>
     </IonPage>
 );

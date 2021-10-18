@@ -1,19 +1,24 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { PixelChanges } from '../../interfaces/Canvas';
-/**
- * @username string representing user who sent the message
- * @message string with the message
- */
-interface messageInterface {
-    username: string;
-    message: string;
-}
+import { ChatMessageInterface } from '../../interfaces/Meeting';
 
 export interface meetingState {
+
+    /**
+     * Name of the meeting
+     */
+    name: string;
+
+    /**
+     * User lists
+     */
+    activeUsers: string[];
+    invitedUsers: string[];
+
     /**
      * Chat messages unique to the meeting
      */
-    messages: messageInterface[];
+    messages: ChatMessageInterface[];
 
     /**
      * Pixel array unique to the last canvas drawn
@@ -23,24 +28,22 @@ export interface meetingState {
     /**
      * currently received changes from backend
      */
-    currentChanges: PixelChanges;
+    currentChanges: PixelChanges[];
 }
 
 const initialState : meetingState = {
+
+    name: 'Spotkanie',
+
+    activeUsers: [],
+
+    invitedUsers: [],
 
     messages: [],
 
     canvas: [],
 
-    currentChanges: {
-        color: {
-            red: 0,
-            green: 0,
-            blue: 0,
-        },
-        points: [],
-        userId: -1,
-    },
+    currentChanges: [],
 
 };
 
@@ -52,13 +55,21 @@ const meetingSlice = createSlice({
             ...state,
             canvas: action.payload,
         }),
-        meetingCanvasChange: (state, action) => ({
-            ...state,
-            currentChanges: action.payload,
-        }),
-        meetingAddMessage: (state, action) => ({
+        // meetingCanvasChange: (state, action) => ({
+        //     ...state,
+        //     currentChanges: action.payload,
+        // }),
+        meetingAddMessage: (state, action: PayloadAction<ChatMessageInterface>) => ({
             ...state,
             messages: [...state.messages, action.payload],
+        }),
+        meetingPushChanges: (state, action: PayloadAction<PixelChanges>) => ({
+            ...state,
+            currentChanges: [...state.currentChanges, action.payload],
+        }),
+        meetingPopChanges: (state) => ({
+            ...state,
+            currentChanges: [],
         }),
     },
 });
@@ -67,22 +78,8 @@ export default meetingSlice.reducer;
 
 export const {
     meetingCanvasUpdate,
-    meetingCanvasChange,
+    // meetingCanvasChange,
     meetingAddMessage,
+    meetingPushChanges,
+    meetingPopChanges,
 } = meetingSlice.actions;
-
-// jedna funkcja na wysylanie, otrzymanie odpowiedzi
-// druga na odbieranie
-// export meetingCanvasSetup = ()
-// 1. zapisz koordynaty
-// 2. stwórz małą p5 z uwzględnieniem grubości
-// 3. narysuj na niej linie
-// 4. spisz piksele zmienione
-// 5. do x,y dodaj położenie ich globalne
-// 6. prześlij do API
-
-// nowy plan
-// zapisz aktualny stan
-// narysuj u siebie
-// porownaj z poprzednim
-// wyslij do backendu

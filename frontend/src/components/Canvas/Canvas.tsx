@@ -1,3 +1,4 @@
+/* eslint-disable object-curly-newline */
 import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
@@ -8,7 +9,7 @@ import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
 import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { MeetingService } from '../../services';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingCanvasChange } from '../../redux/ducks/meeting';
+import { meetingPopChanges, meetingPushChanges } from '../../redux/ducks/meeting';
 
 interface CanvasProps {
     color?: RGBColor;
@@ -17,16 +18,20 @@ interface CanvasProps {
 }
 
 const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
-    const brushColor = color || initialFillColor;
-    let isDrawing = false;
+    const [p5Instance, setP5Instance] = useState<p5Types>();
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
+    const [isDrawing, setIsDrawing] = useState<boolean>(false);
+    const [brushColor, setBrushColor] = useState<RGBColor>(color || initialFillColor);
+
+    const currentChanges = useAppSelector((state) => state.meeting.currentChanges);
+    const meetingService = MeetingService.getInstance();
+    const dispatch = useAppDispatch();
+
     const canvasWidth = 500;
     const canvasHeight = 500;
-    const meetingService = MeetingService.getInstance();
-    const mousePressed = () => { isDrawing = true; };
-    const mouseReleased = () => { isDrawing = false; };
-    const currentChanges = useAppSelector((state) => state.meeting.currentChanges);
-    const dispatch = useAppDispatch();
-    const [pp5, setPP5] = useState<p5Types>();
+
+    const mousePressed = () => { setIsDrawing(true); };
+    const mouseReleased = () => { setIsDrawing(false); };
 
     const boardUpdateCallback = (message: IFrame) => {
         const resp: PixelChanges = JSON.parse(message.body);
@@ -34,34 +39,34 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
         resp.color.red += byteFix;
         resp.color.green += byteFix;
         resp.color.blue += byteFix;
-        dispatch(meetingCanvasChange(resp));
+        dispatch(meetingPushChanges(resp));
     };
 
+    /* subscribe to board updates on connection */
     useEffect(() => {
-        if (meetingService.client.connected) {
-            meetingService.addSubscription('/board/listen', boardUpdateCallback);
-        }
+        if (meetingService.client.connected) meetingService.addSubscription('/board/listen', boardUpdateCallback);
     }, [meetingService.client.connected]);
 
+    /* create canvas and set background + copy p5 reference */
     const setup = (p5: p5Types, canvasParentRef: Element) => {
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
         p5.background(200, 200, 200);
         p5.strokeWeight(brushWidth);
-        setPP5(p5);
+        setP5Instance(p5);
     };
 
+    /* draw on mouse drag if not updating */
     const mouseDragged = (p5: p5Types) => {
-        if (isDrawing) {
-            const {
-                startX, startY, deltaX, deltaY,
-            } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
+        if (!isUpdating && isDrawing) {
+            // eslint-disable-next-line max-len
+            const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
 
             const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
             p5.stroke(brushColor.r, brushColor.g, brushColor.b);
+            p5.strokeWeight(brushWidth);
             p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
 
-            // eslint-disable-next-line max-len
             const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
             // eslint-disable-next-line max-len
@@ -74,20 +79,30 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
     };
 
     useEffect(() => {
-        // eslint-disable-next-line max-len
-        const colorChange = [currentChanges.color.red, currentChanges.color.green, currentChanges.color.blue, 255];
+        /* won't update until drawing complete or if no changes are present */
+        if (isDrawing || currentChanges.length === 0 || isUpdating) return;
 
-        if (typeof pp5 !== 'undefined') {
-            // eslint-disable-next-line max-len
-            pp5.stroke(currentChanges.color.red, currentChanges.color.green, currentChanges.color.blue);
-            pp5.strokeWeight(brushWidth);
+        /* begin updating */
+        setIsUpdating(true);
 
+        if (typeof p5Instance !== 'undefined') {
             // eslint-disable-next-line no-restricted-syntax
-            for (const change of currentChanges.points) {
-                pp5.point(change.x, change.y);
+            for (const change of currentChanges) {
+                p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
+                p5Instance.strokeWeight(brushWidth);
+
+                // eslint-disable-next-line no-restricted-syntax
+                for (const changedPixel of change.points) {
+                    p5Instance.point(changedPixel.x, changedPixel.y);
+                }
             }
+            dispatch(meetingPopChanges());
         }
-    }, [currentChanges]);
+
+        /* finish updating */
+        setIsUpdating(false);
+    }, [currentChanges, isDrawing]);
+
     return (
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
     );
