@@ -38,7 +38,8 @@ const initialState : meetingState = {
             green: 0,
             blue: 0,
         },
-        pixels: [],
+        points: [],
+        userId: -1,
     },
 
 };

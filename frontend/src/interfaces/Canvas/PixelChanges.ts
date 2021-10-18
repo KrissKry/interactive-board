@@ -4,8 +4,9 @@ export interface PixelChanges {
         green: number;
         blue: number;
     },
-    pixels: {
+    points: {
         x: number;
         y: number;
     }[],
+    userId: number | undefined;
 }

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
+import { IFrame } from '@stomp/stompjs';
 
 import { initialFillColor } from '../../helpers/initial';
-import { RGBColor } from '../../interfaces/Canvas';
-import { getComparedPixels, getPixelArea } from '../../util/Canvas';
+import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
+import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { MeetingService } from '../../services';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { meetingCanvasChange } from '../../redux/ducks/meeting';
@@ -25,14 +26,15 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
     const mouseReleased = () => { isDrawing = false; };
     const currentChanges = useAppSelector((state) => state.meeting.currentChanges);
     const dispatch = useAppDispatch();
-    const [pp5, setPP5] = useState<any>();
-    // console.log(window.p5);
-    // const launch = () => {
-        // const pp: p5Types = window.p5;
-    // };
+    const [pp5, setPP5] = useState<p5Types>();
 
-    const boardUpdateCallback = () => {
-        dispatch(meetingCanvasChange(currentChanges));
+    const boardUpdateCallback = (message: IFrame) => {
+        const resp: PixelChanges = JSON.parse(message.body);
+        const byteFix = 128;
+        resp.color.red += byteFix;
+        resp.color.green += byteFix;
+        resp.color.blue += byteFix;
+        dispatch(meetingCanvasChange(resp));
     };
 
     useEffect(() => {
@@ -44,25 +46,30 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
     const setup = (p5: p5Types, canvasParentRef: Element) => {
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
         p5.background(200, 200, 200);
-        p5.strokeWeight(20);
+        p5.strokeWeight(brushWidth);
         setPP5(p5);
     };
 
     const mouseDragged = (p5: p5Types) => {
         if (isDrawing) {
-            // eslint-disable-next-line max-len
-            const prevPixels = getPixelArea(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth, p5);
+            const {
+                startX, startY, deltaX, deltaY,
+            } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
+
+            const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
             p5.stroke(brushColor.r, brushColor.g, brushColor.b);
             p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
 
             // eslint-disable-next-line max-len
-            const newPixels = getPixelArea(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth, p5);
-            const areaWidth = Math.abs(p5.mouseX - p5.pmouseX) + brushWidth;
-            // eslint-disable-next-line max-len
-            const pixelsComparison = getComparedPixels(prevPixels, newPixels, areaWidth, brushColor);
+            const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
-            meetingService.sendCanvasChanges(pixelsComparison);
+            // eslint-disable-next-line max-len
+            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, brushColor);
+
+            if (pixelsComparison.points && pixelsComparison.points.length) {
+                meetingService.sendCanvasChanges(pixelsComparison);
+            }
         }
     };
 
@@ -70,9 +77,15 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
         // eslint-disable-next-line max-len
         const colorChange = [currentChanges.color.red, currentChanges.color.green, currentChanges.color.blue, 255];
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const change of currentChanges.pixels) {
-            pp5.set(change.x, change.y, colorChange);
+        if (typeof pp5 !== 'undefined') {
+            // eslint-disable-next-line max-len
+            pp5.stroke(currentChanges.color.red, currentChanges.color.green, currentChanges.color.blue);
+            pp5.strokeWeight(brushWidth);
+
+            // eslint-disable-next-line no-restricted-syntax
+            for (const change of currentChanges.points) {
+                pp5.point(change.x, change.y);
+            }
         }
     }, [currentChanges]);
     return (

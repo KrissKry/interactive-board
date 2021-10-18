@@ -18,7 +18,7 @@ const Tab1: React.FC = () => (
                     <IonTitle size="large">Tab 1</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <Canvas brushWidth={20} />
+            <Canvas brushWidth={1} />
         </IonContent>
     </IonPage>
 );

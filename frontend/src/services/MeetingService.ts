@@ -8,7 +8,7 @@ export class MeetingService {
 
     private constructor() {
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/',
+            brokerURL: 'ws://localhost:8080/board',
             onConnect: () => {
                 console.log('WS Connnected');
             },
@@ -31,6 +31,7 @@ export class MeetingService {
     }
 
     sendCanvasChanges(changes: PixelChanges) : void {
+        // console.log('WYSYŁAM', changes);
         if (this.client.connected) {
             this.client.publish({
                 destination: '/api/board/send',
@@ -41,7 +42,7 @@ export class MeetingService {
     }
 
     addSubscription(destination: string, callback: (message: IMessage) => void) : void {
-        console.log('wassup');
+        console.log('Subscribe to', destination);
         this.client.subscribe(destination, (message: IMessage) => callback(message));
     }
 }
