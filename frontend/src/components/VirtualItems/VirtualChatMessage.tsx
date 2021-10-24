@@ -1,7 +1,7 @@
 import { IonItem, IonLabel, IonText } from '@ionic/react';
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
-import { ChatMessageInterface } from '../../interfaces/Meeting';
+import { ChatMessageInterface } from '../../interfaces/Chat';
 
 const VirtualChatMessage = ({ username, message } : ChatMessageInterface) : JSX.Element => {
     const [ref, inView] = useInView();
@@ -10,7 +10,7 @@ const VirtualChatMessage = ({ username, message } : ChatMessageInterface) : JSX.
         <IonItem ref={ref} lines="none" button>
             {inView ? (
                 <>
-                    <IonLabel>{username}</IonLabel>
+                    <IonLabel style={{ fontSize: 10 }}>{username}</IonLabel>
                     <IonText>{message}</IonText>
                 </>
             )

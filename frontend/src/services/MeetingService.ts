@@ -1,6 +1,6 @@
 import { Client, IFrame, IMessage } from '@stomp/stompjs';
 import { PixelChanges } from '../interfaces/Canvas';
-import { ChatMessageInterface } from '../interfaces/Meeting';
+import { ChatMessageInterface } from '../interfaces/Chat';
 
 export class MeetingService {
     private static instance: MeetingService;

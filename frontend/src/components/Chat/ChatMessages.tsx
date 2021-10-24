@@ -1,6 +1,6 @@
 import { IonList } from '@ionic/react';
 import React from 'react';
-import { ChatMessageInterface } from '../../interfaces/Meeting';
+import { ChatMessageInterface } from '../../interfaces/Chat';
 import { VirtualChatMessage } from '../VirtualItems';
 
 interface ChatMessagesProps {

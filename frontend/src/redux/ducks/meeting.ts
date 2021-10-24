@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { PixelChanges } from '../../interfaces/Canvas';
-import { ChatMessageInterface } from '../../interfaces/Meeting';
+import { ChatMessageInterface } from '../../interfaces/Chat';
 
 export interface meetingState {
 

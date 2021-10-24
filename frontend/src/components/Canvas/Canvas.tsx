@@ -2,30 +2,49 @@
 import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
-import { IFrame } from '@stomp/stompjs';
 
 import { initialFillColor } from '../../helpers/initial';
 import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
 import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
-import { MeetingService } from '../../services';
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingPopChanges, meetingPushChanges } from '../../redux/ducks/meeting';
 
 interface CanvasProps {
-    color?: RGBColor;
+    /**
+     * Optional color of the brush
+     */
+    brushColor?: RGBColor;
 
     brushWidth: number;
+
+    /**
+     * Canvas updates queued
+     */
+    currentChanges: PixelChanges[];
+
+    /**
+     * Called on finished canvas update
+     */
+    clearChangesCallback: () => void;
+
+    /**
+     * Called every time pixel change is calculated
+     */
+    // eslint-disable-next-line no-unused-vars
+    sendChangesCallback: (changes: PixelChanges) => void;
+
 }
 
-const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
+const Canvas = ({
+    brushColor,
+    brushWidth,
+    currentChanges,
+    clearChangesCallback,
+    sendChangesCallback,
+
+} : CanvasProps) : JSX.Element => {
     const [p5Instance, setP5Instance] = useState<p5Types>();
     const [isUpdating, setIsUpdating] = useState<boolean>(false);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
-    const [brushColor, setBrushColor] = useState<RGBColor>(color || initialFillColor);
-
-    const currentChanges = useAppSelector((state) => state.meeting.currentChanges);
-    const meetingService = MeetingService.getInstance();
-    const dispatch = useAppDispatch();
+    const drawingColor = brushColor || initialFillColor;
 
     const canvasWidth = 500;
     const canvasHeight = 500;
@@ -33,24 +52,10 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
     const mousePressed = () => { setIsDrawing(true); };
     const mouseReleased = () => { setIsDrawing(false); };
 
-    const boardUpdateCallback = (message: IFrame) => {
-        const resp: PixelChanges = JSON.parse(message.body);
-        const byteFix = 128;
-        resp.color.red += byteFix;
-        resp.color.green += byteFix;
-        resp.color.blue += byteFix;
-        dispatch(meetingPushChanges(resp));
-    };
-
-    /* subscribe to board updates on connection */
-    useEffect(() => {
-        if (meetingService.client.connected) meetingService.addSubscription('/board/listen', boardUpdateCallback);
-    }, [meetingService.client.connected]);
-
     /* create canvas and set background + copy p5 reference */
     const setup = (p5: p5Types, canvasParentRef: Element) => {
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
-        p5.background(200, 200, 200);
+        p5.background('white');
         p5.strokeWeight(brushWidth);
         setP5Instance(p5);
     };
@@ -63,17 +68,17 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
 
             const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
-            p5.stroke(brushColor.r, brushColor.g, brushColor.b);
+            p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
             p5.strokeWeight(brushWidth);
             p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
 
             const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
 
             // eslint-disable-next-line max-len
-            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, brushColor);
+            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, drawingColor);
 
             if (pixelsComparison.points && pixelsComparison.points.length) {
-                meetingService.sendCanvasChanges(pixelsComparison);
+                sendChangesCallback(pixelsComparison);
             }
         }
     };
@@ -96,7 +101,8 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
                     p5Instance.point(changedPixel.x, changedPixel.y);
                 }
             }
-            dispatch(meetingPopChanges());
+            // dispatch(meetingPopChanges());
+            clearChangesCallback();
         }
 
         /* finish updating */
@@ -109,7 +115,7 @@ const Canvas = ({ color, brushWidth } : CanvasProps) : JSX.Element => {
 };
 
 Canvas.defaultProps = {
-    color: undefined,
+    brushColor: undefined,
 };
 
 export default Canvas;
