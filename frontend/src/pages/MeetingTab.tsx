@@ -4,7 +4,7 @@ import { IFrame } from '@stomp/stompjs';
 import Canvas from '../components/Canvas';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { MeetingService } from '../services';
-import { meetingAddMessage, meetingPopChanges, meetingPushChanges } from '../redux/ducks/meeting';
+import { meetingCanvasPopChanges, meetingCanvasPushChanges, meetingChatAddMessage } from '../redux/ducks/meeting';
 import ChatContainer from '../components/Chat/ChatContainer';
 
 import type { ChatMessageInterface } from '../interfaces/Chat';
@@ -27,7 +27,7 @@ const MeetingTab = () => {
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
-        dispatch(meetingAddMessage(recvMessage));
+        dispatch(meetingChatAddMessage(recvMessage));
     };
 
     const chatSendMessageCallback = (text: string) => {
@@ -36,11 +36,11 @@ const MeetingTab = () => {
             username: `${user}`,
         };
 
-        meetingService.sendMessage(newMessage);
+        meetingService.sendChatMessage(newMessage);
     };
 
     /* board section */
-    const boardClearChangesCallback = () => { dispatch(meetingPopChanges()); };
+    const boardClearChangesCallback = () => { dispatch(meetingCanvasPopChanges()); };
     // eslint-disable-next-line max-len
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
     const boardUpdateCallback = (message: IFrame) => {
@@ -49,7 +49,8 @@ const MeetingTab = () => {
         resp.color.red += byteFix;
         resp.color.green += byteFix;
         resp.color.blue += byteFix;
-        dispatch(meetingPushChanges(resp));
+
+        dispatch(meetingCanvasPushChanges(resp));
     };
 
     useEffect(() => {

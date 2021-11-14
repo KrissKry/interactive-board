@@ -21,6 +21,7 @@ interface ChatProps {
     // eslint-disable-next-line no-unused-vars
     sendMessageCallback: (text: string) => void;
 }
+
 const ChatContainer = ({ title, messages, sendMessageCallback } : ChatProps) : JSX.Element => (
     <div className="ee-chat-container">
         <ChatHeader title={title} />
