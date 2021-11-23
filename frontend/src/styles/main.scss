@@ -1,8 +1,14 @@
 
 /* components */
 @import './components/Canvas';
-@import './components/IconButtons';
 @import './components/Chat';
+@import './components/IconButtons';
+@import './components/Modals';
+
+/* pages */
+@import './pages/Meetings';
 
 /* layout */
+@import './layout/Alignment';
+@import './layout/Dimensions';
 @import './layout/Generic';

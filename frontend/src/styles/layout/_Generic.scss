@@ -2,12 +2,17 @@
     cursor: pointer;
 }
 
-.ee-generic-row {
+.ee-flex {
     display: flex;
-    flex-direction: row;
-}
 
-.ee-generic-column {
-    display: flex;
-    flex-direction: column;
+    &--row {
+        @extend .ee-flex;
+        flex-direction: row;
+    }
+
+    &--column {
+        @extend .ee-flex;
+        flex-direction: column;
+    }
+
 }

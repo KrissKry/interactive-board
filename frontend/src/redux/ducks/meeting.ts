@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { AxiosResponse } from 'axios';
 import { PixelChanges } from '../../interfaces/Canvas';
 import { ChatMessageInterface } from '../../interfaces/Chat';
 import { MeetingService } from '../../services';
@@ -145,6 +146,9 @@ export {
     meetingCanvasPushChanges,
     meetingCanvasPopChanges,
     meetingSetID,
+    meetingFetchRequest,
+    meetingFetchSuccess,
+    meetingFetchError,
 };
 
 /**
@@ -156,28 +160,38 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
         && ('messages' in (data as any) && Array.isArray((data as any).messages))
         && ('canvas' in (data as any) && Array.isArray((data as any).canvas));
 
-/**
- * Fetches and updates internal app state when meeting is created or joined
- * @param id meeting id sent to API
- * @returns void
- */
-export const meetingUpdate = (id: string) => (dispatch: any) : void => {
+// eslint-disable-next-line max-len
+export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) => (dispatch: any) : void => {
     dispatch(meetingFetchRequest());
-    const service = MeetingService.getInstance();
 
-    service.fetchMeetingDataByID(id)
-        .then((resp) => {
-            /* if data is meeting state update type, dispatches update action */
-            if (resp.status === 200 && assertMeetingStateUpdate(resp.data)) {
-                dispatch(meetingFetchSuccess(resp.data));
-            /* couldnt assert meeting update or status isnt HTTP.OK */
+    apiResponse
+        .then((response) => {
+            if (assertMeetingStateUpdate(response.data)) {
+                dispatch(meetingFetchSuccess(response.data));
             } else {
-                // eslint-disable-next-line no-console
-                console.error('Response', resp.data);
-                dispatch(meetingFetchError('Unknown fetch error'));
+                console.log(response.data);
+                dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
             }
         })
         .catch((error) => {
-            dispatch(meetingFetchError(error));
+            // STATUS_CODE !== (200, 299)
+            if (error.response) {
+                dispatch(meetingFetchError('STATUS_CODE_ERROR'));
+                console.warn(error.response.data);
+                console.warn(error.response.status);
+                console.warn(error.response.headers);
+
+            // NO RESPONSE
+            } else if (error.request) {
+                dispatch(meetingFetchError('NO_RESPONSE'));
+                console.warn(error.request);
+
+            // STH HAPPENED XD
+            } else {
+                dispatch(meetingFetchError('UNKNOWN_ERROR'));
+                console.warn('Error', error.message);
+            }
+
+            console.warn(error.config);
         });
 };

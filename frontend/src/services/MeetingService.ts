@@ -62,10 +62,21 @@ export class MeetingService {
     }
 
     // eslint-disable-next-line class-methods-use-this
-    async fetchMeetingDataByID(id: string) : Promise<AxiosResponse> {
-        const url = `adres do meeting endpoint/${id}`;
-        const data = axios.get(url);
+    async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
+        // TODO HASHOWANIE HASŁA
+        const url = `adres do meeting endpoint/${id}?access=${password}`;
 
-        return data;
+        return axios.get(url);
+    }
+
+    // eslint-disable-next-line class-methods-use-this
+    async requestNewMeeting(id: string, password?: string) : Promise<AxiosResponse> {
+        const url = 'tutaj z env';
+
+        // TODO HASHOWANIE HASŁA
+        return axios.post(url, {
+            id,
+            password,
+        });
     }
 }

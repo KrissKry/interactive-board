@@ -79,9 +79,10 @@ export const ButtonGroup = ({
             )}
             style={style}
         >
-            {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-            {buttons.map((btn) => (
+            {buttons.map((btn, index) => (
                 <Button
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={index}
                     // eslint-disable-next-line max-len
                     className={activeId && btn.id === activeId ? activeClassname : inactiveClassname}
                     color={btn.color}

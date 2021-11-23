@@ -1,0 +1,9 @@
+.ee-c-modal-meet  .modal-wrapper .ion-page {
+    padding: 3rem;
+
+    // inside input
+    & .md input {
+        height: 3rem;
+        color: white;
+    }
+}
