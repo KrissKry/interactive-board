@@ -11,7 +11,6 @@ import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
 
 const MeetingTab = () => {
-    const service = MeetingService.getInstance();
     const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
     const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
 
@@ -65,13 +64,13 @@ const MeetingTab = () => {
 
     const createMeetingCallback = (name: string, pass?: string) : void => {
         // promise for new meeting endpoint
-        const promise = service.requestNewMeeting(name, pass);
+        const promise = MeetingService.requestNewMeeting(name, pass);
         dispatch(meetingRequestValidation(promise));
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         // promise for meeting already in progress endpoint
-        const promise = service.fetchMeetingDataByID(id, pass);
+        const promise = MeetingService.fetchMeetingDataByID(id, pass);
         dispatch(meetingRequestValidation(promise));
     };
 

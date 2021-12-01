@@ -61,8 +61,7 @@ export class MeetingService {
         this.client.subscribe(destination, (message: IMessage) => callback(message));
     }
 
-    // eslint-disable-next-line class-methods-use-this
-    async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
+    static async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
         // TODO HASHOWANIE HASŁA
         const url = `adres do meeting endpoint/?id=${id}&access=${password}`;
 
@@ -70,7 +69,7 @@ export class MeetingService {
     }
 
     // eslint-disable-next-line class-methods-use-this
-    async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
+    static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
         const url = 'tutaj z env';
 
         // TODO HASHOWANIE HASŁA

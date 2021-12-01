@@ -19,8 +19,8 @@ export interface meetingStateInterface {
     /**
      * User lists
      */
-    activeUsers: string[];
-    invitedUsers: string[];
+    // activeUsers: string[];
+    // invitedUsers: string[];
 
     /**
      * Chat messages unique to the meeting
@@ -54,9 +54,9 @@ export interface meetingStateInterface {
 }
 
 /**
- * Used for meeting data update, id is ommited, as it's already set
+ * Used for meeting data update, loading/error data is ommited, as it's already set
  */
-type meetingStateUpdateInterface = Omit<meetingStateInterface, 'id'|'loading'|'loadingError'|'errorMessage'>;
+type meetingStateUpdateInterface = Omit<meetingStateInterface, 'loading'|'loadingError'|'errorMessage'|'currentChanges'>;
 
 const initialState : meetingStateInterface = {
 
@@ -64,9 +64,9 @@ const initialState : meetingStateInterface = {
 
     name: 'Spotkanie',
 
-    activeUsers: [],
+    // activeUsers: [],
 
-    invitedUsers: [],
+    // invitedUsers: [],
 
     messages: [],
 
@@ -173,7 +173,7 @@ export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) =>
                 dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
             }
         })
-        .catch((error) => {
+        .catch((error: any) => {
             // STATUS_CODE !== (200, 299)
             if (error.response) {
                 dispatch(meetingFetchError('STATUS_CODE_ERROR'));

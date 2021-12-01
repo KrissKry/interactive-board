@@ -47,7 +47,7 @@ const MeetingModal = ({
             <IonItem>
                 <IonInput
                     autofocus
-                    maxlength={6}
+                    maxlength={allowedLength}
                     onIonChange={(e) => setIDOrName(e.detail.value!)}
                     placeholder={insertText}
                     required
