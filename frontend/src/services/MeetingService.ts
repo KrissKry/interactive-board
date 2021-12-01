@@ -64,18 +64,18 @@ export class MeetingService {
     // eslint-disable-next-line class-methods-use-this
     async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
         // TODO HASHOWANIE HASŁA
-        const url = `adres do meeting endpoint/${id}?access=${password}`;
+        const url = `adres do meeting endpoint/?id=${id}&access=${password}`;
 
         return axios.get(url);
     }
 
     // eslint-disable-next-line class-methods-use-this
-    async requestNewMeeting(id: string, password?: string) : Promise<AxiosResponse> {
+    async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
         const url = 'tutaj z env';
 
         // TODO HASHOWANIE HASŁA
         return axios.post(url, {
-            id,
+            name,
             password,
         });
     }

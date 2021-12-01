@@ -8,13 +8,12 @@ import { ButtonProps } from '../../components/Button/Button';
 import GenericTab from '../GenericTab';
 import { NoMeeting, OngoingMeeting } from './content';
 import { MeetingModal } from '../../components/Modal';
-
-type meetingModalModes = 'CREATE' | 'JOIN' | 'NONE';
+import { meetingModalModes } from '../../interfaces/Modal';
 
 const MeetingTab = () => {
     const service = MeetingService.getInstance();
     const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
-    const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('NONE');
+    const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
@@ -31,7 +30,7 @@ const MeetingTab = () => {
 
     const hideModalCallback = () : void => {
         setShowMeetingModal(false);
-        setMeetingModalMode('NONE');
+        setMeetingModalMode('JOIN');
     };
 
     const buttons: ButtonProps[] = [
@@ -64,9 +63,9 @@ const MeetingTab = () => {
         );
     };
 
-    const createMeetingCallback = (id: string, pass?: string) : void => {
+    const createMeetingCallback = (name: string, pass?: string) : void => {
         // promise for new meeting endpoint
-        const promise = service.requestNewMeeting(id, pass);
+        const promise = service.requestNewMeeting(name, pass);
         dispatch(meetingRequestValidation(promise));
     };
 
@@ -91,6 +90,7 @@ const MeetingTab = () => {
                 callback={meetingModalMode === 'JOIN'
                     ? joinMeetingCallback : meetingModalMode === 'CREATE'
                         ? createMeetingCallback : () => console.warn('[EE] Incorrect meeting modal mode')}
+                mode={meetingModalMode}
             />
         </GenericTab>
     );
