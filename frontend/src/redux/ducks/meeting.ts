@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AxiosResponse } from 'axios';
+import { Axios, AxiosResponse } from 'axios';
 import { PixelChanges } from '../../interfaces/Canvas';
 import { ChatMessageInterface } from '../../interfaces/Chat';
 import { MeetingService } from '../../services';
@@ -93,6 +93,7 @@ const meetingSlice = createSlice({
             ...state,
             loading: true,
             loadingError: false,
+            errorMessage: '',
         }),
         // eslint-disable-next-line max-len
         meetingFetchSuccess: (state, action: PayloadAction<meetingStateUpdateInterface>) => ({
@@ -124,6 +125,17 @@ const meetingSlice = createSlice({
             ...state,
             currentChanges: [],
         }),
+        testMeetingUpdateId: (state, action: PayloadAction<string>) => ({
+            ...state,
+            id: action.payload,
+            name: `Spotkanie ${action.payload}`,
+            messages: [],
+            canvas: [],
+            currentChanges: [],
+            loading: false,
+            loadingError: false,
+            errorMessage: '',
+        }),
     },
 });
 
@@ -138,6 +150,7 @@ const {
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
+    testMeetingUpdateId,
 } = meetingSlice.actions;
 
 export {
@@ -193,5 +206,34 @@ export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) =>
             }
 
             console.warn(error.config);
+        });
+};
+
+interface testMeetingUpdate {
+    id: string;
+}
+
+const responseHasStringId = (data: unknown) : data is testMeetingUpdate => (typeof data === 'object') && ('id' in (data as any));
+
+// eslint-disable-next-line max-len
+export const testMeetingRequestValidation = (apiResponse: Promise<AxiosResponse>) => (dispatch: any) : void => {
+    dispatch(meetingFetchRequest());
+
+    apiResponse
+        .then((response) => {
+            if (response.status === 200) {
+                // const body = response.data.id as string;
+                // if (response.data && response.data.id && typeof response.data.id === 'string') {
+                if (responseHasStringId(response.data)) {
+                    dispatch(testMeetingUpdateId(response.data.id));
+                } else {
+                    console.log('[UPS] Bez dispatcha z nowym spotkaniem: ', response.data);
+                    dispatch(meetingFetchError('STATUS_ERROR'));
+                }
+            }
+        })
+        .catch((error: any) => {
+            console.error('[UPS] EEERROR', error);
+            dispatch(meetingFetchError('FATAL_ERROR'));
         });
 };

@@ -12,7 +12,7 @@ export class MeetingService {
 
     private constructor() {
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/board',
+            brokerURL: 'ws://localhost:8080/room',
             onConnect: () => {
                 console.log('Client connected to ws://');
                 this.connected = true;
@@ -37,6 +37,16 @@ export class MeetingService {
         return MeetingService.instance;
     }
 
+    sendMessageToMeeting(message: string): void {
+        // const url = `localhost:8080`;
+        if (this.connected) {
+            this.client.publish({
+                destination: '/api/chat/send',
+                body: JSON.stringify(message),
+            });
+        }
+    }
+
     sendCanvasChanges(changes: PixelChanges) : void {
         if (this.connected) {
             this.client.publish({
@@ -56,6 +66,15 @@ export class MeetingService {
         }
     }
 
+    sendChatMessageWithoutUser(message: string, id: string) : void {
+        if (this.connected) {
+            this.client.publish({
+                destination: `/api/chat/send/${id}`,
+                body: message,
+            });
+        }
+    }
+
     addSubscription(destination: string, callback: (message: IMessage) => void) : void {
         console.log('Subscribe to', destination);
         this.client.subscribe(destination, (message: IMessage) => callback(message));
@@ -70,12 +89,13 @@ export class MeetingService {
 
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
-        const url = 'tutaj z env';
+        // const url = 'tutaj z env';
+        const url = 'http://localhost:8080/api/room/create';
 
         // TODO HASHOWANIE HASŁA
         return axios.post(url, {
-            name,
-            password,
+            // name,
+            // password,
         });
     }
 }

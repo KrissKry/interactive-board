@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingRequestValidation } from '../../redux/ducks/meeting';
+import { meetingRequestValidation, testMeetingRequestValidation } from '../../redux/ducks/meeting';
 import { MeetingService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
@@ -65,13 +65,14 @@ const MeetingTab = () => {
     const createMeetingCallback = (name: string, pass?: string) : void => {
         // promise for new meeting endpoint
         const promise = MeetingService.requestNewMeeting(name, pass);
-        dispatch(meetingRequestValidation(promise));
+        // dispatch(meetingRequestValidation(promise));
+        dispatch(testMeetingRequestValidation(promise));
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         // promise for meeting already in progress endpoint
         const promise = MeetingService.fetchMeetingDataByID(id, pass);
-        dispatch(meetingRequestValidation(promise));
+        dispatch(testMeetingRequestValidation(promise));
     };
 
     useEffect(() => {

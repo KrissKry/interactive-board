@@ -31,7 +31,11 @@ const OngoingMeeting = () : JSX.Element => {
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
+        console.log(message.body);
         dispatch(meetingChatAddMessage(recvMessage));
+    };
+    const testChatUpdateCallback = (message: IFrame) => {
+        console.log(message.body);
     };
 
     const chatSendMessageCallback = (text: string) => {
@@ -40,7 +44,8 @@ const OngoingMeeting = () : JSX.Element => {
             username: `${user}`,
         };
 
-        meetingService.sendChatMessage(newMessage);
+        // meetingService.sendChatMessage(newMessage);
+        meetingService.sendChatMessageWithoutUser(text, meetingState.id);
     };
 
     /* board section */
@@ -60,12 +65,16 @@ const OngoingMeeting = () : JSX.Element => {
 
     useEffect(() => {
         setTimeout(() => {
-            if (meetingService.client.connected && !boardSubbed) {
-                meetingService.addSubscription('/board/listen', boardUpdateCallback);
-                setBoardSubbed(true);
-            }
-            if (meetingService.client.connected && !chatSubbed) {
-                meetingService.addSubscription('/chat/listen', chatUpdateCallback);
+            // if (meetingService.client.connected && !boardSubbed) {
+            //     meetingService.addSubscription('/board/listen', boardUpdateCallback);
+            //     setBoardSubbed(true);
+            // }
+            // if (meetingService.client.connected && !chatSubbed) {
+            //     meetingService.addSubscription('/chat/listen', chatUpdateCallback);
+            //     setChatSubbed(true);
+            // }
+            if (meetingService.client.connected && !chatSubbed && meetingState.id !== '') {
+                meetingService.addSubscription(`topic/chat/listen/${meetingState.id}`, testChatUpdateCallback);
                 setChatSubbed(true);
             }
         }, 1000);
