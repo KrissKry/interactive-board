@@ -1,7 +1,7 @@
 package com.board.backend.room.model;
 
-import com.board.backend.room.model.chat.model.Chat;
-import com.board.backend.room.model.drawing.model.Board;
+import com.board.backend.chat.model.Chat;
+import com.board.backend.drawing.model.Board;
 import lombok.Data;
 
 import java.util.List;

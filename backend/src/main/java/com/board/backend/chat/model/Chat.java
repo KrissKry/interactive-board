@@ -1,11 +1,9 @@
-package com.board.backend.room.model.chat.model;
+package com.board.backend.chat.model;
 
 import lombok.Data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Data
 public class Chat {

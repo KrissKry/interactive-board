@@ -1,4 +1,4 @@
-package com.board.backend.room.model.drawing.model;
+package com.board.backend.drawing.model;
 
 import lombok.*;
 import org.springframework.context.annotation.Scope;

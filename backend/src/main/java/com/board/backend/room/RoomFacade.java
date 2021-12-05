@@ -3,10 +3,10 @@ package com.board.backend.room;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.room.dto.RoomMapper;
 import com.board.backend.room.model.RoomRepository;
-import com.board.backend.room.model.chat.dto.ChatMessageDTO;
-import com.board.backend.room.model.chat.dto.ChatMessageMapper;
-import com.board.backend.room.model.drawing.dto.ChangedPixelsDTO;
-import com.board.backend.room.model.drawing.dto.BoardPixelsMapper;
+import com.board.backend.chat.dto.ChatMessageDTO;
+import com.board.backend.chat.dto.ChatMessageMapper;
+import com.board.backend.drawing.dto.ChangedPixelsDTO;
+import com.board.backend.drawing.dto.BoardPixelsMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

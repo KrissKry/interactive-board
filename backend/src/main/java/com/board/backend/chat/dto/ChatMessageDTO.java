@@ -1,4 +1,4 @@
-package com.board.backend.room.model.chat.dto;
+package com.board.backend.chat.dto;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,8 +1,8 @@
 package com.board.backend.room.dto;
 
 import com.board.backend.room.model.Room;
-import com.board.backend.room.model.chat.dto.ChatMessageMapper;
-import com.board.backend.room.model.drawing.dto.BoardPixelsMapper;
+import com.board.backend.chat.dto.ChatMessageMapper;
+import com.board.backend.drawing.dto.BoardPixelsMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
