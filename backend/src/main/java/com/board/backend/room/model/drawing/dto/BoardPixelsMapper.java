@@ -2,7 +2,6 @@ package com.board.backend.room.model.drawing.dto;
 
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 

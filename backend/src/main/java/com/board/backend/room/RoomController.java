@@ -3,15 +3,12 @@ package com.board.backend.room;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.room.model.chat.dto.ChatMessageDTO;
 import com.board.backend.room.model.drawing.dto.ChangedPixelsDTO;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,10 +47,4 @@ public class RoomController {
         template.convertAndSend("/topic/chat.listen." + roomId, message);
         roomFacade.saveMessage(message, roomId);
     }
-}
-
-@Data
-@AllArgsConstructor
-class Id {
-    Long id;
 }

@@ -9,7 +9,4 @@ import lombok.Data;
 @Builder
 public class Color {
     private byte red, green, blue;
-    public Color() {
-        this((byte) 255,(byte) 255, (byte) 255 );
-    }
 }
