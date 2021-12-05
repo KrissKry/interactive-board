@@ -1,4 +1,4 @@
-package com.board.backend.drawing.model;
+package com.board.backend.room.model.drawing.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
