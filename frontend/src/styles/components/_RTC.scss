@@ -1,0 +1,20 @@
+.ee-user {
+    &-panel {
+        position: relative;
+        height: 2rem;
+
+        &--active {
+            &::after {
+                position: absolute;
+                width: 1rem;
+                height: 2px;
+                background-color: green;
+            }
+        }
+    }
+    &-list {
+        height: fit-content;
+        max-height: 30rem;
+        overflow-y: auto;
+    }
+}

@@ -11,6 +11,7 @@ import { MeetingService } from '../../../services';
 
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import type { PixelChanges } from '../../../interfaces/Canvas';
+import { UserList } from '../../../components/RTC';
 
 const OngoingMeeting = () : JSX.Element => {
     const [boardSubbed, setBoardSubbed] = useState<boolean>(false);
@@ -24,6 +25,7 @@ const OngoingMeeting = () : JSX.Element => {
         messages: state.meeting.messages,
         title: state.meeting.name,
         boardChanges: state.meeting.currentChanges,
+        users: state.meeting.users,
     }));
 
     // this gon be replaced by useAppSelector => state.user.userID when ready
@@ -84,6 +86,8 @@ const OngoingMeeting = () : JSX.Element => {
                 sendMessageCallback={chatSendMessageCallback}
                 title={meetingState.title}
             />
+
+            <UserList users={meetingState.users} />
         </div>
     );
 };

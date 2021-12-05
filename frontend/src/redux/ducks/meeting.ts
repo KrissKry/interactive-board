@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AxiosResponse } from 'axios';
 import { PixelChanges } from '../../interfaces/Canvas';
 import { ChatMessageInterface } from '../../interfaces/Chat';
+import { UserInterface } from '../../interfaces/User/UserInterface';
 import { MeetingService } from '../../services';
 
 export interface meetingStateInterface {
@@ -37,6 +38,8 @@ export interface meetingStateInterface {
      */
     currentChanges: PixelChanges[];
 
+    users: UserInterface[],
+
     /**
      * Meeting data fetch in progress
      */
@@ -67,6 +70,7 @@ const initialState : meetingStateInterface = {
     // activeUsers: [],
 
     // invitedUsers: [],
+    users: [],
 
     messages: [],
 
