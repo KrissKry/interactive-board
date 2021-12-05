@@ -162,6 +162,7 @@ export {
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
+    testMeetingUpdateId,
 };
 
 /**
@@ -210,7 +211,7 @@ export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) =>
 };
 
 interface testMeetingUpdate {
-    id: string;
+    id: number;
 }
 
 const responseHasStringId = (data: unknown) : data is testMeetingUpdate => (typeof data === 'object') && ('id' in (data as any));
@@ -225,7 +226,7 @@ export const testMeetingRequestValidation = (apiResponse: Promise<AxiosResponse>
                 // const body = response.data.id as string;
                 // if (response.data && response.data.id && typeof response.data.id === 'string') {
                 if (responseHasStringId(response.data)) {
-                    dispatch(testMeetingUpdateId(response.data.id));
+                    dispatch(testMeetingUpdateId(response.data.id.toString()));
                 } else {
                     console.log('[UPS] Bez dispatcha z nowym spotkaniem: ', response.data);
                     dispatch(meetingFetchError('STATUS_ERROR'));

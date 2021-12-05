@@ -74,9 +74,13 @@ const OngoingMeeting = () : JSX.Element => {
             //     setChatSubbed(true);
             // }
             if (meetingService.client.connected && !chatSubbed && meetingState.id !== '') {
-                meetingService.addSubscription(`topic/chat/listen/${meetingState.id}`, testChatUpdateCallback);
+                meetingService.addSubscription(`/topic/chat/listen/${meetingState.id}`, testChatUpdateCallback);
                 setChatSubbed(true);
             }
+
+            // if (meetingService.client.connected) {
+
+            // }
         }, 1000);
     }, [meetingService.client.connected]);
 

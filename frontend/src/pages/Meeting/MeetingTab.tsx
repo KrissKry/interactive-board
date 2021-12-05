@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingRequestValidation, testMeetingRequestValidation } from '../../redux/ducks/meeting';
+import { meetingRequestValidation, testMeetingRequestValidation, testMeetingUpdateId } from '../../redux/ducks/meeting';
 import { MeetingService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
@@ -71,14 +71,18 @@ const MeetingTab = () => {
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         // promise for meeting already in progress endpoint
-        const promise = MeetingService.fetchMeetingDataByID(id, pass);
-        dispatch(testMeetingRequestValidation(promise));
+        // const promise = MeetingService.fetchMeetingDataByID(id, pass);
+        // dispatch(testMeetingRequestValidation(promise));
+        dispatch(testMeetingUpdateId(id));
     };
 
     useEffect(() => {
         console.log(meetingState.loading, meetingState.loadingError, meetingState.errorMessage);
     }, [meetingState]);
 
+    useEffect(() => {
+        setShowMeetingModal(false);
+    }, [meetingState.id]);
     return (
         <GenericTab title="Spotkanie">
             {getMeetingContent()}
