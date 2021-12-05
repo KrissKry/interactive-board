@@ -20,8 +20,8 @@ public class RoomFacade {
     private final ChatMessageMapper chatMessageMapper;
     private final BoardPixelsMapper changedPixelsMapper;
 
-    public RoomDTO createRoom() {
-        return roomMapper.toDTO(roomRepository.createRoom());
+    public RoomDTO createRoom(String name, String password) {
+        return roomMapper.toDTO(roomRepository.createRoom(name, password));
     }
 
     public RoomDTO getRoom(Long id) {

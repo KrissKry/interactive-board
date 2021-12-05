@@ -10,9 +10,13 @@ public class RoomRepository {
     Map<Long, Room> rooms = new ConcurrentHashMap<>();
     Long idCounter = 0L;
 
-    public Room createRoom() {
-        var room = new Room(++idCounter);
+    public Room createRoom(String name, String password) {
+        var room = new Room(++idCounter, name, password);
         return saveRoom(room);
+    }
+
+    public boolean findRoom(Long id, String password) {
+        return rooms.get(id).getPassword().equals(password);
     }
 
     public Room getRoom(Long id) {

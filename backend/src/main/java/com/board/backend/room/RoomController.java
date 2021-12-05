@@ -25,8 +25,8 @@ public class RoomController {
     private final SimpMessagingTemplate template;
 
     @PostMapping("/api/room/create")
-    public ResponseEntity<RoomDTO> createRoom() {
-        return ResponseEntity.ok(roomFacade.createRoom());
+    public ResponseEntity<RoomDTO> createRoom(String name, String password) {
+        return ResponseEntity.ok(roomFacade.createRoom(name, password));
     }
 
     @GetMapping("/api/room/get/{roomId}")

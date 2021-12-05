@@ -11,13 +11,16 @@ import java.util.Map;
 public class Room {
     private Long roomId;
     private String roomName;
+    private String password;
     private Chat chat;
     private Board board;
 
-    public Room(Long id) {
+    public Room(Long id, String name, String password) {
         roomId = id;
         chat = new Chat();
         board = new Board();
+        roomName = name;
+        this.password = password;
     }
 
     public void saveMessage(String message) {
