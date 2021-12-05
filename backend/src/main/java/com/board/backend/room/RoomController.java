@@ -34,7 +34,7 @@ public class RoomController {
         return ResponseEntity.ok(roomFacade.createRoom(name, password));
     }
 
-    @SubscribeMapping("/topic/room/connect/{roomId}")
+    @SubscribeMapping("/room/connect/{roomId}")
     public ResponseEntity<RoomDTO> getRoom(@PathVariable Long roomId, Principal principal) {
         template.convertAndSend("/topic/room/connected/" + roomId,
                 new UserDTO(principal.getName(), UserStatus.CONNECTED));
