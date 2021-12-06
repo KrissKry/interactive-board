@@ -36,12 +36,12 @@ const UserPanel = ({
     avatar = '',
     name = 'User',
 } : UserPanelProps) : JSX.Element => (
-    <IonItem className="ee-user-panel">
-        <IonAvatar className={active ? 'ee-user-panel--active' : ''}>
+    <IonItem className="ee-user-panel ion-no-padding ion-no-margin">
+        <IonAvatar className={[active ? 'ee-user-panel--active' : '', 'ee-margin--auto'].join(' ')}>
             <img src={avatar !== '' ? avatar : Avatar} alt={name} />
         </IonAvatar>
         {expand && (
-            <IonLabel>
+            <IonLabel className="ee-margin--vertical">
                 {name}
             </IonLabel>
         )}

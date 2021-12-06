@@ -56,6 +56,15 @@ export class MeetingService {
         }
     }
 
+    // sendMediaStream(stream: MediaStream) : void {
+    //     if (this.connected) {
+    //         this.client.publish({
+    //             destination: '/api/...../audio',
+    //             body: stream,
+    //         });
+    //     }
+    // }
+
     addSubscription(destination: string, callback: (message: IMessage) => void) : void {
         console.log('Subscribe to', destination);
         this.client.subscribe(destination, (message: IMessage) => callback(message));

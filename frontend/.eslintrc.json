@@ -43,7 +43,9 @@
         // ponizej moze byc fakap
         "import/no-unresolved": "off",
         "import/extensions": "off",
-        "no-unused-vars": "warn"
+        "no-unused-vars": "warn",
+        "react/require-default-props": "off",
+        "react/prop-types": "off"
     },
     "globals": {
         "JSX": "readonly",

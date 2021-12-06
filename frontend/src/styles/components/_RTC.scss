@@ -1,20 +1,39 @@
 .ee-user {
     &-panel {
         position: relative;
-        height: 2rem;
+        height: fit-content;
 
         &--active {
-            &::after {
+            &::before {
+                content: '';
                 position: absolute;
-                width: 1rem;
-                height: 2px;
-                background-color: green;
+                top: 0.25rem;
+                left: 1.75rem;
+                width: .5rem;
+                height: .5rem;
+                border-radius: 10rem;
+                background-color: limegreen;
             }
         }
+
+        img {
+            height: 80%;
+            width: 80%;
+            margin: 10%;
+            object-fit:scale-down;
+        }
     }
+ 
     &-list {
         height: fit-content;
         max-height: 30rem;
         overflow-y: auto;
+    }
+}
+
+.ee-rtc-config {
+    &--icon {
+        width: 2rem;
+        height: 2rem;
     }
 }
