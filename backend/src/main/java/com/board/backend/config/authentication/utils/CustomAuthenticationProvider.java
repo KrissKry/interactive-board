@@ -1,4 +1,4 @@
-package com.board.backend.authentication.utils;
+package com.board.backend.config.authentication.utils;
 
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 

@@ -4,6 +4,7 @@ import com.board.backend.chat.model.Chat;
 import com.board.backend.drawing.model.Board;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +15,9 @@ public class Room {
     private String password;
     private Chat chat;
     private Board board;
+    private List<String> users;
+    private LocalDateTime created;
+    private LocalDateTime lastUpdated;
 
     public Room(Long id, String name, String password) {
         roomId = id;

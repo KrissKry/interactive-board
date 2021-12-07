@@ -1,4 +1,4 @@
-package com.board.backend.authentication.user;
+package com.board.backend.config.authentication.user;
 
 import lombok.Data;
 

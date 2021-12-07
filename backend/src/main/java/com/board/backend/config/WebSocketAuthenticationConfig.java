@@ -1,6 +1,6 @@
-package com.board.backend.authentication.config;
+package com.board.backend.config;
 
-import com.board.backend.authentication.user.UserInterceptor;
+import com.board.backend.config.authentication.user.UserInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;

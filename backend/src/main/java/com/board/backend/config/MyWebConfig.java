@@ -1,4 +1,4 @@
-package com.board.backend.authentication.config;
+package com.board.backend.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

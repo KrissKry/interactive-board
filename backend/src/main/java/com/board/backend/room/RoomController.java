@@ -14,7 +14,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -38,7 +37,7 @@ public class RoomController {
     public ResponseEntity<RoomDTO> getRoom(@PathVariable Long roomId, Principal principal) {
         template.convertAndSend("/topic/room/connected/" + roomId,
                 new UserDTO(principal.getName(), UserStatus.CONNECTED));
-        return ResponseEntity.ok(roomFacade.getRoom(roomId));
+        return ResponseEntity.ok(roomFacade.connectAndGetRoom(roomId, principal.getName()));
     }
 
     @MessageMapping("/board/send/{roomId}")

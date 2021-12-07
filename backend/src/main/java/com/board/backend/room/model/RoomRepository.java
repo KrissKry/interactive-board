@@ -15,12 +15,20 @@ public class RoomRepository {
         return saveRoom(room);
     }
 
+    public void removeRoom(Long id) {
+        rooms.remove(id);
+    }
+
     public boolean findRoom(Long id, String password) {
         return rooms.get(id).getPassword().equals(password);
     }
 
     public Room getRoom(Long id) {
         return rooms.get(id);
+    }
+
+    public void addNewUser(Long id, String username) {
+        rooms.get(id).getUsers().add(username);
     }
 
     public Room saveRoom(Room room) {

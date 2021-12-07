@@ -24,7 +24,8 @@ public class RoomFacade {
         return roomMapper.toDTO(roomRepository.createRoom(name, password));
     }
 
-    public RoomDTO getRoom(Long id) {
+    public RoomDTO connectAndGetRoom(Long id, String username) {
+        roomRepository.addNewUser(id, username);
         return roomMapper.toDTO(roomRepository.getRoom(id));
     }
 
@@ -38,5 +39,13 @@ public class RoomFacade {
 
     public void savePixels(ChangedPixelsDTO points, Long roomId) {
         roomRepository.savePixels(roomId, changedPixelsMapper.toModel(points));
+    }
+
+    public void disconnectUser(String roomId, String username) {
+        var room = roomRepository.getRoom(Long.valueOf(roomId));
+        room.getUsers().remove(username);
+        if (room.getUsers().isEmpty()) {
+            roomRepository.removeRoom(Long.valueOf(roomId));
+        }
     }
 }
