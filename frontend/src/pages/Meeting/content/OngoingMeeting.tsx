@@ -23,12 +23,14 @@ import type { PixelChanges } from '../../../interfaces/Canvas';
 import { UserList } from '../../../components/RTC';
 import { ButtonsPanel } from '../../../components/ButtonGroup';
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
+import { p2p } from '../../../interfaces/Meeting';
 
 const OngoingMeeting = () : JSX.Element => {
     const [connectSubbed, setConnectSubbed] = useState<boolean>(false);
     const [usersSubbed, setUsersSubbed] = useState<boolean>(false);
     const [boardSubbed, setBoardSubbed] = useState<boolean>(false);
     const [chatSubbed, setChatSubbed] = useState<boolean>(false);
+    const [p2pSubbed, setP2PSubbed] = useState<boolean>(false);
 
     /* communication */
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
@@ -96,19 +98,39 @@ const OngoingMeeting = () : JSX.Element => {
         dispatch(meetingUpdateTestUsers(newUser));
     };
 
+    const sendP2PCommunication = (data: any, type: p2p.p2pEvent, receiver?: string) : void => {
+        const message: p2p.p2pMessage = {
+            from: meetingState.user,
+            to: receiver || 'ANY',
+            type,
+            data,
+        };
+
+        meetingService.sendP2PMessage(message);
+    };
+
+    const handleP2PCommunication = (frame: IFrame) : void => {
+        const message: p2p.p2pMessage = JSON.parse(frame.body);
+
+        switch (message.type) {
+            case 'OFFER':
+                break;
+            default:
+                break;
+        }
+    };
+
     useEffect(() => {
         setTimeout(() => {
-            if (meetingService.getConnected()) {
+            if (meetingService.connected) {
                 if (!connectSubbed) {
                     meetingService.addSubscription(`/api/room/connect/${meetingState.id}`, meetingUpdateCallback);
                     setConnectSubbed(true);
                 }
-
                 if (!usersSubbed) {
                     meetingService.addSubscription(`/api/room/connected/${meetingState.id}`, newUserUpdateCallback);
                     setUsersSubbed(true);
                 }
-
                 if (!boardSubbed) {
                     meetingService.addSubscription(`/topic/board/listen/${meetingState.id}`, boardUpdateCallback);
                     setBoardSubbed(true);
@@ -117,9 +139,13 @@ const OngoingMeeting = () : JSX.Element => {
                     meetingService.addSubscription(`/topic/chat.listen.${meetingState.id}`, chatUpdateCallback);
                     setChatSubbed(true);
                 }
+                if (!p2pSubbed) {
+                    meetingService.addSubscription(`/topic/p2p.listen.${meetingState.id}`, handleP2PCommunication);
+                    setP2PSubbed(true);
+                }
             }
         }, 1000);
-    }, [meetingService.getConnected()]);
+    }, [meetingService.connected]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
