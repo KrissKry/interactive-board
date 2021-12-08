@@ -16,6 +16,7 @@ public class Room {
     private Chat chat;
     private Board board;
     private List<String> users;
+    private List<String> messages;
     private LocalDateTime created;
     private LocalDateTime lastUpdated;
 

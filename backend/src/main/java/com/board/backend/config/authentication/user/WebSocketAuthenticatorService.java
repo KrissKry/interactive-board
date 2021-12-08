@@ -1,20 +1,23 @@
 package com.board.backend.config.authentication.user;
 
-import com.board.backend.room.model.RoomRepository;
+import com.board.backend.room.cassandra.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthenticatorService {
 
+    private final PasswordEncoder encoder;
     private final RoomRepository repository;
 
     // This method MUST return a UsernamePasswordAuthenticationToken instance, the spring security chain is testing it with 'instanceof' later on. So don't use a subclass of it or any other class
@@ -26,7 +29,7 @@ public class WebSocketAuthenticatorService {
             throw new AuthenticationCredentialsNotFoundException("Password was null or empty.");
         }
         // Add your own logic for retrieving user in fetchUserFromDb()
-        if (fetchUserFromDb(roomId, roomPassword)) {
+        if (fetchUserFromDb(UUID.fromString(roomId), encoder.encode(roomPassword))) {
             throw new BadCredentialsException("Bad credentials for user " + username);
         }
 
@@ -39,7 +42,7 @@ public class WebSocketAuthenticatorService {
     }
 
     // TODO implement db fetch
-    boolean fetchUserFromDb(String roomId, String password) {
-        return repository.findRoom(Long.valueOf(roomId), password);
+    boolean fetchUserFromDb(UUID roomId, String password) {
+        return repository.findOne(roomId).getPassword().equals(password);
     }
 }

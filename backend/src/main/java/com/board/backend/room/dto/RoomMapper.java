@@ -1,8 +1,8 @@
 package com.board.backend.room.dto;
 
-import com.board.backend.room.model.Room;
 import com.board.backend.chat.dto.ChatMessageMapper;
 import com.board.backend.drawing.dto.BoardPixelsMapper;
+import com.board.backend.room.cassandra.model.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +15,7 @@ public class RoomMapper {
     public RoomDTO toDTO(Room room) {
         return RoomDTO
             .builder()
-            .roomId(room.getRoomId().toString())
-            .roomName(room.getRoomName())
+            .roomId(room.getId().toString())
             .pixels(boardPixelsMapper.toDTO(room.getPixels()))
             .messages(chatMessageMapper.toDTO(room.getMessages()))
             .build();

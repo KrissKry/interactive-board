@@ -14,7 +14,6 @@ import java.util.Map;
 @Builder
 public class RoomDTO {
     private String roomId;
-    private String roomName;
     private List<String> currentUsers;
     private List<ChatMessageDTO> messages;
     private Map<Point, Color> pixels;

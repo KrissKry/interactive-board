@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class RoomRepository {
+public class OldRoomRepository {
     Map<Long, Room> rooms = new ConcurrentHashMap<>();
     Long idCounter = 0L;
 
@@ -36,7 +36,7 @@ public class RoomRepository {
         return room;
     }
 
-    public void saveMessage(Long roomId, String message) {
+    public void saveMessage(UUID roomId, String message) {
         rooms.get(roomId).saveMessage(message);
     }
 

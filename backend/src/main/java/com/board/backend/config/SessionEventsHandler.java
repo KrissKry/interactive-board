@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -19,6 +20,13 @@ public class SessionEventsHandler {
 
     @EventListener
     public void handleSessionDisconnect(@NonNull SessionDisconnectEvent event) {
-        roomFacade.disconnectUser(PrincipalUtils.extractRoomIdFromPrincipal(Objects.requireNonNull(event.getUser())), PrincipalUtils.extractRoomIdFromPrincipal(event.getUser()));
+        roomFacade.disconnectUser(
+                UUID.fromString(
+                    PrincipalUtils.extractRoomIdFromPrincipal(
+                        Objects.requireNonNull(event.getUser())
+                    )
+                ),
+                PrincipalUtils.extractRoomIdFromPrincipal(event.getUser()));
+        log.info("User removed");
     }
 }

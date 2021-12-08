@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.security.Principal;
+import java.util.UUID;
 
 
 @RequiredArgsConstructor
@@ -34,21 +35,27 @@ public class RoomController {
     }
 
     @SubscribeMapping("/room/connect/{roomId}")
-    public ResponseEntity<RoomDTO> getRoom(@PathVariable Long roomId, Principal principal) {
+    public ResponseEntity<RoomDTO> getRoom(@PathVariable UUID roomId, Principal principal) {
         template.convertAndSend("/topic/room/connected/" + roomId,
                 new UserDTO(principal.getName(), UserStatus.CONNECTED));
         return ResponseEntity.ok(roomFacade.connectAndGetRoom(roomId, principal.getName()));
     }
 
     @MessageMapping("/board/send/{roomId}")
-    public void savePixels(@DestinationVariable Long roomId, @Payload ChangedPixelsDTO pixels) {
+    public void savePixels(@DestinationVariable UUID roomId, @Payload ChangedPixelsDTO pixels) {
         template.convertAndSend("/topic/board.listen.{roomId}", pixels);
         roomFacade.savePixels(pixels, roomId);
         log.info(pixels.toString());
     }
 
+    @MessageMapping("/chat/test/{roomId}")
+    public void sendMessage(@DestinationVariable Long roomId, @Payload String message) {
+        log.info("Received: " + message);
+        template.convertAndSend("/topic/chat.listen." + roomId, message);
+    }
+
     @MessageMapping("/chat/send/{roomId}")
-    public void sendMessage(@DestinationVariable Long roomId, @Payload ChatMessageDTO message) {
+    public void sendMessage(@DestinationVariable UUID roomId, @Payload ChatMessageDTO message) {
         log.info("Received: " + message);
         template.convertAndSend("/topic/chat.listen." + roomId, message);
         roomFacade.saveMessage(message, roomId);

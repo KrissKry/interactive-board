@@ -38,6 +38,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-redis'
     implementation 'redis.clients:jedis'
     implementation 'org.springframework.boot:spring-boot-starter-reactor-netty'
+    implementation 'org.springframework.data:spring-data-cassandra'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
