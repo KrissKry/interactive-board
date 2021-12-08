@@ -13,7 +13,7 @@ const ChatMessages = ({ messages } : ChatMessagesProps) : JSX.Element => (
                 // eslint-disable-next-line react/no-array-index-key
                 key={index}
                 username={item.username}
-                message={item.message}
+                text={item.text}
             />
         ))}
     </IonList>

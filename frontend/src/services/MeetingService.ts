@@ -6,16 +6,44 @@ import { ChatMessageInterface } from '../interfaces/Chat';
 export class MeetingService {
     private static instance: MeetingService;
 
-    public client: Client;
+    public client: Client | null = null;
 
-    connected = false;
+    private connected: boolean;
+
+    private id = '';
 
     private constructor() {
+        this.connected = false;
+        // this.client = new Client({
+        //     brokerURL: 'ws://localhost:8080/board',
+        //     onConnect: () => {
+        //         console.log('Client connected to ws://');
+        //         this.connected = true;
+        //     },
+        //     onStompError: (frame: IFrame) => {
+        //         console.log('Broker reported error: ', frame.headers.message);
+        //         console.log('Additional details: ', frame.body);
+        //     },
+        //     onDisconnect: () => {
+        //         this.connected = false;
+        //     },
+        // });
+
+        // this.client.activate();
+    }
+
+    createClient(callback:() => void, login: string, roomId: string, password?: string) : void {
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/board',
+            brokerURL: 'ws://localhost:8080/room',
+            connectHeaders: {
+                login,
+                roomId,
+                password: password || '',
+            },
             onConnect: () => {
                 console.log('Client connected to ws://');
                 this.connected = true;
+                this.id = roomId;
             },
             onStompError: (frame: IFrame) => {
                 console.log('Broker reported error: ', frame.headers.message);
@@ -38,9 +66,9 @@ export class MeetingService {
     }
 
     sendCanvasChanges(changes: PixelChanges) : void {
-        if (this.connected) {
+        if (this.connected && this.client !== null) {
             this.client.publish({
-                destination: '/api/board/send',
+                destination: `/api/board/send/${this.id}`,
                 body: JSON.stringify(changes),
                 skipContentLengthHeader: true,
             });
@@ -48,38 +76,37 @@ export class MeetingService {
     }
 
     sendChatMessage(message: ChatMessageInterface) : void {
-        if (this.connected) {
+        if (this.connected && this.client !== null) {
             this.client.publish({
-                destination: '/api/chat/send',
+                destination: `/api/chat/send/${this.id}`,
                 body: JSON.stringify(message),
             });
         }
     }
 
-    // sendMediaStream(stream: MediaStream) : void {
-    //     if (this.connected) {
-    //         this.client.publish({
-    //             destination: '/api/...../audio',
-    //             body: stream,
-    //         });
-    //     }
-    // }
-
     addSubscription(destination: string, callback: (message: IMessage) => void) : void {
         console.log('Subscribe to', destination);
-        this.client.subscribe(destination, (message: IMessage) => callback(message));
+        if (this.connected && this.client !== null) {
+            this.client.subscribe(destination, (message: IMessage) => callback(message));
+        }
     }
 
-    static async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
-        // TODO HASHOWANIE HASŁA
-        const url = `adres do meeting endpoint/?id=${id}&access=${password}`;
-
-        return axios.get(url);
+    getConnected() : boolean {
+        // eslint-disable-next-line max-len
+        if (this.client === null || this.client.connected === false || this.connected === false) return false;
+        return true;
     }
+
+    // static async fetchMeetingDataByID(id: string, password?: string) : Promise<AxiosResponse> {
+    //     // TODO HASHOWANIE HASŁA
+    //     const url = `adres do meeting endpoint/?id=${id}&access=${password}`;
+
+    //     return axios.get(url);
+    // }
 
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
-        const url = 'tutaj z env';
+        const url = 'http://localhost:8080/api/room/create';
 
         // TODO HASHOWANIE HASŁA
         return axios.post(url, {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingRequestValidation } from '../../redux/ducks/meeting';
+import { meetingRequestValidation, meetingSetID } from '../../redux/ducks/meeting';
 import { MeetingService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
@@ -9,10 +9,13 @@ import GenericTab from '../GenericTab';
 import { NoMeeting, OngoingMeeting } from './content';
 import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
+import { SimpleIonicInput } from '../../components/Input';
 
 const MeetingTab = () => {
     const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
     const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
+    const [user, setUser] = useState<string>('');
+    const [potentialId, setPotentialId] = useState<string>('');
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
@@ -21,6 +24,8 @@ const MeetingTab = () => {
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
     }));
+
+    const meetingService = MeetingService.getInstance();
 
     const showModalCallback = (mode: meetingModalModes) : void => {
         setShowMeetingModal(true);
@@ -62,25 +67,35 @@ const MeetingTab = () => {
         );
     };
 
+    const dispatchMeetingUpdate = () : void => { dispatch(meetingSetID(potentialId)); };
+
     const createMeetingCallback = (name: string, pass?: string) : void => {
         // promise for new meeting endpoint
-        const promise = MeetingService.requestNewMeeting(name, pass);
-        dispatch(meetingRequestValidation(promise));
+        MeetingService.requestNewMeeting(name, pass)
+        .then((response) => {
+            setPotentialId(response.data as string);
+            meetingService.createClient(dispatchMeetingUpdate, user, response.data as string, pass);
+        });
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         // promise for meeting already in progress endpoint
-        const promise = MeetingService.fetchMeetingDataByID(id, pass);
-        dispatch(meetingRequestValidation(promise));
+        // const promise = MeetingService.fetchMeetingDataByID(id, pass);
+        // dispatch(meetingRequestValidation(promise));
+
     };
 
+    const updateUser = (newUser: string) => { setUser(newUser); };
+
     useEffect(() => {
-        console.log(meetingState.loading, meetingState.loadingError, meetingState.errorMessage);
+        console.log(meetingState);
     }, [meetingState]);
 
     return (
         <GenericTab title="Spotkanie">
             {getMeetingContent()}
+
+            <SimpleIonicInput sendCallback={updateUser} />
 
             <MeetingModal
                 isOpen={showMeetingModal}

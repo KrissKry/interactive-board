@@ -5,6 +5,11 @@ import { ChatMessageInterface } from '../../interfaces/Chat';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { MeetingService } from '../../services';
 
+interface meetingUsers {
+    name: string,
+    status: string,
+}
+
 export interface meetingStateInterface {
 
     /**
@@ -22,7 +27,7 @@ export interface meetingStateInterface {
      */
     // activeUsers: string[];
     // invitedUsers: string[];
-
+    allMeetingUsers: meetingUsers[];
     /**
      * Chat messages unique to the meeting
      */
@@ -70,7 +75,30 @@ const initialState : meetingStateInterface = {
     // activeUsers: [],
 
     // invitedUsers: [],
-    users: [],
+    users: [
+        {
+            name: 'Hehe',
+            avatar: 'https://www.dovercourt.org/wp-content/uploads/2019/11/610-6104451_image-placeholder-png-user-profile-placeholder-image-png.jpg',
+            active: true,
+        },
+        {
+            name: 'Hehe2',
+            avatar: '',
+            active: false,
+        },
+        {
+            name: 'Hehe the comebackkkkk',
+            avatar: '',
+            active: false,
+        },
+        {
+            name: 'Hehe & the family',
+            avatar: '',
+            active: true,
+        },
+    ],
+
+    allMeetingUsers: [],
 
     messages: [],
 
@@ -128,6 +156,10 @@ const meetingSlice = createSlice({
             ...state,
             currentChanges: [],
         }),
+        meetingUpdateTestUsers: (state, action: PayloadAction<meetingUsers>) => ({
+            ...state,
+            allMeetingUsers: [...state.allMeetingUsers, action.payload],
+        }),
     },
 });
 
@@ -142,6 +174,7 @@ const {
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
+    meetingUpdateTestUsers,
 } = meetingSlice.actions;
 
 export {
@@ -153,6 +186,7 @@ export {
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
+    meetingUpdateTestUsers,
 };
 
 /**
@@ -198,4 +232,15 @@ export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) =>
 
             console.warn(error.config);
         });
+};
+
+export const meetingDataUpdateValidation = (response: any) => (dispatch: any) : void => {
+    dispatch(meetingFetchRequest());
+
+    if (assertMeetingStateUpdate(response)) {
+        dispatch(meetingFetchSuccess(response));
+    } else {
+        console.log(response);
+        dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
+    }
 };

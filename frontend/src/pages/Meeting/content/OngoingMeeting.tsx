@@ -8,7 +8,13 @@ import Canvas from '../../../components/Canvas';
 import ChatContainer from '../../../components/Chat/ChatContainer';
 
 import { useAppDispatch, useAppSelector } from '../../../hooks';
-import { meetingCanvasPopChanges, meetingCanvasPushChanges, meetingChatAddMessage } from '../../../redux/ducks/meeting';
+import {
+    meetingCanvasPopChanges,
+    meetingCanvasPushChanges,
+    meetingChatAddMessage,
+    meetingRequestValidation,
+    meetingUpdateTestUsers,
+} from '../../../redux/ducks/meeting';
 
 import { MeetingService } from '../../../services';
 
@@ -19,6 +25,8 @@ import { ButtonsPanel } from '../../../components/ButtonGroup';
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
 
 const OngoingMeeting = () : JSX.Element => {
+    const [connectSubbed, setConnectSubbed] = useState<boolean>(false);
+    const [usersSubbed, setUsersSubbed] = useState<boolean>(false);
     const [boardSubbed, setBoardSubbed] = useState<boolean>(false);
     const [chatSubbed, setChatSubbed] = useState<boolean>(false);
 
@@ -55,7 +63,7 @@ const OngoingMeeting = () : JSX.Element => {
 
     const chatSendMessageCallback = (text: string) => {
         const newMessage: ChatMessageInterface = {
-            message: text,
+            text,
             username: `${user}`,
         };
 
@@ -77,18 +85,40 @@ const OngoingMeeting = () : JSX.Element => {
         dispatch(meetingCanvasPushChanges(resp));
     };
 
+    const meetingUpdateCallback = (message: IFrame) : void => {
+        const resp = JSON.parse(message.body);
+        dispatch(meetingRequestValidation(resp));
+    };
+
+    const newUserUpdateCallback = (message: IFrame) : void => {
+        const newUser = JSON.parse(message.body);
+        dispatch(meetingUpdateTestUsers(newUser));
+    };
+
     useEffect(() => {
         setTimeout(() => {
-            if (meetingService.client.connected && !boardSubbed) {
-                meetingService.addSubscription('/board/listen', boardUpdateCallback);
-                setBoardSubbed(true);
-            }
-            if (meetingService.client.connected && !chatSubbed) {
-                meetingService.addSubscription('/chat/listen', chatUpdateCallback);
-                setChatSubbed(true);
+            if (meetingService.getConnected()) {
+                if (!connectSubbed) {
+                    meetingService.addSubscription(`/api/room/connect/${meetingState.id}`, meetingUpdateCallback);
+                    setConnectSubbed(true);
+                }
+
+                if (!usersSubbed) {
+                    meetingService.addSubscription(`/api/room/connected/${meetingState.id}`, newUserUpdateCallback);
+                    setUsersSubbed(true);
+                }
+
+                if (!boardSubbed) {
+                    meetingService.addSubscription(`/topic/board/listen/${meetingState.id}`, boardUpdateCallback);
+                    setBoardSubbed(true);
+                }
+                if (!chatSubbed) {
+                    meetingService.addSubscription(`/topic/chat.listen.${meetingState.id}`, chatUpdateCallback);
+                    setChatSubbed(true);
+                }
             }
         }, 1000);
-    }, [meetingService.client.connected]);
+    }, [meetingService.getConnected()]);
 
     const controlButtons : ControlButtonPanel[] = [
         {

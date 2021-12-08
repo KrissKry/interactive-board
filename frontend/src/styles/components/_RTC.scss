@@ -8,7 +8,8 @@
                 content: '';
                 position: absolute;
                 top: 0.25rem;
-                left: 1.75rem;
+                // right: 0.25rem;
+                left: 2rem;
                 width: .5rem;
                 height: .5rem;
                 border-radius: 10rem;
@@ -18,7 +19,9 @@
 
         img {
             height: 80%;
+            max-height: 3rem;
             width: 80%;
+            max-width: 3rem;
             margin: 10%;
             object-fit:scale-down;
         }

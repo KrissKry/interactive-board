@@ -4,5 +4,5 @@
  */
 export interface ChatMessageInterface {
     username: string;
-    message: string;
+    text: string;
 }

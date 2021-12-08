@@ -3,7 +3,7 @@ import React from 'react';
 import { useInView } from 'react-intersection-observer';
 import { ChatMessageInterface } from '../../interfaces/Chat';
 
-const VirtualChatMessage = ({ username, message } : ChatMessageInterface) : JSX.Element => {
+const VirtualChatMessage = ({ username, text } : ChatMessageInterface) : JSX.Element => {
     const [ref, inView] = useInView();
 
     return (
@@ -11,7 +11,7 @@ const VirtualChatMessage = ({ username, message } : ChatMessageInterface) : JSX.
             {inView ? (
                 <>
                     <IonLabel style={{ fontSize: 10 }}>{username}</IonLabel>
-                    <IonText>{message}</IonText>
+                    <IonText>{text}</IonText>
                 </>
             )
             : null}
