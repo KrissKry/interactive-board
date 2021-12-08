@@ -5,14 +5,22 @@ import React, { useState } from 'react';
 interface InputProps {
     // eslint-disable-next-line no-unused-vars
     sendCallback: (text: string) => void;
+
+    placeholder?: string;
+
+    resetOnCallback?: boolean;
 }
 
-const SimpleIonicInput = ({ sendCallback } : InputProps) : JSX.Element => {
+const SimpleIonicInput = ({
+    sendCallback,
+    placeholder,
+    resetOnCallback = true,
+} : InputProps) : JSX.Element => {
     const [text, setText] = useState<string>('');
 
     const handleSend = () => {
         sendCallback(text);
-        setText('');
+        if (resetOnCallback) setText('');
     };
 
     return (
@@ -21,7 +29,7 @@ const SimpleIonicInput = ({ sendCallback } : InputProps) : JSX.Element => {
             <IonInput
                 onIonChange={(e) => setText(e.detail.value!)}
                 onKeyDown={(e) => (e.key === 'Enter' ? handleSend() : null)}
-                placeholder="Aa"
+                placeholder={placeholder || 'Aa'}
                 type="text"
                 value={text}
             />

@@ -50,11 +50,12 @@ const OngoingMeeting = () : JSX.Element => {
         title: state.meeting.name,
         boardChanges: state.meeting.currentChanges,
         users: state.meeting.users,
+        user: state.user.username,
     }));
 
     // const stream = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     // this gon be replaced by useAppSelector => state.user.userID when ready
-    const user = 1234;
+    // const user = 1234;
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
@@ -64,7 +65,7 @@ const OngoingMeeting = () : JSX.Element => {
     const chatSendMessageCallback = (text: string) => {
         const newMessage: ChatMessageInterface = {
             text,
-            username: `${user}`,
+            username: `${meetingState.user}`,
         };
 
         meetingService.sendChatMessage(newMessage);

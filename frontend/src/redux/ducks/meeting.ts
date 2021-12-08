@@ -111,6 +111,7 @@ const initialState : meetingStateInterface = {
     loadingError: false,
 
     errorMessage: '',
+
 };
 
 const meetingSlice = createSlice({

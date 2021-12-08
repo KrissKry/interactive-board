@@ -108,10 +108,11 @@ export class MeetingService {
     static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
         const url = 'http://localhost:8080/api/room/create';
 
-        // TODO HASHOWANIE HASŁA
-        return axios.post(url, {
+        const data = {
             name,
             password,
-        });
+        };
+        // TODO HASHOWANIE HASŁA
+        return axios.post(url, JSON.stringify(data));
     }
 }

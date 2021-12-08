@@ -10,11 +10,12 @@ import { NoMeeting, OngoingMeeting } from './content';
 import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
 import { SimpleIonicInput } from '../../components/Input';
+import { setUsername } from '../../redux/ducks/user';
 
 const MeetingTab = () => {
     const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
     const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
-    const [user, setUser] = useState<string>('');
+    // const [user, setUser] = useState<string>('');
     const [potentialId, setPotentialId] = useState<string>('');
 
     const dispatch = useAppDispatch();
@@ -23,6 +24,7 @@ const MeetingTab = () => {
         loading: state.meeting.loading,
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
+        user: state.user.username,
     }));
 
     const meetingService = MeetingService.getInstance();
@@ -74,7 +76,8 @@ const MeetingTab = () => {
         MeetingService.requestNewMeeting(name, pass)
         .then((response) => {
             setPotentialId(response.data as string);
-            meetingService.createClient(dispatchMeetingUpdate, user, response.data as string, pass);
+            // eslint-disable-next-line max-len
+            meetingService.createClient(dispatchMeetingUpdate, meetingState.user, response.data as string, pass);
         });
     };
 
@@ -82,10 +85,10 @@ const MeetingTab = () => {
         // promise for meeting already in progress endpoint
         // const promise = MeetingService.fetchMeetingDataByID(id, pass);
         // dispatch(meetingRequestValidation(promise));
-
+        meetingService.createClient(dispatchMeetingUpdate, meetingState.user, id, pass);
     };
 
-    const updateUser = (newUser: string) => { setUser(newUser); };
+    const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
 
     useEffect(() => {
         console.log(meetingState);
@@ -93,9 +96,13 @@ const MeetingTab = () => {
 
     return (
         <GenericTab title="Spotkanie">
+            <div className="ee-flex--column ee-align-cross--center">
             {getMeetingContent()}
 
-            <SimpleIonicInput sendCallback={updateUser} />
+            <div className="ee-width--50p">
+                <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
+                <p>{meetingState.user}</p>
+            </div>
 
             <MeetingModal
                 isOpen={showMeetingModal}
@@ -106,6 +113,7 @@ const MeetingTab = () => {
                         ? createMeetingCallback : () => console.warn('[EE] Incorrect meeting modal mode')}
                 mode={meetingModalMode}
             />
+            </div>
         </GenericTab>
     );
 };
