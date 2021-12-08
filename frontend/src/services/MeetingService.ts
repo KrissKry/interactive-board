@@ -38,7 +38,7 @@ export class MeetingService {
             connectHeaders: {
                 login,
                 roomId,
-                password: password || '',
+                roomPassword: password || '',
             },
             onConnect: () => {
                 console.log('Client connected to ws://');
@@ -113,6 +113,6 @@ export class MeetingService {
             password,
         };
         // TODO HASHOWANIE HASŁA
-        return axios.post(url, JSON.stringify(data));
+        return axios.post(url, data);
     }
 }
