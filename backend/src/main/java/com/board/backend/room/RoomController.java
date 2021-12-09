@@ -1,11 +1,14 @@
 package com.board.backend.room;
 
+import com.board.backend.room.dto.CreateRoomDTO;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.chat.dto.ChatMessageDTO;
 import com.board.backend.drawing.dto.ChangedPixelsDTO;
 import com.board.backend.user.UserDTO;
 import com.board.backend.user.UserStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,10 +17,10 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -28,10 +31,14 @@ public class RoomController {
 
     private final RoomFacade roomFacade;
     private final SimpMessagingTemplate template;
+    private ObjectMapper mapper = new ObjectMapper();
 
+    @SneakyThrows
     @PostMapping("/api/room/create")
-    public ResponseEntity<RoomDTO> createRoom(String name, String password) {
-        return ResponseEntity.ok(roomFacade.createRoom(name, password));
+    public ResponseEntity<String> createRoom(@RequestBody String roomDTO) {
+        log.info(roomDTO);
+        var dto = mapper.readValue(roomDTO, CreateRoomDTO.class);
+        return ResponseEntity.ok(roomFacade.createRoom(dto.getPassword()).getRoomId());
     }
 
     @SubscribeMapping("/room/connect/{roomId}")

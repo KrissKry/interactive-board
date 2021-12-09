@@ -12,6 +12,6 @@ public class PrincipalUtils {
     }
 
     public static String extractRoomIdFromPrincipal(Principal principal) {
-        return principal.getName().substring(principal.getName().lastIndexOf("#")+1);
+        return principal.getName().substring(principal.getName().lastIndexOf("#") + 1);
     }
 }

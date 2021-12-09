@@ -14,7 +14,9 @@ import java.util.stream.Collectors;
 public class ChatMessageMapper {
 
     ObjectMapper mapper = new ObjectMapper();
+
     public List<ChatMessageDTO> toDTO(List<String> messages) {
+        if (messages == null) return null;
         return messages.stream().map(m -> {
             try {
                 return mapper.readValue(m, ChatMessageDTO.class);

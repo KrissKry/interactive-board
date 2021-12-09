@@ -14,11 +14,11 @@ public class RoomMapper {
 
     public RoomDTO toDTO(Room room) {
         return RoomDTO
-            .builder()
-            .roomId(room.getId().toString())
-            .pixels(boardPixelsMapper.toDTO(room.getPixels()))
-            .messages(chatMessageMapper.toDTO(room.getMessages()))
-            .build();
+                .builder()
+                .roomId(room.getId().toString())
+                .pixels(boardPixelsMapper.toDTO(room.getPixels()))
+                .messages(chatMessageMapper.toDTO(room.getMessages()))
+                .build();
     }
 }
 

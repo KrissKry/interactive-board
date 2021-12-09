@@ -20,11 +20,19 @@ public class SessionEventsHandler {
 
     @EventListener
     public void handleSessionDisconnect(@NonNull SessionDisconnectEvent event) {
+        var uuid = UUID.fromString(
+                PrincipalUtils.extractRoomIdFromPrincipal(
+                        Objects.requireNonNull(event.getUser())
+                )
+        );
+
+        log.info(uuid.toString());
+
         roomFacade.disconnectUser(
                 UUID.fromString(
-                    PrincipalUtils.extractRoomIdFromPrincipal(
-                        Objects.requireNonNull(event.getUser())
-                    )
+                        PrincipalUtils.extractRoomIdFromPrincipal(
+                                Objects.requireNonNull(event.getUser())
+                        )
                 ),
                 PrincipalUtils.extractRoomIdFromPrincipal(event.getUser()));
         log.info("User removed");

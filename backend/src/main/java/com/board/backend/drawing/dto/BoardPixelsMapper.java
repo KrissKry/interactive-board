@@ -13,20 +13,21 @@ public class BoardPixelsMapper {
                 .getPoints()
                 .stream()
                 .collect(
-                    Collectors.toMap(
-                        this::pointToString,
-                        v->colorToLong(changedPixels.getColor())
-                    )
+                        Collectors.toMap(
+                                this::pointToString,
+                                v -> colorToLong(changedPixels.getColor())
+                        )
                 );
     }
 
     public Map<Point, Color> toDTO(Map<String, Long> pixels) {
+        if (pixels == null) return null;
         return pixels.entrySet().stream()
                 .collect(
-                    Collectors.toMap(
-                        k -> stringToPoint(k.getKey()),
-                        v->longToColor(v.getValue())
-                    )
+                        Collectors.toMap(
+                                k -> stringToPoint(k.getKey()),
+                                v -> longToColor(v.getValue())
+                        )
                 );
     }
 
@@ -36,8 +37,8 @@ public class BoardPixelsMapper {
 
     private Point stringToPoint(String point) {
         return new Point(Short.valueOf(
-            point.substring(0, point.lastIndexOf(":"))),
-            Short.valueOf(point.substring(point.lastIndexOf(":") +1))
+                point.substring(0, point.lastIndexOf(":"))),
+                Short.valueOf(point.substring(point.lastIndexOf(":") + 1))
         );
     }
 
@@ -50,8 +51,8 @@ public class BoardPixelsMapper {
 
     private Color longToColor(Long rgb) {
         return Color.builder()
-            .red((byte) ((rgb >> 16) & 0xFF))
-            .green((byte)((rgb >> 8) & 0xFF))
-            .blue((byte)(rgb & 0xFF)).build();
+                .red((byte) ((rgb >> 16) & 0xFF))
+                .green((byte) ((rgb >> 8) & 0xFF))
+                .blue((byte) (rgb & 0xFF)).build();
     }
 }

@@ -23,9 +23,9 @@ public class Board {
     }
 
     private void initializeBoard() {
-        for (short i = 0; i< HEIGHT; ++i){
-            for (short j = 0; j< WIDTH; ++j){
-                pixels.put(i+":"+j, backgroundColor);
+        for (short i = 0; i < HEIGHT; ++i) {
+            for (short j = 0; j < WIDTH; ++j) {
+                pixels.put(i + ":" + j, backgroundColor);
             }
         }
     }

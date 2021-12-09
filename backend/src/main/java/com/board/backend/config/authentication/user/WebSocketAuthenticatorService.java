@@ -1,7 +1,9 @@
 package com.board.backend.config.authentication.user;
 
 import com.board.backend.room.cassandra.repository.RoomRepository;
+import com.board.backend.room.cassandra.repository.RoomRepositoryOld;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,13 +17,15 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketAuthenticatorService {
 
     private final PasswordEncoder encoder;
     private final RoomRepository repository;
 
     // This method MUST return a UsernamePasswordAuthenticationToken instance, the spring security chain is testing it with 'instanceof' later on. So don't use a subclass of it or any other class
-    public UsernamePasswordAuthenticationToken getAuthenticatedOrFail(final String  username, final String roomId, final String roomPassword) throws AuthenticationException {
+    public UsernamePasswordAuthenticationToken getAuthenticatedOrFail(final String username, final String roomId, final String roomPassword) throws AuthenticationException {
+        log.info(username + roomId + roomPassword);
         if (username == null || username.trim().isEmpty()) {
             throw new AuthenticationCredentialsNotFoundException("Username was null or empty.");
         }
@@ -35,7 +39,7 @@ public class WebSocketAuthenticatorService {
 
         // null credentials, we do not pass the password along
         return new UsernamePasswordAuthenticationToken(
-                username+"#"+roomId,
+                username + "#" + roomId,
                 null,
                 Collections.singleton((GrantedAuthority) () -> "USER") // MUST provide at least one role
         );
@@ -43,6 +47,6 @@ public class WebSocketAuthenticatorService {
 
     // TODO implement db fetch
     boolean fetchUserFromDb(UUID roomId, String password) {
-        return repository.findOne(roomId).getPassword().equals(password);
+        return repository.findById(roomId).get().getPassword().equals(password);
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class Chat {
     private List<String> messages = new ArrayList<>();
+
     public void saveMessage(String message) {
         messages.add(message);
     }
