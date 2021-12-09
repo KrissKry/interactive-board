@@ -75,28 +75,7 @@ const initialState : meetingStateInterface = {
     // activeUsers: [],
 
     // invitedUsers: [],
-    users: [
-        {
-            name: 'Hehe',
-            avatar: 'https://www.dovercourt.org/wp-content/uploads/2019/11/610-6104451_image-placeholder-png-user-profile-placeholder-image-png.jpg',
-            active: true,
-        },
-        {
-            name: 'Hehe2',
-            avatar: '',
-            active: false,
-        },
-        {
-            name: 'Hehe the comebackkkkk',
-            avatar: '',
-            active: false,
-        },
-        {
-            name: 'Hehe & the family',
-            avatar: '',
-            active: true,
-        },
-    ],
+    users: [],
 
     allMeetingUsers: [],
 
