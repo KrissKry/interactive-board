@@ -27,6 +27,7 @@ const MeetingTab = () => {
         user: state.user.username,
     }));
 
+    const [noMeetingState, setNoMeetingState] = useState<boolean>(parseInt(meetingState.id, 10) === -1 || meetingState.id === '');
     const meetingService = MeetingService.getInstance();
 
     const showModalCallback = (mode: meetingModalModes) : void => {
@@ -57,7 +58,7 @@ const MeetingTab = () => {
     ];
 
     const getMeetingContent = () : JSX.Element => {
-        if (parseInt(meetingState.id, 10) === -1 || meetingState.id === '') {
+        if (noMeetingState) {
             return (
                 <NoMeeting buttons={buttons} />
             );
@@ -70,16 +71,29 @@ const MeetingTab = () => {
     };
 
     const dispatchMeetingUpdate = () : void => { dispatch(meetingSetID(potentialId)); };
+    const updateid = (id: string) : void => { setPotentialId(id); };
 
     const createMeetingCallback = (name: string, pass?: string) : void => {
         // promise for new meeting endpoint
         MeetingService.requestNewMeeting(name, pass)
         .then((response) => {
-            setPotentialId(response.data as string);
-            // eslint-disable-next-line max-len
-            meetingService.createClient(dispatchMeetingUpdate, meetingState.user, response.data as string, pass);
+            console.log('ODPOWIEDŹ API:', response);
+            const data = JSON.stringify(response.data);
+            console.log(data);
+
+            meetingService.createClient(() => updateid(data), meetingState.user, data, pass);
+
+            // setPotentialId(data);
+        })
+        .catch((err) => {
+            console.warn('FAKAP Żądania');
+            console.error(err);
         });
     };
+
+    useEffect(() => {
+        dispatchMeetingUpdate();
+    }, [potentialId]);
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         // promise for meeting already in progress endpoint
@@ -96,24 +110,27 @@ const MeetingTab = () => {
 
     return (
         <GenericTab title="Spotkanie">
-            <div className="ee-flex--column ee-align-cross--center">
             {getMeetingContent()}
 
-            <div className="ee-width--50p">
-                <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
-                <p>{meetingState.user}</p>
-            </div>
+            {noMeetingState && (
+                <div className="ee-flex--column ee-align-cross--center">
 
-            <MeetingModal
-                isOpen={showMeetingModal}
-                closeCallback={hideModalCallback}
-                // eslint-disable-next-line no-nested-ternary
-                callback={meetingModalMode === 'JOIN'
-                    ? joinMeetingCallback : meetingModalMode === 'CREATE'
-                        ? createMeetingCallback : () => console.warn('[EE] Incorrect meeting modal mode')}
-                mode={meetingModalMode}
-            />
-            </div>
+                    <div className="ee-width--50p">
+                        <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
+                        <p>{meetingState.user}</p>
+                    </div>
+
+                    <MeetingModal
+                        isOpen={showMeetingModal}
+                        closeCallback={hideModalCallback}
+                        // eslint-disable-next-line no-nested-ternary
+                        callback={meetingModalMode === 'JOIN'
+                            ? joinMeetingCallback : meetingModalMode === 'CREATE'
+                                ? createMeetingCallback : () => console.warn('[EE] Incorrect meeting modal mode')}
+                        mode={meetingModalMode}
+                    />
+                </div>
+            )}
         </GenericTab>
     );
 };
