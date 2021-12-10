@@ -17,7 +17,8 @@ export class MeetingService {
         this.connected = false;
     }
 
-    createClient(callback:() => void, login: string, roomId: string, password?: string) : void {
+    // eslint-disable-next-line max-len
+    createClient(successCallback:() => void, login: string, roomId: string, password?: string) : void {
         this.client = new Client({
             brokerURL: 'ws://localhost:8080/room',
             connectHeaders: {
@@ -29,6 +30,7 @@ export class MeetingService {
                 console.log('Client connected to ws://');
                 this.connected = true;
                 this.id = roomId;
+                successCallback();
             },
             onStompError: (frame: IFrame) => {
                 console.log('Broker reported error: ', frame.headers.message);

@@ -78,10 +78,11 @@ const MeetingTab = () => {
         MeetingService.requestNewMeeting(name, pass)
         .then((response) => {
             console.log('ODPOWIEDŹ API:', response);
-            const data = JSON.stringify(response.data);
+            const { data } = response;
             console.log(data);
 
-            meetingService.createClient(() => updateid(data), meetingState.user, data, pass);
+            // eslint-disable-next-line max-len
+            meetingService.createClient(() => updateid(data as string), meetingState.user, data as string, pass);
 
             // setPotentialId(data);
         })
@@ -104,6 +105,9 @@ const MeetingTab = () => {
 
     const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
 
+    useEffect(() => {
+        setNoMeetingState(parseInt(meetingState.id, 10) === -1 || meetingState.id === '');
+    }, [meetingState.id]);
     useEffect(() => {
         console.log(meetingState);
     }, [meetingState]);
