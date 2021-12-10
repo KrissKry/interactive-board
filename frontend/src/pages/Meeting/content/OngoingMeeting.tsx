@@ -132,7 +132,7 @@ const OngoingMeeting = () : JSX.Element => {
                     setUsersSubbed(true);
                 }
                 if (!boardSubbed) {
-                    meetingService.addSubscription(`/topic/board/listen/${meetingState.id}`, boardUpdateCallback);
+                    meetingService.addSubscription(`/topic/board.listen.${meetingState.id}`, boardUpdateCallback);
                     setBoardSubbed(true);
                 }
                 if (!chatSubbed) {

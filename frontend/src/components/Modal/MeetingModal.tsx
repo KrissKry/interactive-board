@@ -28,7 +28,7 @@ const MeetingModal = ({
 
     const insertText: string = mode === 'JOIN' ? 'Identyfikator (id) spotkania' : 'Nazwa spotkania';
 
-    const allowedLength: number = mode === 'JOIN' ? 6 : 100;
+    const allowedLength: number = mode === 'JOIN' ? 100 : 100;
 
     useEffect(() => {
         setIDOrName('');
