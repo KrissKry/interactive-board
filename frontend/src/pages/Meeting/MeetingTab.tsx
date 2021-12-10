@@ -100,7 +100,7 @@ const MeetingTab = () => {
         // promise for meeting already in progress endpoint
         // const promise = MeetingService.fetchMeetingDataByID(id, pass);
         // dispatch(meetingRequestValidation(promise));
-        meetingService.createClient(dispatchMeetingUpdate, meetingState.user, id, pass);
+        meetingService.createClient(() => updateid(id), meetingState.user, id, pass);
     };
 
     const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
