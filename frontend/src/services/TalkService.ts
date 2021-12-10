@@ -1,3 +1,6 @@
+import { p2pEvent } from '../interfaces/Meeting/p2p';
+
+/* eslint-disable no-unused-vars */
 interface PeerConnections {
     /**
      * PeerConnection object to handle messages
@@ -5,9 +8,13 @@ interface PeerConnections {
     connection: RTCPeerConnection;
 
     /**
+     * PeerConnection data channel
+     */
+    // channel: RTCDataChannel;
+    /**
      * Remote username the connection is with
      */
-    with: string;
+    remote: string;
 }
 
 export class TalkService {
@@ -15,8 +22,19 @@ export class TalkService {
 
     private connections: PeerConnections[];
 
+    // eslint-disable-next-line no-undef
+    private ownOffer: RTCSessionDescriptionInit;
+
+    sendDataCallbackRef: (data: any, type: p2pEvent) => void;
+
+    handleReceivedStreamRef: (data: any) => void
+
     private constructor() {
         this.connections = [];
+        this.sendDataCallbackRef = () => console.log('sendDataRef');
+        this.handleReceivedStreamRef = () => console.log('handleMessageRef');
+        // eslint-disable-next-line no-undef
+        this.ownOffer = {} as RTCSessionDescriptionInit;
     }
 
     static getInstance(): TalkService {
@@ -27,30 +45,92 @@ export class TalkService {
         return TalkService.instance;
     }
 
-    // eslint-disable-next-line class-methods-use-this
-    preparePeerConnection(
-        sendDataCallback: (data: any, type: 'ICE') => void,
-        handleReceivedMessage: (data: any) => void,
+    setCallbacks(
+        sendDataCallback: (data: any, type: string) => void,
+        handleReceivedStreamCallback: (data: any) => void,
     ) {
-        const peerConnection = new RTCPeerConnection();
+        this.sendDataCallbackRef = sendDataCallback;
+        this.handleReceivedStreamRef = handleReceivedStreamCallback;
+    }
 
-        peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
-            if (ev.candidate) {
-                sendDataCallback(ev.candidate, 'ICE');
-            }
-        };
+    // eslint-disable-next-line class-methods-use-this
+    private preparePeerConnection() : RTCPeerConnection {
+        const peerConnection = new RTCPeerConnection();
 
         let dataChannel = peerConnection.createDataChannel('dataChannel');
 
-        dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedMessage(ev.data); };
+        // eslint-disable-next-line max-len
+        dataChannel.onmessage = (ev: MessageEvent<any>) => { this.handleReceivedStreamRef(ev.data); };
         dataChannel.onerror = (ev: Event) => { console.error('ERROR', ev.target); };
         dataChannel.onclose = (ev: Event) => { console.warn('Data channel closed'); };
 
         peerConnection.ondatachannel = (ev: RTCDataChannelEvent) => {
             dataChannel = ev.channel;
         };
+
+        return peerConnection;
     }
 
+    // eslint-disable-next-line no-undef
+    handleOffer(from: string, offer: RTCSessionDescriptionInit) {
+        const peerConnection = this.preparePeerConnection();
+
+        peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
+            if (ev.candidate) {
+                this.sendDataCallbackRef(ev.candidate, 'ICE');
+            }
+        };
+
+        peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+        peerConnection.createAnswer()
+            .then((answer) => {
+                peerConnection.setLocalDescription(answer);
+                this.sendDataCallbackRef(answer, 'ANSWER');
+            })
+            .catch((err) => console.error(err));
+
+        const newConnectionObj: PeerConnections = {
+            remote: from,
+
+            connection: peerConnection,
+        };
+
+        this.connections.push(newConnectionObj);
+    }
+
+    // eslint-disable-next-line no-undef
+    handleAnswer(from: string, answer: RTCSessionDescriptionInit) {
+        const peerConnection = this.connections.find((item) => item.remote === from);
+
+        peerConnection?.connection.setRemoteDescription(new RTCSessionDescription(answer));
+        // if (typeof peerConnection === 'undefined') peerConnection = this.preparePeerConnection();
+    }
+
+    // eslint-disable-next-line no-undef
+    handleCandidate(from: string, candidate: RTCIceCandidateInit) {
+        const peerConnection = this.connections.find((item) => item.remote === from);
+
+        peerConnection?.connection.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+
+    createPeer() {
+        const peerConnection = this.preparePeerConnection();
+        const remote = '';
+        peerConnection.setLocalDescription();
+        this.connections.push({
+            connection: peerConnection,
+            remote,
+        });
+    }
+
+    hasRemote(remote: string) : boolean {
+        return this.connections.findIndex((e) => e.remote === remote) !== -1;
+    }
+
+    hasEmpty() : boolean {
+        return this.connections.findIndex((e) => e.remote === '') !== -1;
+    }
     // createPeerConnection(
     //     sendDataCallback: (data: any, type: 'CANDIDATE' | 'OFFER') => void,
     //     receiveMessageCallback: (data: any) => void,
