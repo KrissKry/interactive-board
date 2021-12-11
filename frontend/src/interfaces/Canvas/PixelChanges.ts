@@ -8,5 +8,4 @@ export interface PixelChanges {
         x: number;
         y: number;
     }[],
-    userId: number | undefined;
 }

@@ -5,45 +5,54 @@ import { ChatMessageInterface } from '../../interfaces/Chat';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { MeetingService } from '../../services';
 
-interface meetingUsers {
+interface meetingUser {
     name: string,
-    status: string,
+    status: 'CONNECTED' | 'DISCONNECTED',
 }
+
+type fetchErrorTypes = 'NOT_STATE_UPDATE' | 'UNKNOWN';
 
 export interface meetingStateInterface {
 
     /**
      * meeting ID
      */
-    id: string;
+    roomId: string;
 
-    /**
-     * Name of the meeting
-     */
-    name: string;
-
-    /**
-     * User lists
-     */
-    // activeUsers: string[];
-    // invitedUsers: string[];
-    allMeetingUsers: meetingUsers[];
     /**
      * Chat messages unique to the meeting
      */
     messages: ChatMessageInterface[];
 
     /**
-     * Pixel array unique to the last canvas drawn
+     * Room creation timestamp
      */
-    canvas: number[];
+    created: string;
 
     /**
-     * currently received changes from backend
+     * Room update timestamp
+     */
+    lastUpdated: string;
+
+    /**
+     * Users that joined the room at least once with current status
+     */
+    currentUsers: meetingUser[];
+
+    /**
+     * currently drawn changes
      */
     currentChanges: PixelChanges[];
 
-    users: UserInterface[],
+    /**
+     * received new changes from backend
+     */
+    pixels: PixelChanges[];
+
+    /**
+     * if drawing changes is in progress, then redux should not update currentChanges
+     */
+    drawingChangesInProgress: boolean;
 
     /**
      * Meeting data fetch in progress
@@ -64,26 +73,25 @@ export interface meetingStateInterface {
 /**
  * Used for meeting data update, loading/error data is ommited, as it's already set
  */
-type meetingStateUpdateInterface = Omit<meetingStateInterface, 'loading'|'loadingError'|'errorMessage'|'currentChanges'>;
+type meetingStateUpdateInterface = Omit<meetingStateInterface, 'loading'|'loadingError'|'errorMessage'|'currentChanges'|'drawingChangesInProgress'>;
 
 const initialState : meetingStateInterface = {
 
-    id: '',
+    roomId: '',
 
-    name: 'Spotkanie',
+    created: '',
 
-    // activeUsers: [],
+    lastUpdated: '',
 
-    // invitedUsers: [],
-    users: [],
-
-    allMeetingUsers: [],
+    currentUsers: [],
 
     messages: [],
 
-    canvas: [],
-
     currentChanges: [],
+
+    pixels: [],
+
+    drawingChangesInProgress: false,
 
     loading: false,
 
@@ -99,7 +107,7 @@ const meetingSlice = createSlice({
     reducers: {
         meetingSetID: (state, action: PayloadAction<string>) => ({
             ...state,
-            id: action.payload,
+            roomId: action.payload,
         }),
         meetingFetchRequest: (state) => ({
             ...state,
@@ -114,7 +122,7 @@ const meetingSlice = createSlice({
             loadingError: false,
             errorMessage: '',
         }),
-        meetingFetchError: (state, action: PayloadAction<string>) => ({
+        meetingFetchError: (state, action: PayloadAction<fetchErrorTypes>) => ({
             ...state,
             loading: false,
             loadingError: true,
@@ -124,49 +132,65 @@ const meetingSlice = createSlice({
             ...state,
             messages: [...state.messages, action.payload],
         }),
-        meetingCanvasSet: (state, action) => ({
+        meetingCanvasAddChanges: (state, action: PayloadAction<PixelChanges>) => ({
             ...state,
-            canvas: action.payload,
+            pixels: [...state.pixels, action.payload],
         }),
-        meetingCanvasPushChanges: (state, action: PayloadAction<PixelChanges>) => ({
+        meetingCanvasActivateChanges: (state) => ({
             ...state,
-            currentChanges: [...state.currentChanges, action.payload],
+            currentChanges: state.pixels,
+            pixels: [],
+            drawingChangesInProgress: true,
         }),
-        meetingCanvasPopChanges: (state) => ({
+        meetingCanvasFinishChanges: (state) => ({
             ...state,
             currentChanges: [],
+            drawingChangesInProgress: false,
         }),
-        meetingUpdateTestUsers: (state, action: PayloadAction<meetingUsers>) => ({
-            ...state,
-            allMeetingUsers: [...state.allMeetingUsers, action.payload],
-        }),
+        meetingUserUpdate: (state, action: PayloadAction<meetingUser>) => {
+            const users: meetingUser[] = JSON.parse(JSON.stringify(state.currentUsers));
+            const userIndex = users.findIndex((u) => u.name === action.payload.name);
+
+            if (userIndex !== -1) {
+                users[userIndex].status = action.payload.status;
+                return {
+                    ...state,
+                    currentUsers: users,
+                };
+            }
+
+            return {
+                ...state,
+                currentUsers: [...users, action.payload],
+            };
+        },
     },
 });
 
 export default meetingSlice.reducer;
 
 const {
-    meetingChatAddMessage,
-    meetingCanvasSet,
-    meetingCanvasPushChanges,
-    meetingCanvasPopChanges,
     meetingSetID,
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
-    meetingUpdateTestUsers,
+    meetingChatAddMessage,
+    meetingCanvasAddChanges,
+    meetingCanvasActivateChanges,
+    meetingCanvasFinishChanges,
+    meetingUserUpdate,
 } = meetingSlice.actions;
 
 export {
-    meetingChatAddMessage,
-    meetingCanvasSet,
-    meetingCanvasPushChanges,
-    meetingCanvasPopChanges,
     meetingSetID,
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
-    meetingUpdateTestUsers,
+    meetingChatAddMessage,
+    meetingCanvasAddChanges,
+    meetingCanvasActivateChanges,
+    meetingCanvasFinishChanges,
+    meetingUserUpdate,
 };
 
 /**
@@ -175,27 +199,19 @@ export {
  * @returns asserted data
  */
 const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInterface => (typeof data === 'object')
+        && 'roomId' in (data as any)
+        && 'created' in (data as any) && typeof (data as any).created === 'string'
         && ('messages' in (data as any) && Array.isArray((data as any).messages))
-        && ('canvas' in (data as any) && Array.isArray((data as any).canvas));
+        && ('pixels' in (data as any) && Array.isArray((data as any).pixels));
 
-// eslint-disable-next-line max-len
-export const meetingRequestValidation = (apiResponse: JSON) => (dispatch: any) : void => {
-    dispatch(meetingFetchRequest());
-        if (assertMeetingStateUpdate(apiResponse)) {
-            dispatch(meetingFetchSuccess(apiResponse));
-        } else {
-            console.log(apiResponse);
-            dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
-        }
-};
-
-export const meetingDataUpdateValidation = (response: any) => (dispatch: any) : void => {
+/**
+ * Validates meeting update object
+ * @param data potential state object
+ * @dispatch fetchSuccess on object validation. fetchError otherwise.
+ */
+export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => {
     dispatch(meetingFetchRequest());
 
-    if (assertMeetingStateUpdate(response)) {
-        dispatch(meetingFetchSuccess(response));
-    } else {
-        console.log(response);
-        dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
-    }
+    if (assertMeetingStateUpdate(data)) dispatch(meetingFetchSuccess(data));
+    else dispatch(meetingFetchError('NOT_STATE_UPDATE'));
 };

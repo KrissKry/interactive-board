@@ -4,26 +4,28 @@ import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 
-import Canvas from '../../../components/Canvas';
-import ChatContainer from '../../../components/Chat/ChatContainer';
-
+/* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
-    meetingCanvasPopChanges,
-    meetingCanvasPushChanges,
-    meetingChatAddMessage,
-    meetingRequestValidation,
-    meetingUpdateTestUsers,
+    meetingCanvasActivateChanges,
+    // eslint-disable-next-line max-len
+    meetingCanvasAddChanges, meetingCanvasFinishChanges, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService } from '../../../services';
 
-import type { ChatMessageInterface } from '../../../interfaces/Chat';
-import type { PixelChanges } from '../../../interfaces/Canvas';
+/* components */
 import { UserList } from '../../../components/RTC';
 import { ButtonsPanel } from '../../../components/ButtonGroup';
+import Canvas from '../../../components/Canvas';
+import ChatContainer from '../../../components/Chat/ChatContainer';
+
+/* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
+import type { PixelChanges } from '../../../interfaces/Canvas';
+import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
+import { UserInterface } from '../../../interfaces/User/UserInterface';
 
 const OngoingMeeting = () : JSX.Element => {
     const [connectSubbed, setConnectSubbed] = useState<boolean>(false);
@@ -47,17 +49,24 @@ const OngoingMeeting = () : JSX.Element => {
     const meetingService = MeetingService.getInstance();
 
     const meetingState = useAppSelector((state) => ({
-        id: state.meeting.id,
+        id: state.meeting.roomId,
         messages: state.meeting.messages,
-        title: state.meeting.name,
+
         boardChanges: state.meeting.currentChanges,
-        users: state.meeting.users,
+        boardChangesWaiting: state.meeting.pixels.length,
+        changesInProgress: state.meeting.drawingChangesInProgress,
+
+        users: state.meeting.currentUsers,
         user: state.user.username,
     }));
 
+    const mappedUsers: UserInterface[] = meetingState.users.map((u) => ({
+        avatar: '',
+        name: u.name,
+        active: u.status === 'CONNECTED',
+    }));
+
     // const stream = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    // this gon be replaced by useAppSelector => state.user.userID when ready
-    // const user = 1234;
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
@@ -74,7 +83,8 @@ const OngoingMeeting = () : JSX.Element => {
     };
 
     /* board section */
-    const boardClearChangesCallback = () => { dispatch(meetingCanvasPopChanges()); };
+    const boardBeginApplyingChanges = () => { dispatch(meetingCanvasActivateChanges()); };
+    const boardFinishApplyingChanges = () => { dispatch(meetingCanvasFinishChanges()); };
     // eslint-disable-next-line max-len
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
 
@@ -85,19 +95,17 @@ const OngoingMeeting = () : JSX.Element => {
         resp.color.green += byteFix;
         resp.color.blue += byteFix;
 
-        console.log(resp);
-
-        dispatch(meetingCanvasPushChanges(resp));
+        dispatch(meetingCanvasAddChanges(resp));
     };
 
     const meetingUpdateCallback = (message: IFrame) : void => {
         const resp = JSON.parse(message.body);
-        dispatch(meetingRequestValidation(resp));
+        dispatch(meetingUpdateMiddleware(resp));
     };
 
     const newUserUpdateCallback = (message: IFrame) : void => {
         const newUser = JSON.parse(message.body);
-        dispatch(meetingUpdateTestUsers(newUser));
+        dispatch(meetingUserUpdate(newUser));
     };
 
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, receiver?: string) : void => {
@@ -170,21 +178,24 @@ const OngoingMeeting = () : JSX.Element => {
             callback: settingsCallback,
         },
     ];
+
     return (
         <div className="ee-flex--row">
             <Canvas
                 brushWidth={1}
-                clearChangesCallback={boardClearChangesCallback}
+                changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
+                beginChangesCallback={boardBeginApplyingChanges}
+                clearChangesCallback={boardFinishApplyingChanges}
                 sendChangesCallback={boardSendChangesCallback}
             />
             <ChatContainer
                 messages={meetingState.messages}
                 sendMessageCallback={chatSendMessageCallback}
-                title={meetingState.title}
+                title=""
             />
 
-            <UserList users={meetingState.users} />
+            <UserList users={mappedUsers} />
 
             <ButtonsPanel buttons={controlButtons} />
         </div>

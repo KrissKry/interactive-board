@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingRequestValidation, meetingSetID } from '../../redux/ducks/meeting';
+import { meetingSetID } from '../../redux/ducks/meeting';
 import { MeetingService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
@@ -20,7 +20,7 @@ const MeetingTab = () => {
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
-        id: state.meeting.id,
+        id: state.meeting.roomId,
         loading: state.meeting.loading,
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
@@ -113,7 +113,7 @@ const MeetingTab = () => {
     }, [meetingState]);
 
     return (
-        <GenericTab title="Spotkanie">
+        <GenericTab title={meetingState.id}>
             {getMeetingContent()}
 
             {noMeetingState && (

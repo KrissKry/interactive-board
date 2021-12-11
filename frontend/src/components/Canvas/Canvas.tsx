@@ -21,6 +21,16 @@ interface CanvasProps {
     currentChanges: PixelChanges[];
 
     /**
+     * At least 1 Canvas update is waiting to be applied
+     */
+    changesWaiting: boolean;
+
+    /**
+     * Called on awaiting changes to be applied and user not drawing
+     */
+    beginChangesCallback: () => void;
+
+    /**
      * Called on finished canvas update
      */
     clearChangesCallback: () => void;
@@ -37,6 +47,8 @@ const Canvas = ({
     brushColor,
     brushWidth,
     currentChanges,
+    changesWaiting,
+    beginChangesCallback,
     clearChangesCallback,
     sendChangesCallback,
 
@@ -85,10 +97,15 @@ const Canvas = ({
 
     useEffect(() => {
         /* won't update until drawing complete or if no changes are present */
-        if (isDrawing || currentChanges.length === 0 || isUpdating) return;
+        if (isDrawing || !changesWaiting || isUpdating) return;
 
         /* begin updating */
         setIsUpdating(true);
+        beginChangesCallback();
+    }, [changesWaiting, isDrawing]);
+
+    useEffect(() => {
+        if (!currentChanges.length) return;
 
         if (typeof p5Instance !== 'undefined') {
             // eslint-disable-next-line no-restricted-syntax
@@ -101,13 +118,14 @@ const Canvas = ({
                     p5Instance.point(changedPixel.x, changedPixel.y);
                 }
             }
-            // dispatch(meetingPopChanges());
             clearChangesCallback();
         }
 
         /* finish updating */
-        setIsUpdating(false);
-    }, [currentChanges, isDrawing]);
+        setTimeout(() => {
+            setIsUpdating(false);
+        }, 50);
+    }, [currentChanges]);
 
     return (
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
