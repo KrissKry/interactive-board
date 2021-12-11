@@ -179,39 +179,14 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
         && ('canvas' in (data as any) && Array.isArray((data as any).canvas));
 
 // eslint-disable-next-line max-len
-export const meetingRequestValidation = (apiResponse: Promise<AxiosResponse>) => (dispatch: any) : void => {
+export const meetingRequestValidation = (apiResponse: JSON) => (dispatch: any) : void => {
     dispatch(meetingFetchRequest());
-
-    apiResponse
-        .then((response) => {
-            if (assertMeetingStateUpdate(response.data)) {
-                dispatch(meetingFetchSuccess(response.data));
-            } else {
-                console.log(response.data);
-                dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
-            }
-        })
-        .catch((error: any) => {
-            // STATUS_CODE !== (200, 299)
-            if (error.response) {
-                dispatch(meetingFetchError('STATUS_CODE_ERROR'));
-                console.warn(error.response.data);
-                console.warn(error.response.status);
-                console.warn(error.response.headers);
-
-            // NO RESPONSE
-            } else if (error.request) {
-                dispatch(meetingFetchError('NO_RESPONSE'));
-                console.warn(error.request);
-
-            // STH HAPPENED XD
-            } else {
-                dispatch(meetingFetchError('UNKNOWN_ERROR'));
-                console.warn('Error', error.message);
-            }
-
-            console.warn(error.config);
-        });
+        if (assertMeetingStateUpdate(apiResponse)) {
+            dispatch(meetingFetchSuccess(apiResponse));
+        } else {
+            console.log(apiResponse);
+            dispatch(meetingFetchError('NOT_MEETING_STATE_UPDATE'));
+        }
 };
 
 export const meetingDataUpdateValidation = (response: any) => (dispatch: any) : void => {

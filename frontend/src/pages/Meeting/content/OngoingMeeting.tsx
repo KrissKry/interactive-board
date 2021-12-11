@@ -85,6 +85,8 @@ const OngoingMeeting = () : JSX.Element => {
         resp.color.green += byteFix;
         resp.color.blue += byteFix;
 
+        console.log(resp);
+
         dispatch(meetingCanvasPushChanges(resp));
     };
 
@@ -128,7 +130,7 @@ const OngoingMeeting = () : JSX.Element => {
                     setConnectSubbed(true);
                 }
                 if (!usersSubbed) {
-                    meetingService.addSubscription(`/api/room/connected/${meetingState.id}`, newUserUpdateCallback);
+                    meetingService.addSubscription(`/topic/room.connected.${meetingState.id}`, newUserUpdateCallback);
                     setUsersSubbed(true);
                 }
                 if (!boardSubbed) {
