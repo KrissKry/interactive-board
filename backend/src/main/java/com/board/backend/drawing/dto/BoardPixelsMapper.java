@@ -2,6 +2,7 @@ package com.board.backend.drawing.dto;
 
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -21,7 +22,7 @@ public class BoardPixelsMapper {
     }
 
     public Map<Point, Color> toDTO(Map<String, Long> pixels) {
-        if (pixels == null) return null;
+        if (pixels == null) return new HashMap<>();
         return pixels.entrySet().stream()
                 .collect(
                         Collectors.toMap(

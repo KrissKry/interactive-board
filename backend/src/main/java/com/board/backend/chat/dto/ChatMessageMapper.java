@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,7 +17,7 @@ public class ChatMessageMapper {
     ObjectMapper mapper = new ObjectMapper();
 
     public List<ChatMessageDTO> toDTO(List<String> messages) {
-        if (messages == null) return null;
+        if (messages == null) return new ArrayList<>();
         return messages.stream().map(m -> {
             try {
                 return mapper.readValue(m, ChatMessageDTO.class);

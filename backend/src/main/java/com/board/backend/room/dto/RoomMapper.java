@@ -6,6 +6,8 @@ import com.board.backend.room.cassandra.model.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+
 @Component
 @RequiredArgsConstructor
 public class RoomMapper {
@@ -18,6 +20,9 @@ public class RoomMapper {
                 .roomId(room.getId().toString())
                 .pixels(boardPixelsMapper.toDTO(room.getPixels()))
                 .messages(chatMessageMapper.toDTO(room.getMessages()))
+                .currentUsers(room.getCurrentUsers() == null ? new ArrayList<>() : room.getCurrentUsers())
+                .created(room.getCreated().getTime())
+                .lastUpdated(room.getLastUpdated().getTime())
                 .build();
     }
 }

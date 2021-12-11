@@ -6,7 +6,6 @@ import com.board.backend.drawing.dto.Point;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +16,6 @@ public class RoomDTO {
     private List<String> currentUsers;
     private List<ChatMessageDTO> messages;
     private Map<Point, Color> pixels;
-    private LocalDateTime created;
-    private LocalDateTime lastUpdated;
+    private Long created;
+    private Long lastUpdated;
 }
