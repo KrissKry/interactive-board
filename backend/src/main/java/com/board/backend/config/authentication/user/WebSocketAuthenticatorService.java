@@ -1,7 +1,6 @@
 package com.board.backend.config.authentication.user;
 
 import com.board.backend.room.cassandra.repository.RoomRepository;
-import com.board.backend.room.cassandra.repository.RoomRepositoryOld;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -47,6 +46,6 @@ public class WebSocketAuthenticatorService {
 
     // TODO implement db fetch
     boolean fetchUserFromDb(UUID roomId, String password) {
-        return repository.findById(roomId).get().getPassword().equals(password);
+        return repository.findOne(roomId).getPassword().equals(password);
     }
 }

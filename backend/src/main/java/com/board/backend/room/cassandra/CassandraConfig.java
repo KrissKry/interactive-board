@@ -1,27 +1,14 @@
 package com.board.backend.room.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.cassandra.SessionFactory;
 import org.springframework.data.cassandra.config.*;
-import org.springframework.data.cassandra.core.AsyncCassandraOperations;
-import org.springframework.data.cassandra.core.AsyncCassandraTemplate;
-import org.springframework.data.cassandra.core.CassandraOperations;
-import org.springframework.data.cassandra.core.CassandraTemplate;
-import org.springframework.data.cassandra.core.convert.CassandraConverter;
-import org.springframework.data.cassandra.core.convert.MappingCassandraConverter;
+import org.springframework.data.cassandra.core.cql.AsyncCqlTemplate;
 import org.springframework.data.cassandra.core.cql.keyspace.CreateKeyspaceSpecification;
-import org.springframework.data.cassandra.core.cql.keyspace.DataCenterReplication;
 import org.springframework.data.cassandra.core.cql.keyspace.KeyspaceOption;
-import org.springframework.data.cassandra.core.mapping.BasicCassandraMappingContext;
-import org.springframework.data.cassandra.core.mapping.CassandraMappingContext;
-import org.springframework.data.cassandra.core.mapping.SimpleUserTypeResolver;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,5 +34,10 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
     @Override
     public SchemaAction getSchemaAction() {
         return SchemaAction.RECREATE_DROP_UNUSED;
+    }
+
+    @Bean
+    public AsyncCqlTemplate template(CqlSession session) {
+        return new AsyncCqlTemplate(session);
     }
 }

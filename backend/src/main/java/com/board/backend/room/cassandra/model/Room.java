@@ -28,9 +28,8 @@ public class Room {
     private Date lastUpdated;
     @CassandraType(type = CassandraType.Name.LIST, typeArguments = {CassandraType.Name.TEXT})
     List<String> currentUsers;
-    @CassandraType(type = CassandraType.Name.MAP, typeArguments = {CassandraType.Name.TEXT, CassandraType.Name.TEXT})
+    @CassandraType(type = CassandraType.Name.MAP, typeArguments = {CassandraType.Name.TEXT, CassandraType.Name.INT})
     Map<String, Long> pixels;
-    ;
     @CassandraType(type = CassandraType.Name.LIST, typeArguments = {CassandraType.Name.TEXT})
     List<String> messages;
 

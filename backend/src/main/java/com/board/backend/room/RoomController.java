@@ -42,15 +42,15 @@ public class RoomController {
     }
 
     @SubscribeMapping("/room/connect/{roomId}")
-    public ResponseEntity<RoomDTO> getRoom(@PathVariable UUID roomId, Principal principal) {
-        template.convertAndSend("/topic/room/connected/" + roomId,
+    public ResponseEntity<RoomDTO> getRoom(@DestinationVariable UUID roomId, Principal principal) {
+        template.convertAndSend("/topic/room.connected." + roomId,
                 new UserDTO(principal.getName(), UserStatus.CONNECTED));
         return ResponseEntity.ok(roomFacade.connectAndGetRoom(roomId, principal.getName()));
     }
 
     @MessageMapping("/board/send/{roomId}")
     public void savePixels(@DestinationVariable UUID roomId, @Payload ChangedPixelsDTO pixels) {
-        template.convertAndSend("/topic/board.listen.{roomId}", pixels);
+        template.convertAndSend("/topic/board.listen." + roomId, pixels);
         roomFacade.savePixels(pixels, roomId);
         log.info(pixels.toString());
     }

@@ -2,7 +2,6 @@ package com.board.backend.room;
 
 import com.board.backend.room.cassandra.model.Room;
 import com.board.backend.room.cassandra.repository.RoomRepository;
-import com.board.backend.room.cassandra.repository.RoomRepositoryOld;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.room.dto.RoomMapper;
 import com.board.backend.chat.dto.ChatMessageDTO;
@@ -21,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class RoomFacade {
-    private final RoomRepository roomRepositoryOld;
+    private final RoomRepository crudRoomRepositoryOld;
     private final RoomMapper roomMapper;
     private final ChatMessageMapper chatMessageMapper;
     private final BoardPixelsMapper changedPixelsMapper;
@@ -33,7 +32,7 @@ public class RoomFacade {
 
     public RoomDTO createRoom(String password) {
         return roomMapper.toDTO(
-                roomRepositoryOld.save(
+                crudRoomRepositoryOld.save(
                         new Room(encoder.encode(password))
                 )
         );
@@ -41,7 +40,7 @@ public class RoomFacade {
 
     public RoomDTO connectAndGetRoom(UUID id, String username) {
         addNewUser(id, username);
-        return roomMapper.toDTO(roomRepositoryOld.findById(id).get()); // TODO handle no meeting
+        return roomMapper.toDTO(crudRoomRepositoryOld.findOne(id)); // TODO handle no meeting
     }
 
     public void saveMessage(ChatMessageDTO message, UUID roomId) {
@@ -53,34 +52,27 @@ public class RoomFacade {
     }
 
     public void disconnectUser(UUID roomId, String username) {
-        var room = roomRepositoryOld.findById(roomId).get();
+        var room = crudRoomRepositoryOld.findOne(roomId);
         if (room == null) {
             log.info("EMPTY");
         }
         room.getCurrentUsers().remove(username);
         if (room.getCurrentUsers().isEmpty()) {
-            roomRepositoryOld.deleteById(roomId);
+            crudRoomRepositoryOld.delete(roomId);
         } else {
-            roomRepositoryOld.save(room);
+            crudRoomRepositoryOld.save(room);
         }
     }
 
     private void addNewUser(UUID id, String username) {
-        var room = roomRepositoryOld.findById(id).get();
-        room.getCurrentUsers().add(username);
-        roomRepositoryOld.save(room);
-        if (roomRepositoryOld.findById(id).get().getCurrentUsers() == null) log.info("NULLLLLL");
+        crudRoomRepositoryOld.addNewUser(id, username);
     }
 
     private void saveMessage(UUID id, String message) {
-        var room = roomRepositoryOld.findById(id).get();
-        room.getMessages().add(message);
-        roomRepositoryOld.save(room);
+        crudRoomRepositoryOld.saveMessage(id, message);
     }
 
     private void savePixels(UUID id, Map<String, Long> pixels) {
-        var room = roomRepositoryOld.findById(id).get();
-        room.getPixels().putAll(pixels);
-        roomRepositoryOld.save(room);
+        crudRoomRepositoryOld.savePixels(id, pixels);
     }
 }
