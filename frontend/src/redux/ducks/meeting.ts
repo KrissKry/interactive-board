@@ -142,6 +142,22 @@ const meetingSlice = createSlice({
             pixels: [],
             drawingChangesInProgress: true,
         }),
+        meetingCanvasPushChange: (state, action: PayloadAction<PixelChanges>) => ({
+            ...state,
+            pixels: [...state.pixels, action.payload],
+        }),
+        meetingCanvasPopChange: (state) => {
+            const hasChanges = state.pixels.length > 1;
+            let newPixels: PixelChanges[];
+
+            if (hasChanges) newPixels = state.pixels.slice(1);
+            else newPixels = [];
+
+            return {
+                ...state,
+                pixels: newPixels,
+            };
+        },
         meetingCanvasFinishChanges: (state) => ({
             ...state,
             currentChanges: [],
@@ -178,6 +194,8 @@ const {
     meetingCanvasAddChanges,
     meetingCanvasActivateChanges,
     meetingCanvasFinishChanges,
+    meetingCanvasPushChange,
+    meetingCanvasPopChange,
     meetingUserUpdate,
 } = meetingSlice.actions;
 
@@ -190,6 +208,8 @@ export {
     meetingCanvasAddChanges,
     meetingCanvasActivateChanges,
     meetingCanvasFinishChanges,
+    meetingCanvasPushChange,
+    meetingCanvasPopChange,
     meetingUserUpdate,
 };
 
@@ -200,9 +220,9 @@ export {
  */
 const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInterface => (typeof data === 'object')
         && 'roomId' in (data as any)
-        && 'created' in (data as any) && typeof (data as any).created === 'string'
+        && 'created' in (data as any) && typeof (data as any).created === 'number'
         && ('messages' in (data as any) && Array.isArray((data as any).messages))
-        && ('pixels' in (data as any) && Array.isArray((data as any).pixels));
+        && ('pixels' in (data as any) && typeof (data as any).pixels === 'object');
 
 /**
  * Validates meeting update object

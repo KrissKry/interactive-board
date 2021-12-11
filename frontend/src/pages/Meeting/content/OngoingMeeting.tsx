@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
     meetingCanvasActivateChanges,
     // eslint-disable-next-line max-len
-    meetingCanvasAddChanges, meetingCanvasFinishChanges, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
+    meetingCanvasAddChanges, meetingCanvasFinishChanges, meetingCanvasPopChange, meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService } from '../../../services';
@@ -85,6 +85,7 @@ const OngoingMeeting = () : JSX.Element => {
     /* board section */
     const boardBeginApplyingChanges = () => { dispatch(meetingCanvasActivateChanges()); };
     const boardFinishApplyingChanges = () => { dispatch(meetingCanvasFinishChanges()); };
+    const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     // eslint-disable-next-line max-len
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
 
@@ -95,7 +96,8 @@ const OngoingMeeting = () : JSX.Element => {
         resp.color.green += byteFix;
         resp.color.blue += byteFix;
 
-        dispatch(meetingCanvasAddChanges(resp));
+        // dispatch(meetingCanvasAddChanges(resp));
+        dispatch(meetingCanvasPushChange(resp));
     };
 
     const meetingUpdateCallback = (message: IFrame) : void => {
@@ -185,8 +187,9 @@ const OngoingMeeting = () : JSX.Element => {
                 brushWidth={1}
                 changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
-                beginChangesCallback={boardBeginApplyingChanges}
-                clearChangesCallback={boardFinishApplyingChanges}
+                // beginChangesCallback={boardBeginApplyingChanges}
+                // clearChangesCallback={boardFinishApplyingChanges}
+                popChangeCallback={boardPopChange}
                 sendChangesCallback={boardSendChangesCallback}
             />
             <ChatContainer

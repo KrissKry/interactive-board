@@ -28,13 +28,14 @@ interface CanvasProps {
     /**
      * Called on awaiting changes to be applied and user not drawing
      */
-    beginChangesCallback: () => void;
+    // beginChangesCallback: () => void;
 
     /**
      * Called on finished canvas update
      */
-    clearChangesCallback: () => void;
+    // clearChangesCallback: () => void;
 
+    popChangeCallback:() => void;
     /**
      * Called every time pixel change is calculated
      */
@@ -48,8 +49,9 @@ const Canvas = ({
     brushWidth,
     currentChanges,
     changesWaiting,
-    beginChangesCallback,
-    clearChangesCallback,
+    popChangeCallback,
+    // beginChangesCallback,
+    // clearChangesCallback,
     sendChangesCallback,
 
 } : CanvasProps) : JSX.Element => {
@@ -101,31 +103,54 @@ const Canvas = ({
 
         /* begin updating */
         setIsUpdating(true);
-        beginChangesCallback();
-    }, [changesWaiting, isDrawing]);
+        // beginChangesCallback();
+    }, [changesWaiting, isDrawing, isUpdating]);
+
+    const renderPixelChange = () : void => {
+        if (typeof p5Instance !== 'undefined') {
+            const change = currentChanges[0];
+
+            p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
+            p5Instance.strokeWeight(brushWidth);
+
+            // eslint-disable-next-line no-restricted-syntax
+            for (const changedPixel of change.points) {
+                p5Instance.point(changedPixel.x, changedPixel.y);
+            }
+
+            // clearChangesCallback();
+            popChangeCallback();
+            setIsUpdating(false);
+        }
+    };
 
     useEffect(() => {
-        if (!currentChanges.length) return;
-
-        if (typeof p5Instance !== 'undefined') {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const change of currentChanges) {
-                p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
-                p5Instance.strokeWeight(brushWidth);
-
-                // eslint-disable-next-line no-restricted-syntax
-                for (const changedPixel of change.points) {
-                    p5Instance.point(changedPixel.x, changedPixel.y);
-                }
-            }
-            clearChangesCallback();
+        if (isUpdating) {
+            renderPixelChange();
         }
+    }, [isUpdating]);
+    // useEffect(() => {
+    //     if (!currentChanges.length) return;
 
-        /* finish updating */
-        setTimeout(() => {
-            setIsUpdating(false);
-        }, 50);
-    }, [currentChanges]);
+    //     if (typeof p5Instance !== 'undefined') {
+    //         // eslint-disable-next-line no-restricted-syntax
+    //         for (const change of currentChanges) {
+    //             p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
+    //             p5Instance.strokeWeight(brushWidth);
+
+    //             // eslint-disable-next-line no-restricted-syntax
+    //             for (const changedPixel of change.points) {
+    //                 p5Instance.point(changedPixel.x, changedPixel.y);
+    //             }
+    //         }
+    //         clearChangesCallback();
+    //     }
+
+    //     /* finish updating */
+    //     setTimeout(() => {
+    //         setIsUpdating(false);
+    //     }, 50);
+    // }, [currentChanges]);
 
     return (
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
