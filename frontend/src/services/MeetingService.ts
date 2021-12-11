@@ -92,7 +92,7 @@ export class MeetingService {
         const url = 'http://localhost:8080/api/room/create';
 
         const data = {
-            name,
+            // name,
             password,
         };
         // TODO HASHOWANIE HASŁA
