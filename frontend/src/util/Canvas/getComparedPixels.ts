@@ -24,7 +24,6 @@ export const getComparedPixels = (
             blue: color.b + byteNormalizer,
         },
         points: [],
-        userId: 123,
     };
 
     for (let index = 0; index < previousPixels.length; index += 4) {
