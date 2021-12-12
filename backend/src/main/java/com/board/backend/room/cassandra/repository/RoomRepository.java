@@ -4,10 +4,10 @@ import com.board.backend.room.cassandra.model.Room;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.cassandra.core.cql.AsyncCqlTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -21,14 +21,29 @@ public class RoomRepository {
     private final CrudRoomRepository crudRoomRepository;
 
     public void addNewUser(UUID id, String user) {
-        cassandraTemplate.execute("UPDATE room SET currentUsers = currentUsers + ['" + user + "'] where id = " + id);
+        try {
+            cassandraTemplate.execute("UPDATE room SET currentUsers = currentUsers + ['" + user + "'], " +
+                    "lastUpdated = " + new Date(System.currentTimeMillis()).getTime() + " WHERE id = " + id).get();
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+    }
+
+    public void removeUser(UUID id, String user) {
+        try {
+            cassandraTemplate.execute("UPDATE room SET currentUsers = currentUsers - ['" + user + "'], " +
+                    "lastUpdated = " + new Date(System.currentTimeMillis()).getTime() + " WHERE id = " + id).get();
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
     }
 
     public void saveMessage(UUID id, String message) {
         try {
             log.info(message);
-            cassandraTemplate.execute("UPDATE room SET messages = messages + ['" + message + "'] WHERE id = " + id).get();
-        } catch (InterruptedException | ExecutionException e) {
+            cassandraTemplate.execute("UPDATE room SET messages = messages + ['" + message + "'], " +
+                    "lastUpdated = " + new Date(System.currentTimeMillis()).getTime() + " WHERE id = " + id).get();
+        } catch (Exception e) {
             log.info(e.toString());
         }
     }
@@ -42,7 +57,10 @@ public class RoomRepository {
                 query.append(", ");
             }
         }
-        query.append("} where id = ").append(id);
+        query
+                .append("}, lastUpdated = ")
+                .append(new Date(System.currentTimeMillis()).getTime())
+                .append(" where id = ").append(id);
 
         try {
             var x = cassandraTemplate.execute(query.toString()).get();

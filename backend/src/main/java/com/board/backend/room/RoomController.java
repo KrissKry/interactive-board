@@ -1,5 +1,6 @@
 package com.board.backend.room;
 
+import com.board.backend.config.PrincipalUtils;
 import com.board.backend.room.dto.CreateRoomDTO;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.chat.dto.ChatMessageDTO;
@@ -44,7 +45,7 @@ public class RoomController {
     @SubscribeMapping("/room/connect/{roomId}")
     public ResponseEntity<RoomDTO> getRoom(@DestinationVariable UUID roomId, Principal principal) {
         template.convertAndSend("/topic/room.connected." + roomId,
-                new UserDTO(principal.getName(), UserStatus.CONNECTED));
+                new UserDTO(PrincipalUtils.extractUserNameFromPrincipal(principal), UserStatus.CONNECTED));
         var response = roomFacade.connectAndGetRoom(roomId, principal);
         log.info(response.toString());
         return ResponseEntity.ok(response);

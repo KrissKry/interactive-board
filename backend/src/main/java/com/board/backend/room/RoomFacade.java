@@ -57,6 +57,7 @@ public class RoomFacade {
         var room = crudRoomRepositoryOld.findOne(roomId);
         if (room == null) {
             log.info("EMPTY");
+            return;
         }
         room.getCurrentUsers().remove(username);
         if (room.getCurrentUsers().isEmpty()) {

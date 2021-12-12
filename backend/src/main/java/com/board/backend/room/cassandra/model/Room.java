@@ -20,8 +20,8 @@ public class Room {
     @CassandraType(type = CassandraType.Name.UUID)
     private UUID id;
     private String password;
-    private Date created;
-    private Date lastUpdated;
+    private Long created;
+    private Long lastUpdated;
     @CassandraType(type = CassandraType.Name.LIST, typeArguments = {CassandraType.Name.TEXT})
     List<String> currentUsers;
     @CassandraType(type = CassandraType.Name.MAP, typeArguments = {CassandraType.Name.TEXT, CassandraType.Name.TEXT})
@@ -32,7 +32,7 @@ public class Room {
     public Room(String password) {
         this.id = UUID.randomUUID();
         this.password = password;
-        this.created = new Date(System.currentTimeMillis());
-        this.lastUpdated = new Date(System.currentTimeMillis());
+        this.created = new Date(System.currentTimeMillis()).getTime();
+        this.lastUpdated = new Date(System.currentTimeMillis()).getTime();
     }
 }

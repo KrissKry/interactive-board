@@ -21,8 +21,8 @@ public class RoomMapper {
                 .pixels(boardPixelsMapper.toDTO(room.getPixels()))
                 .messages(chatMessageMapper.toDTO(room.getMessages()))
                 .currentUsers(room.getCurrentUsers() == null ? new ArrayList<>() : room.getCurrentUsers())
-                .created(room.getCreated().getTime())
-                .lastUpdated(room.getLastUpdated().getTime())
+                .created(room.getCreated())
+                .lastUpdated(room.getLastUpdated())
                 .build();
     }
 }
