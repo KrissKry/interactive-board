@@ -32,6 +32,7 @@ public class WebSocketAuthenticatorService {
             throw new AuthenticationCredentialsNotFoundException("Password was null or empty.");
         }
         // Add your own logic for retrieving user in fetchUserFromDb()
+        log.info("WHAT UP" + roomId);
         if (fetchUserFromDb(UUID.fromString(roomId), encoder.encode(roomPassword))) {
             throw new BadCredentialsException("Bad credentials for user " + username);
         }

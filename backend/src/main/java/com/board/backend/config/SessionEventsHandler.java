@@ -40,7 +40,7 @@ public class SessionEventsHandler {
                                 Objects.requireNonNull(event.getUser())
                         )
                 ),
-                PrincipalUtils.extractRoomIdFromPrincipal(event.getUser()));
+                PrincipalUtils.extractUserNameFromPrincipal(event.getUser()));
         log.info("User removed");
         template.convertAndSend("/topic/room.connected." + uuid,
                 new UserDTO(username, UserStatus.DISCONNECTED));

@@ -1,15 +1,11 @@
 package com.board.backend.chat.dto;
 
-import com.board.backend.config.BoardMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.board.backend.config.CustomJsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatMessageMapper {
 
-    private final BoardMapper mapper;
+    private final CustomJsonMapper mapper;
 
     public List<ChatMessageDTO> toDTO(List<String> messages) {
         if (messages == null) return new ArrayList<>();

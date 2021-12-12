@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -20,12 +21,14 @@ public class RoomRepository {
     private final AsyncCqlTemplate cassandraTemplate;
     private final CrudRoomRepository crudRoomRepository;
 
-    public void addNewUser(UUID id, String user) {
+    public boolean addNewUser(UUID id, String user) {
         try {
             cassandraTemplate.execute("UPDATE room SET currentUsers = currentUsers + ['" + user + "'], " +
                     "lastUpdated = " + new Date(System.currentTimeMillis()).getTime() + " WHERE id = " + id).get();
+            return true;
         } catch (Exception e) {
             log.info(e.toString());
+            return false;
         }
     }
 
@@ -72,7 +75,7 @@ public class RoomRepository {
 
     @SneakyThrows
     public Room findOne(UUID id) {
-        return crudRoomRepository.findById(id).get();
+        return crudRoomRepository.findById(id).orElse(null);
     }
 
     @SneakyThrows

@@ -1,13 +1,12 @@
 package com.board.backend.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class BoardMapper {
+public class CustomJsonMapper {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public <T> T toObject(String object, Class<T> clz) {

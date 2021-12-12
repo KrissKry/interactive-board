@@ -1,6 +1,7 @@
 package com.board.backend.room;
 
 import com.board.backend.config.PrincipalUtils;
+import com.board.backend.config.authentication.utils.UserRoomValidator;
 import com.board.backend.room.dto.CreateRoomDTO;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.chat.dto.ChatMessageDTO;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 import java.util.UUID;
 
 
@@ -32,42 +32,37 @@ public class RoomController {
 
     private final RoomFacade roomFacade;
     private final SimpMessagingTemplate template;
-    private ObjectMapper mapper = new ObjectMapper();
 
     @SneakyThrows
     @PostMapping("/api/room/create")
-    public ResponseEntity<String> createRoom(@RequestBody String roomDTO) {
+    public ResponseEntity<?> createRoom(@RequestBody String roomDTO) {
         log.info(roomDTO);
-        var dto = mapper.readValue(roomDTO, CreateRoomDTO.class);
-        return ResponseEntity.ok(roomFacade.createRoom(dto.getPassword()).getRoomId());
+        return roomFacade.createRoom(roomDTO);
     }
 
     @SubscribeMapping("/room/connect/{roomId}")
-    public ResponseEntity<RoomDTO> getRoom(@DestinationVariable UUID roomId, Principal principal) {
-        template.convertAndSend("/topic/room.connected." + roomId,
-                new UserDTO(PrincipalUtils.extractUserNameFromPrincipal(principal), UserStatus.CONNECTED));
-        var response = roomFacade.connectAndGetRoom(roomId, principal);
-        log.info(response.toString());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> getRoom(@DestinationVariable UUID roomId, Principal principal) {
+        if (UserRoomValidator.validate(principal, roomId)) {
+            return roomFacade.connectAndGetRoom(roomId, principal);
+        } else {
+            log.error("Room not accessible for current user");
+            return ResponseEntity.badRequest().body("Room not accessible for current user");
+        }
     }
 
     @MessageMapping("/board/send/{roomId}")
-    public void savePixels(@DestinationVariable UUID roomId, @Payload ChangedPixelsDTO pixels) {
-        template.convertAndSend("/topic/board.listen." + roomId, pixels);
-        roomFacade.savePixels(pixels, roomId);
-        log.info(pixels.toString());
-    }
-
-    @MessageMapping("/chat/test/{roomId}")
-    public void sendMessage(@DestinationVariable Long roomId, @Payload String message) {
-        log.info("Received: " + message);
-        template.convertAndSend("/topic/chat.listen." + roomId, message);
+    public void savePixels(@DestinationVariable UUID roomId, @Payload ChangedPixelsDTO pixels, Principal principal) {
+        if (UserRoomValidator.validate(principal, roomId)) {
+            roomFacade.savePixels(pixels, roomId);
+        }
     }
 
     @MessageMapping("/chat/send/{roomId}")
-    public void sendMessage(@DestinationVariable UUID roomId, @Payload ChatMessageDTO message) {
-        log.info("Received: " + message);
-        template.convertAndSend("/topic/chat.listen." + roomId, message);
-        roomFacade.saveMessage(message, roomId);
+    public void sendMessage(@DestinationVariable UUID roomId, @Payload ChatMessageDTO message, Principal principal) {
+        if (UserRoomValidator.validate(principal, roomId)) {
+            log.info("Received: " + message);
+            template.convertAndSend("/topic/chat.listen." + roomId, message);
+            roomFacade.saveMessage(message, roomId);
+        }
     }
 }

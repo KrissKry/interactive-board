@@ -1,6 +1,6 @@
 package com.board.backend.drawing.dto;
 
-import com.board.backend.config.BoardMapper;
+import com.board.backend.config.CustomJsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BoardPixelsMapper {
 
-    private final BoardMapper mapper;
+    private final CustomJsonMapper mapper;
 
     public Map<String, String> toModel(ChangedPixelsDTO changedPixels) {
         return changedPixels
