@@ -9,3 +9,15 @@ export interface PixelChanges {
         y: number;
     }[],
 }
+
+export interface PixelUpdate {
+    point: {
+        x: number;
+        y: number;
+    },
+    color: {
+        red: number;
+        green: number;
+        blue: number;
+    },
+}

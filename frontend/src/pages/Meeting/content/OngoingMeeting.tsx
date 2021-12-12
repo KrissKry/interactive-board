@@ -7,9 +7,9 @@ import {
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
-    meetingCanvasActivateChanges,
+    meetingCanvasCleanupInitial,
     // eslint-disable-next-line max-len
-    meetingCanvasAddChanges, meetingCanvasFinishChanges, meetingCanvasPopChange, meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
+    meetingCanvasPopChange, meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService } from '../../../services';
@@ -52,9 +52,10 @@ const OngoingMeeting = () : JSX.Element => {
         id: state.meeting.roomId,
         messages: state.meeting.messages,
 
-        boardChanges: state.meeting.currentChanges,
-        boardChangesWaiting: state.meeting.pixels.length,
-        changesInProgress: state.meeting.drawingChangesInProgress,
+        boardInitialChanges: state.meeting.pixels,
+        boardChanges: state.meeting.updatingPixels,
+        boardChangesWaiting: state.meeting.updatingPixels.length,
+        // changesInProgress: state.meeting.drawingChangesInProgress,
 
         users: state.meeting.currentUsers,
         user: state.user.username,
@@ -83,18 +84,19 @@ const OngoingMeeting = () : JSX.Element => {
     };
 
     /* board section */
-    const boardBeginApplyingChanges = () => { dispatch(meetingCanvasActivateChanges()); };
-    const boardFinishApplyingChanges = () => { dispatch(meetingCanvasFinishChanges()); };
+    // const boardBeginApplyingChanges = () => { dispatch(meetingCanvasActivateChanges()); };
+    // const boardFinishApplyingChanges = () => { dispatch(meetingCanvasFinishChanges()); };
     const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     // eslint-disable-next-line max-len
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
+    const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
 
     const boardUpdateCallback = (message: IFrame) => {
         const resp: PixelChanges = JSON.parse(message.body);
-        const byteFix = 128;
-        resp.color.red += byteFix;
-        resp.color.green += byteFix;
-        resp.color.blue += byteFix;
+        // const byteFix = 128;
+        // resp.color.red += byteFix;
+        // resp.color.green += byteFix;
+        // resp.color.blue += byteFix;
 
         // dispatch(meetingCanvasAddChanges(resp));
         dispatch(meetingCanvasPushChange(resp));
@@ -187,8 +189,8 @@ const OngoingMeeting = () : JSX.Element => {
                 brushWidth={1}
                 changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
-                // beginChangesCallback={boardBeginApplyingChanges}
-                // clearChangesCallback={boardFinishApplyingChanges}
+                initialChanges={meetingState.boardInitialChanges}
+                cleanupInitialCallback={boardCleanupInitialCallback}
                 popChangeCallback={boardPopChange}
                 sendChangesCallback={boardSendChangesCallback}
             />

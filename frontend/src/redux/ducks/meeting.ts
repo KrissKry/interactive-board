@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AxiosResponse } from 'axios';
 import { PixelChanges } from '../../interfaces/Canvas';
+import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
 import { ChatMessageInterface } from '../../interfaces/Chat';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { MeetingService } from '../../services';
@@ -42,17 +43,22 @@ export interface meetingStateInterface {
     /**
      * currently drawn changes
      */
-    currentChanges: PixelChanges[];
+    // currentChanges: PixelChanges[];
 
     /**
-     * received new changes from backend
+     * received initial changes from backend
      */
-    pixels: PixelChanges[];
+    pixels: PixelUpdate[];
+
+    /**
+     * Received on websocket draw event
+     */
+    updatingPixels: PixelChanges[];
 
     /**
      * if drawing changes is in progress, then redux should not update currentChanges
      */
-    drawingChangesInProgress: boolean;
+    // drawingChangesInProgress: boolean;
 
     /**
      * Meeting data fetch in progress
@@ -87,11 +93,13 @@ const initialState : meetingStateInterface = {
 
     messages: [],
 
-    currentChanges: [],
+    // currentChanges: [],
 
     pixels: [],
 
-    drawingChangesInProgress: false,
+    updatingPixels: [],
+
+    // drawingChangesInProgress: false,
 
     loading: false,
 
@@ -132,37 +140,37 @@ const meetingSlice = createSlice({
             ...state,
             messages: [...state.messages, action.payload],
         }),
-        meetingCanvasAddChanges: (state, action: PayloadAction<PixelChanges>) => ({
-            ...state,
-            pixels: [...state.pixels, action.payload],
-        }),
-        meetingCanvasActivateChanges: (state) => ({
-            ...state,
-            currentChanges: state.pixels,
-            pixels: [],
-            drawingChangesInProgress: true,
-        }),
+        // meetingCanvasAddChanges: (state, action: PayloadAction<PixelChanges>) => ({
+        //     ...state,
+        //     pixels: [...state.pixels, action.payload],
+        // }),
+        // meetingCanvasActivateChanges: (state) => ({
+        //     ...state,
+        //     currentChanges: state.pixels,
+        //     pixels: [],
+        //     drawingChangesInProgress: true,
+        // }),
         meetingCanvasPushChange: (state, action: PayloadAction<PixelChanges>) => ({
             ...state,
-            pixels: [...state.pixels, action.payload],
+            updatingPixels: [...state.updatingPixels, action.payload],
         }),
         meetingCanvasPopChange: (state) => {
             const hasChanges = state.pixels.length > 1;
             let newPixels: PixelChanges[];
 
-            if (hasChanges) newPixels = state.pixels.slice(1);
+            if (hasChanges) newPixels = state.updatingPixels.slice(1);
             else newPixels = [];
 
             return {
                 ...state,
-                pixels: newPixels,
+                updatingPixels: newPixels,
             };
         },
-        meetingCanvasFinishChanges: (state) => ({
-            ...state,
-            currentChanges: [],
-            drawingChangesInProgress: false,
-        }),
+        // meetingCanvasFinishChanges: (state) => ({
+        //     ...state,
+        //     currentChanges: [],
+        //     drawingChangesInProgress: false,
+        // }),
         meetingUserUpdate: (state, action: PayloadAction<meetingUser>) => {
             const users: meetingUser[] = JSON.parse(JSON.stringify(state.currentUsers));
             const userIndex = users.findIndex((u) => u.name === action.payload.name);
@@ -180,6 +188,10 @@ const meetingSlice = createSlice({
                 currentUsers: [...users, action.payload],
             };
         },
+        meetingCanvasCleanupInitial: (state) => ({
+            ...state,
+            pixels: [],
+        }),
     },
 });
 
@@ -191,11 +203,12 @@ const {
     meetingFetchSuccess,
     meetingFetchError,
     meetingChatAddMessage,
-    meetingCanvasAddChanges,
-    meetingCanvasActivateChanges,
-    meetingCanvasFinishChanges,
+    // meetingCanvasAddChanges,
+    // meetingCanvasActivateChanges,
+    // meetingCanvasFinishChanges,
     meetingCanvasPushChange,
     meetingCanvasPopChange,
+    meetingCanvasCleanupInitial,
     meetingUserUpdate,
 } = meetingSlice.actions;
 
@@ -205,11 +218,12 @@ export {
     meetingFetchSuccess,
     meetingFetchError,
     meetingChatAddMessage,
-    meetingCanvasAddChanges,
-    meetingCanvasActivateChanges,
-    meetingCanvasFinishChanges,
+    // meetingCanvasAddChanges,
+    // meetingCanvasActivateChanges,
+    // meetingCanvasFinishChanges,
     meetingCanvasPushChange,
     meetingCanvasPopChange,
+    meetingCanvasCleanupInitial,
     meetingUserUpdate,
 };
 
@@ -220,9 +234,9 @@ export {
  */
 const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInterface => (typeof data === 'object')
         && 'roomId' in (data as any)
-        && 'created' in (data as any) && typeof (data as any).created === 'number'
+        && ('created' in (data as any) && typeof (data as any).created === 'number')
         && ('messages' in (data as any) && Array.isArray((data as any).messages))
-        && ('pixels' in (data as any) && typeof (data as any).pixels === 'object');
+        && ('pixels' in (data as any) && Array.isArray((data as any).pixels));
 
 /**
  * Validates meeting update object
@@ -231,6 +245,8 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
  */
 export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => {
     dispatch(meetingFetchRequest());
+
+    console.log('meetingUpdateMiddleware', data);
 
     if (assertMeetingStateUpdate(data)) dispatch(meetingFetchSuccess(data));
     else dispatch(meetingFetchError('NOT_STATE_UPDATE'));

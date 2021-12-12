@@ -6,6 +6,7 @@ import Sketch from 'react-p5';
 import { initialFillColor } from '../../helpers/initial';
 import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
 import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
+import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
 
 interface CanvasProps {
     /**
@@ -26,14 +27,14 @@ interface CanvasProps {
     changesWaiting: boolean;
 
     /**
-     * Called on awaiting changes to be applied and user not drawing
+     * Canvas initial state (removed after update)
      */
-    // beginChangesCallback: () => void;
+    initialChanges: PixelUpdate[];
 
     /**
-     * Called on finished canvas update
+     * Called on finished canvas update on initial connection
      */
-    // clearChangesCallback: () => void;
+    cleanupInitialCallback: () => void;
 
     popChangeCallback:() => void;
     /**
@@ -49,9 +50,9 @@ const Canvas = ({
     brushWidth,
     currentChanges,
     changesWaiting,
+    initialChanges,
+    cleanupInitialCallback,
     popChangeCallback,
-    // beginChangesCallback,
-    // clearChangesCallback,
     sendChangesCallback,
 
 } : CanvasProps) : JSX.Element => {
@@ -118,7 +119,6 @@ const Canvas = ({
                 p5Instance.point(changedPixel.x, changedPixel.y);
             }
 
-            // clearChangesCallback();
             popChangeCallback();
             setIsUpdating(false);
         }
@@ -129,28 +129,20 @@ const Canvas = ({
             renderPixelChange();
         }
     }, [isUpdating]);
-    // useEffect(() => {
-    //     if (!currentChanges.length) return;
 
-    //     if (typeof p5Instance !== 'undefined') {
-    //         // eslint-disable-next-line no-restricted-syntax
-    //         for (const change of currentChanges) {
-    //             p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
-    //             p5Instance.strokeWeight(brushWidth);
+    useEffect(() => {
+        if (initialChanges.length && typeof p5Instance !== 'undefined') {
+            p5Instance.strokeWeight(1);
 
-    //             // eslint-disable-next-line no-restricted-syntax
-    //             for (const changedPixel of change.points) {
-    //                 p5Instance.point(changedPixel.x, changedPixel.y);
-    //             }
-    //         }
-    //         clearChangesCallback();
-    //     }
+            // eslint-disable-next-line no-restricted-syntax
+            for (const pixel of initialChanges) {
+                p5Instance.stroke(pixel.color.red, pixel.color.green, pixel.color.blue);
+                p5Instance.point(pixel.point.x, pixel.point.y);
+            }
 
-    //     /* finish updating */
-    //     setTimeout(() => {
-    //         setIsUpdating(false);
-    //     }, 50);
-    // }, [currentChanges]);
+            cleanupInitialCallback();
+        }
+    }, [initialChanges, p5Instance]);
 
     return (
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />

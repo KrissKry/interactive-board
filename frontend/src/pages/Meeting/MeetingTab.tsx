@@ -77,14 +77,11 @@ const MeetingTab = () => {
         // promise for new meeting endpoint
         MeetingService.requestNewMeeting(name, pass)
         .then((response) => {
-            console.log('ODPOWIEDŹ API:', response);
+            console.log('createMeetingCallback', response);
             const { data } = response;
-            console.log(data);
 
             // eslint-disable-next-line max-len
             meetingService.createClient(() => updateid(data as string), meetingState.user, data as string, pass);
-
-            // setPotentialId(data);
         })
         .catch((err) => {
             console.warn('FAKAP Żądania');
@@ -108,8 +105,9 @@ const MeetingTab = () => {
     useEffect(() => {
         setNoMeetingState(parseInt(meetingState.id, 10) === -1 || meetingState.id === '');
     }, [meetingState.id]);
+
     useEffect(() => {
-        console.log(meetingState);
+        console.log('STAN', meetingState);
     }, [meetingState]);
 
     return (
