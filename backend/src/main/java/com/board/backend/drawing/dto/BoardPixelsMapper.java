@@ -1,56 +1,44 @@
 package com.board.backend.drawing.dto;
 
+import com.board.backend.config.BoardMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class BoardPixelsMapper {
 
-    public Map<String, Long> toModel(ChangedPixelsDTO changedPixels) {
+    private final BoardMapper mapper;
+
+    public Map<String, String> toModel(ChangedPixelsDTO changedPixels) {
         return changedPixels
                 .getPoints()
                 .stream()
                 .collect(
                         Collectors.toMap(
-                                this::pointToString,
-                                v -> colorToLong(changedPixels.getColor())
+                                mapper::toString,
+                                e -> mapper.toString(changedPixels.getColor())
                         )
                 );
     }
 
-    public Map<Point, Color> toDTO(Map<String, Long> pixels) {
-        if (pixels == null) return new HashMap<>();
-        return pixels.entrySet().stream()
-                .collect(
-                        Collectors.toMap(
-                                k -> stringToPoint(k.getKey()),
-                                v -> longToColor(v.getValue())
+    public List<Pixel> toDTO(Map<String, String> pixels) {
+        if (pixels == null) return new ArrayList<>();
+        return pixels
+                .entrySet()
+                .stream()
+                .map(e -> new Pixel(
+                                mapper.toObject(e.getKey(), Point.class),
+                                mapper.toObject(e.getValue(), Color.class)
                         )
-                );
-    }
-
-    private String pointToString(Point point) {
-        return point.getX() + ":" + point.getY();
-    }
-
-    private Point stringToPoint(String point) {
-        return new Point(Short.valueOf(
-                point.substring(0, point.lastIndexOf(":"))),
-                Short.valueOf(point.substring(point.lastIndexOf(":") + 1))
-        );
-    }
-
-    private Long colorToLong(Color color) {
-        return (long) (((color.getRed() & 0x0ff) << 16) | ((color.getGreen() & 0x0ff) << 8) | (color.getBlue() & 0x0ff));
-    }
-
-    private Color longToColor(Long rgb) {
-        return Color.builder()
-                .red((byte) ((rgb >> 16) & 0x0FF))
-                .green((byte) ((rgb >> 8) & 0x0FF))
-                .blue((byte) (rgb & 0x0FF)).build();
+                )
+                .collect(Collectors.toList());
     }
 }

@@ -33,7 +33,7 @@ public class RoomRepository {
         }
     }
 
-    public void savePixels(UUID id, Map<String, Long> pixels) {
+    public void savePixels(UUID id, Map<String, String> pixels) {
         StringBuilder query = new StringBuilder("UPDATE room SET pixels = pixels + {");
         var pixel = pixels.entrySet().iterator();
         while (pixel.hasNext()) {
@@ -66,7 +66,7 @@ public class RoomRepository {
         crudRoomRepository.deleteById(id);
     }
 
-    private String convertPixelToString(Map.Entry<String, Long> pixel) {
-        return "'" + pixel.getKey() + "'" + " : " + pixel.getValue().toString();
+    private String convertPixelToString(Map.Entry<String, String> pixel) {
+        return "'" + pixel.getKey() + "' : '" + pixel.getValue() + "'";
     }
 }

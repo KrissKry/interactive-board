@@ -74,7 +74,7 @@ public class RoomFacade {
         crudRoomRepositoryOld.saveMessage(id, message);
     }
 
-    private void savePixels(UUID id, Map<String, Long> pixels) {
+    private void savePixels(UUID id, Map<String, String> pixels) {
         crudRoomRepositoryOld.savePixels(id, pixels);
     }
 }
