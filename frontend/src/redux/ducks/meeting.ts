@@ -248,6 +248,19 @@ export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => 
 
     console.log('meetingUpdateMiddleware', data.body);
 
-    if (assertMeetingStateUpdate(data.body)) dispatch(meetingFetchSuccess(data.body));
-    else dispatch(meetingFetchError('NOT_STATE_UPDATE'));
+    if (assertMeetingStateUpdate(data.body)) {
+        const parsedData: meetingStateUpdateInterface = data.body;
+
+        const newCurrentUsers: meetingUser[] = [];
+        const usernames: string[] = [...data.body.currentUsers];
+        for (let i = 0; i < usernames.length; i += 1) {
+            newCurrentUsers.push({
+                name: usernames[i],
+                status: 'CONNECTED',
+            });
+        }
+        parsedData.currentUsers = newCurrentUsers;
+
+        dispatch(meetingFetchSuccess(parsedData));
+    } else dispatch(meetingFetchError('NOT_STATE_UPDATE'));
 };
