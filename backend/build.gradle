@@ -16,6 +16,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    google()
 }
 
 dependencies {
@@ -40,6 +41,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-reactor-netty'
     implementation 'org.springframework.data:spring-data-cassandra'
     implementation 'org.springframework.boot:spring-boot-starter-data-cassandra'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'

@@ -44,16 +44,13 @@ public class BoardPixelsMapper {
     }
 
     private Long colorToLong(Color color) {
-        int rgb = color.getRed();
-        rgb = (rgb << 8) + color.getGreen();
-        rgb = (rgb << 8) + color.getBlue();
-        return (long) rgb;
+        return (long) (((color.getRed() & 0x0ff) << 16) | ((color.getGreen() & 0x0ff) << 8) | (color.getBlue() & 0x0ff));
     }
 
     private Color longToColor(Long rgb) {
         return Color.builder()
-                .red((byte) ((rgb >> 16) & 0xFF))
-                .green((byte) ((rgb >> 8) & 0xFF))
-                .blue((byte) (rgb & 0xFF)).build();
+                .red((byte) ((rgb >> 16) & 0x0FF))
+                .green((byte) ((rgb >> 8) & 0x0FF))
+                .blue((byte) (rgb & 0x0FF)).build();
     }
 }

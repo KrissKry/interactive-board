@@ -45,7 +45,9 @@ public class RoomController {
     public ResponseEntity<RoomDTO> getRoom(@DestinationVariable UUID roomId, Principal principal) {
         template.convertAndSend("/topic/room.connected." + roomId,
                 new UserDTO(principal.getName(), UserStatus.CONNECTED));
-        return ResponseEntity.ok(roomFacade.connectAndGetRoom(roomId, principal.getName()));
+        var response = roomFacade.connectAndGetRoom(roomId, principal);
+        log.info(response.toString());
+        return ResponseEntity.ok(response);
     }
 
     @MessageMapping("/board/send/{roomId}")

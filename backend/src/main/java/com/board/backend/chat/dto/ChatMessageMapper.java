@@ -1,6 +1,7 @@
 package com.board.backend.chat.dto;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,12 +20,14 @@ public class ChatMessageMapper {
     public List<ChatMessageDTO> toDTO(List<String> messages) {
         if (messages == null) return new ArrayList<>();
         return messages.stream().map(m -> {
+            ChatMessageDTO x = new ChatMessageDTO(null, null);
             try {
-                return mapper.readValue(m, ChatMessageDTO.class);
-            } catch (JsonProcessingException e) {
-                log.error("Chat message parsing failed" + Arrays.toString(e.getStackTrace()));
+                log.info("outbound mapper: " + m);
+                x = mapper.readValue(m, ChatMessageDTO.class);
+            } catch (Exception e) {
+                log.info("Chat message parsing failed" + e.toString());
             }
-            return null;
+            return x;
         }).collect(Collectors.toList());
     }
 
@@ -32,7 +35,7 @@ public class ChatMessageMapper {
         try {
             return mapper.writeValueAsString(messageDTO);
         } catch (JsonProcessingException e) {
-            log.error("Chat message parsing failed" + Arrays.toString(e.getStackTrace()));
+            log.info("Chat message parsing failed" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }

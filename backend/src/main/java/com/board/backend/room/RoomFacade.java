@@ -1,5 +1,6 @@
 package com.board.backend.room;
 
+import com.board.backend.config.PrincipalUtils;
 import com.board.backend.room.cassandra.model.Room;
 import com.board.backend.room.cassandra.repository.RoomRepository;
 import com.board.backend.room.dto.RoomDTO;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,8 +40,8 @@ public class RoomFacade {
         );
     }
 
-    public RoomDTO connectAndGetRoom(UUID id, String username) {
-        addNewUser(id, username);
+    public RoomDTO connectAndGetRoom(UUID id, Principal principal) {
+        addNewUser(id, PrincipalUtils.extractUserNameFromPrincipal(principal));
         return roomMapper.toDTO(crudRoomRepositoryOld.findOne(id)); // TODO handle no meeting
     }
 
