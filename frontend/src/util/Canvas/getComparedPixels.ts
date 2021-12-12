@@ -1,7 +1,6 @@
 import type { PixelChanges, RGBColor } from '../../interfaces/Canvas';
 
 const compareChannel = (channel1: number, channel2: number) : boolean => channel1 !== channel2;
-const byteNormalizer = -128;
 
 /**
  * Compare pixels between
@@ -19,9 +18,9 @@ export const getComparedPixels = (
 ) : PixelChanges => {
     const changes: PixelChanges = {
         color: {
-            red: color.r + byteNormalizer,
-            green: color.g + byteNormalizer,
-            blue: color.b + byteNormalizer,
+            red: color.r,
+            green: color.g,
+            blue: color.b,
         },
         points: [],
     };

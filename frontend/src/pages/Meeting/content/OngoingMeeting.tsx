@@ -55,7 +55,6 @@ const OngoingMeeting = () : JSX.Element => {
         boardInitialChanges: state.meeting.pixels,
         boardChanges: state.meeting.updatingPixels,
         boardChangesWaiting: state.meeting.updatingPixels.length,
-        // changesInProgress: state.meeting.drawingChangesInProgress,
 
         users: state.meeting.currentUsers,
         user: state.user.username,
@@ -84,21 +83,13 @@ const OngoingMeeting = () : JSX.Element => {
     };
 
     /* board section */
-    // const boardBeginApplyingChanges = () => { dispatch(meetingCanvasActivateChanges()); };
-    // const boardFinishApplyingChanges = () => { dispatch(meetingCanvasFinishChanges()); };
-    const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     // eslint-disable-next-line max-len
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
+    const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
 
-    const boardUpdateCallback = (message: IFrame) => {
+    const boardUpdateCallback = (message: IFrame) : void => {
         const resp: PixelChanges = JSON.parse(message.body);
-        // const byteFix = 128;
-        // resp.color.red += byteFix;
-        // resp.color.green += byteFix;
-        // resp.color.blue += byteFix;
-
-        // dispatch(meetingCanvasAddChanges(resp));
         dispatch(meetingCanvasPushChange(resp));
     };
 

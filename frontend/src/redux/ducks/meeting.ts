@@ -246,8 +246,8 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
 export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => {
     dispatch(meetingFetchRequest());
 
-    console.log('meetingUpdateMiddleware', data);
+    console.log('meetingUpdateMiddleware', data.body);
 
-    if (assertMeetingStateUpdate(data)) dispatch(meetingFetchSuccess(data));
+    if (assertMeetingStateUpdate(data.body)) dispatch(meetingFetchSuccess(data.body));
     else dispatch(meetingFetchError('NOT_STATE_UPDATE'));
 };
