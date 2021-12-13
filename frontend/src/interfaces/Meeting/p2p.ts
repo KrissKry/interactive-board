@@ -1,4 +1,4 @@
-export type p2pEvent = 'OFFER' | 'ANSWER' | 'ICE';
+export type p2pEvent = 'QUERY' | 'QUERY_ANSWER' | 'OFFER' | 'OFFER_ANSWER' | 'ICE';
 
 export interface p2pMessage {
     from: string;

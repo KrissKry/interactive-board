@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IFrame } from '@stomp/stompjs';
 import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
@@ -12,7 +12,7 @@ import {
     meetingCanvasPopChange, meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserUpdate,
 } from '../../../redux/ducks/meeting';
 
-import { MeetingService } from '../../../services';
+import { MeetingService, TalkService } from '../../../services';
 
 /* components */
 import { UserList } from '../../../components/RTC';
@@ -37,6 +37,7 @@ const OngoingMeeting = () : JSX.Element => {
     /* communication */
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(false);
+    const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
 
@@ -47,6 +48,7 @@ const OngoingMeeting = () : JSX.Element => {
     /* state */
     const dispatch = useAppDispatch();
     const meetingService = MeetingService.getInstance();
+    const talkService = TalkService.getInstance();
 
     const meetingState = useAppSelector((state) => ({
         id: state.meeting.roomId,
@@ -66,7 +68,9 @@ const OngoingMeeting = () : JSX.Element => {
         active: u.status === 'CONNECTED',
     }));
 
-    // const stream = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const stream = navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then((str) => { setOwnMediaStream(str); })
+        .catch((err) => console.error('media strim fakap', err));
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
@@ -114,16 +118,61 @@ const OngoingMeeting = () : JSX.Element => {
         meetingService.sendP2PMessage(message);
     };
 
+    // const tracks = ownMediaStream?.getTracks().forEach((track) => {
+    //     track.kind === 'audio' ? track.enabled = microphoneOn : null
+    // });
     const handleP2PCommunication = (frame: IFrame) : void => {
         const message: p2p.p2pMessage = JSON.parse(frame.body);
 
+        console.log('[P2P] Received message', message.type, 'from', message.from, 'to', message.to);
+
+        /* This app instance is the receiver end */
+        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from === meetingState.user) {
         switch (message.type) {
-            case 'OFFER':
+            /* On new user joining, respond with simple query answer */
+            case 'QUERY':
+                sendP2PCommunication({}, 'QUERY_ANSWER', message.from);
                 break;
+
+            /* initial response from another user in the meeting */
+            case 'QUERY_ANSWER':
+                // create peer in TalkService
+                // send OFFER back to the responding client
+                talkService.initConnectionWith(message.from);
+                break;
+
+            /* received offer from remote */
+            case 'OFFER':
+                talkService.handleOffer(message.from, message.data);
+                talkService.addTrack(message.from, ownMediaStream?.getAudioTracks()[0]);
+                break;
+
+            /* received answer to own offer */
+            case 'OFFER_ANSWER':
+                talkService.handleAnswer(message.from, message.data);
+                talkService.addTrack(message.from, ownMediaStream?.getAudioTracks()[0]);
+                break;
+
+            /* new ice candidate sent by one peer to the other */
+            case 'ICE':
+                talkService.handleCandidate(message.from, message.data);
+                break;
+
+            /* unknown message type */
             default:
+                console.warn('[P2P] Unknown message type', message);
                 break;
         }
+    } else {
+        console.warn('[P2P] omitting query message from self'); // , message.type, message.from, meetingState.user);
+    }
     };
+
+    const handleReceivedStream = (data: any) : void => {
+        console.log('ReceivedStream', data);
+    };
+
+    talkService.setCallbacks(sendP2PCommunication, handleReceivedStream);
 
     useEffect(() => {
         setTimeout(() => {
@@ -148,9 +197,20 @@ const OngoingMeeting = () : JSX.Element => {
                     meetingService.addSubscription(`/topic/p2p.listen.${meetingState.id}`, handleP2PCommunication);
                     setP2PSubbed(true);
                 }
+                sendP2PCommunication({}, 'QUERY');
             }
         }, 1000);
     }, [meetingService.connected]);
+
+    useEffect(() => {
+        if (typeof ownMediaStream !== 'undefined') {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const track of ownMediaStream?.getAudioTracks()) {
+                track.enabled = microphoneOn;
+                console.log(track.kind, track.id, track.enabled);
+            }
+        }
+    }, [microphoneOn]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -194,6 +254,8 @@ const OngoingMeeting = () : JSX.Element => {
             <UserList users={mappedUsers} />
 
             <ButtonsPanel buttons={controlButtons} />
+
+            <audio id="strimAudio"><track kind="captions" /></audio>
         </div>
     );
 };
