@@ -24,7 +24,7 @@ export class TalkService {
 
     sendDataCallbackRef: (data: any, type: p2pEvent, receiver?: string) => void;
 
-    handleReceivedStreamRef: (data: any) => void
+    handleReceivedStreamRef: (data: any, sender?: string) => void
 
     private constructor() {
         this.connections = [];
@@ -50,7 +50,7 @@ export class TalkService {
      */
     setCallbacks(
         sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
-        handleReceivedStreamCallback: (data: any) => void,
+        handleReceivedStreamCallback: (data: any, sender?: string) => void,
     ) {
         this.sendDataCallbackRef = sendDataCallback;
         this.handleReceivedStreamRef = handleReceivedStreamCallback;
@@ -74,9 +74,6 @@ export class TalkService {
             dataChannel = ev.channel;
         };
 
-        // eslint-disable-next-line max-len
-        peerConnection.ontrack = (ev: RTCTrackEvent) => { this.handleReceivedStreamRef(ev.streams); };
-
         return { peerConnection, dataChannel };
     }
 
@@ -87,6 +84,9 @@ export class TalkService {
      */
     initConnectionWith(remote: string) : void {
         const { peerConnection, dataChannel } = this.preparePeerConnection();
+
+        // eslint-disable-next-line max-len
+        peerConnection.ontrack = (ev: RTCTrackEvent) => { this.handleReceivedStreamRef(ev.streams, remote); };
 
         peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
             if (ev.candidate) {
@@ -176,7 +176,7 @@ export class TalkService {
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
             peerConnection.connection.addTrack(track);
         } else {
-            console.error('TalkService.handleCandidate(), peer', remote, 'not found');
+            console.error('TalkService.handleCandidate(), peer', remote, 'or track', track?.id, 'not found');
         }
     }
 
@@ -186,12 +186,5 @@ export class TalkService {
 
     hasEmpty() : boolean {
         return this.connections.findIndex((e) => e.remote === '') !== -1;
-    }
-
-    sendStream(stream: MediaStream) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const connection of this.connections) {
-            // connection.get
-        }
     }
 }

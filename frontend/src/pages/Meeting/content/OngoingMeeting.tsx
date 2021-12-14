@@ -118,16 +118,13 @@ const OngoingMeeting = () : JSX.Element => {
         meetingService.sendP2PMessage(message);
     };
 
-    // const tracks = ownMediaStream?.getTracks().forEach((track) => {
-    //     track.kind === 'audio' ? track.enabled = microphoneOn : null
-    // });
     const handleP2PCommunication = (frame: IFrame) : void => {
         const message: p2p.p2pMessage = JSON.parse(frame.body);
 
         console.log('[P2P] Received message', message.type, 'from', message.from, 'to', message.to);
 
         /* This app instance is the receiver end */
-        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from === meetingState.user) {
+        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user) {
         switch (message.type) {
             /* On new user joining, respond with simple query answer */
             case 'QUERY':
@@ -168,8 +165,8 @@ const OngoingMeeting = () : JSX.Element => {
     }
     };
 
-    const handleReceivedStream = (data: any) : void => {
-        console.log('ReceivedStream', data);
+    const handleReceivedStream = (data: MediaStream, sender?: string) : void => {
+        console.log('ReceivedStream', data, 'from', sender);
     };
 
     talkService.setCallbacks(sendP2PCommunication, handleReceivedStream);
@@ -197,6 +194,7 @@ const OngoingMeeting = () : JSX.Element => {
                     meetingService.addSubscription(`/topic/p2p.listen.${meetingState.id}`, handleP2PCommunication);
                     setP2PSubbed(true);
                 }
+                // TO-DO HANDLE DISCONNECT & RECONNECT p2p RESET
                 sendP2PCommunication({}, 'QUERY');
             }
         }, 1000);
