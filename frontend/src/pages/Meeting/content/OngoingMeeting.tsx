@@ -40,6 +40,7 @@ const OngoingMeeting = () : JSX.Element => {
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
+    const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([]);
 
     /* settings */
     const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
@@ -67,10 +68,6 @@ const OngoingMeeting = () : JSX.Element => {
         name: u.name,
         active: u.status === 'CONNECTED',
     }));
-
-    const stream = navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        .then((str) => { setOwnMediaStream(str); })
-        .catch((err) => console.error('media strim fakap', err));
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
@@ -117,6 +114,7 @@ const OngoingMeeting = () : JSX.Element => {
 
         meetingService.sendP2PMessage(message);
     };
+    const logTracks = () : void => { console.log('Current Tracks', ownMediaStream?.getTracks()); };
 
     const handleP2PCommunication = (frame: IFrame) : void => {
         const message: p2p.p2pMessage = JSON.parse(frame.body);
@@ -141,12 +139,14 @@ const OngoingMeeting = () : JSX.Element => {
             /* received offer from remote */
             case 'OFFER':
                 talkService.handleOffer(message.from, message.data);
+                logTracks();
                 talkService.addTrack(message.from, ownMediaStream?.getAudioTracks()[0]);
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
                 talkService.handleAnswer(message.from, message.data);
+                logTracks();
                 talkService.addTrack(message.from, ownMediaStream?.getAudioTracks()[0]);
                 break;
 
@@ -165,7 +165,7 @@ const OngoingMeeting = () : JSX.Element => {
     }
     };
 
-    const handleReceivedStream = (data: MediaStream, sender?: string) : void => {
+    const handleReceivedStream = (data: MediaStream[], sender?: string) : void => {
         console.log('ReceivedStream', data, 'from', sender);
     };
 
@@ -209,6 +209,22 @@ const OngoingMeeting = () : JSX.Element => {
             }
         }
     }, [microphoneOn]);
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then((str) => {
+            console.log('Beginning stream', str);
+            console.log('Got tracks', str.getTracks());
+            setOwnMediaStream(str);
+        })
+        .catch((err) => console.error('media strim fakap', err));
+    }, []);
+
+    useEffect(() => {
+        console.log('ownMediaStream changed', ownMediaStream);
+        console.log('current tracks', ownMediaStream?.getTracks());
+        console.log('current AUDIO tracks', ownMediaStream?.getAudioTracks());
+    }, [ownMediaStream]);
 
     const controlButtons : ControlButtonPanel[] = [
         {

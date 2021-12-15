@@ -97,7 +97,7 @@ export class TalkService {
         peerConnection.createOffer()
         .then((offer) => {
             peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-            this.sendDataCallbackRef(offer, 'OFFER');
+            this.sendDataCallbackRef(offer, 'OFFER', remote);
         })
         .catch((err) => console.error(err));
 
@@ -125,7 +125,7 @@ export class TalkService {
         peerConnection.createAnswer()
             .then((answer) => {
                 peerConnection.setLocalDescription(answer);
-                this.sendDataCallbackRef(answer, 'OFFER_ANSWER');
+                this.sendDataCallbackRef(answer, 'OFFER_ANSWER', remote);
             })
             .catch((err) => console.error(err));
 
