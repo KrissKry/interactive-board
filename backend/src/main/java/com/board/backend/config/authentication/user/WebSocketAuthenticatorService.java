@@ -23,20 +23,21 @@ public class WebSocketAuthenticatorService {
     private final RoomRepository repository;
 
     // This method MUST return a UsernamePasswordAuthenticationToken instance, the spring security chain is testing it with 'instanceof' later on. So don't use a subclass of it or any other class
-    public UsernamePasswordAuthenticationToken getAuthenticatedOrFail(final String username, final String roomId, final String roomPassword) throws AuthenticationException {
-        log.info(username + roomId + roomPassword);
+    public UsernamePasswordAuthenticationToken getAuthenticatedOrFail(final String username,
+                                                                      final String roomId, final String roomPassword) throws AuthenticationException {
         if (username == null || username.trim().isEmpty()) {
             throw new AuthenticationCredentialsNotFoundException("Username was null or empty.");
         }
         if (roomPassword == null || roomPassword.trim().isEmpty()) {
             throw new AuthenticationCredentialsNotFoundException("Password was null or empty.");
         }
-        // Add your own logic for retrieving user in fetchUserFromDb()
         if (!validatePassword(UUID.fromString(roomId), roomPassword)) {
             throw new BadCredentialsException("Bad credentials for user " + username);
         }
+        return createAuthenticationToken(username, roomId);
+    }
 
-        // null credentials, we do not pass the password along
+    private UsernamePasswordAuthenticationToken createAuthenticationToken(String username, String roomId) {
         return new UsernamePasswordAuthenticationToken(
                 username + "#" + roomId,
                 null,
@@ -45,6 +46,7 @@ public class WebSocketAuthenticatorService {
     }
 
     // TODO implement db fetch
+
     boolean validatePassword(UUID roomId, String password) {
         return encoder.matches(password, repository.findOne(roomId).getPassword());
     }
