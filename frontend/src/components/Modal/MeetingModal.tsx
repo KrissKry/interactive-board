@@ -38,8 +38,9 @@ const MeetingModal = ({
     return (
         <IonModal
             isOpen={isOpen}
-            backdropDismiss={false}
+            backdropDismiss
             showBackdrop
+            onDidDismiss={closeCallback}
             cssClass="ee-c-modal-meet"
         >
             <p>WPISZ DANE SPOTKANIA</p>

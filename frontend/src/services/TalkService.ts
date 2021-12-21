@@ -22,14 +22,14 @@ export class TalkService {
 
     private connections: PeerConnections[];
 
-    sendDataCallbackRef: (data: any, type: p2pEvent, receiver?: string) => void;
+    // sendDataCallbackRef: (data: any, type: p2pEvent, receiver?: string) => void;
 
-    handleReceivedStreamRef: (data: any, sender?: string) => void
+    // handleReceivedStreamRef: (data: any, sender?: string) => void
 
     private constructor() {
         this.connections = [];
-        this.sendDataCallbackRef = () => console.log('sendDataRef');
-        this.handleReceivedStreamRef = () => console.log('handleMessageRef');
+        // this.sendDataCallbackRef = () => console.log('sendDataRef');
+        // this.handleReceivedStreamRef = () => console.log('handleMessageRef');
     }
 
     /**
@@ -48,25 +48,26 @@ export class TalkService {
      * @param sendDataCallback callback function which handles connecting between peers
      * @param handleReceivedStreamCallback callback function
      */
-    setCallbacks(
-        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
-        handleReceivedStreamCallback: (data: any, sender?: string) => void,
-    ) {
-        this.sendDataCallbackRef = sendDataCallback;
-        this.handleReceivedStreamRef = handleReceivedStreamCallback;
-    }
+    // setCallbacks(
+    //     sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+    //     handleReceivedStreamCallback: (data: any, sender?: string) => void,
+    // ) {
+    //     this.sendDataCallbackRef = sendDataCallback;
+    //     this.handleReceivedStreamRef = handleReceivedStreamCallback;
+    // }
 
     /**
      * Creates new peer connection object
      * @returns created peer connection object
      */
+    // eslint-disable-next-line class-methods-use-this
     private preparePeerConnection() {
         const peerConnection = new RTCPeerConnection();
 
         let dataChannel = peerConnection.createDataChannel('dataChannel');
 
         // eslint-disable-next-line max-len
-        dataChannel.onmessage = (ev: MessageEvent<any>) => { this.handleReceivedStreamRef(ev.data); };
+        // dataChannel.onmessage = (ev: MessageEvent<any>) => { this.handleReceivedStreamRef(ev.data); };
         dataChannel.onerror = (ev: Event) => { console.error('ERROR', ev.target); };
         dataChannel.onclose = (ev: Event) => { console.warn('Data channel closed'); };
 
@@ -78,36 +79,57 @@ export class TalkService {
     }
 
     /**
+     * Adds p2p connection with remote to self connections array
+     * @param remote username of remote
+     * @param con p2pConnection obj
+     * @param dataChannel ref to that p2pConnection data channel
+     */
+    // eslint-disable-next-line max-len
+    private addPeerConnection(remote: string, con: RTCPeerConnection, dataChannel: RTCDataChannel) : void {
+        const newConnectionObj: PeerConnections = {
+            remote,
+            connection: con,
+            dataChannel,
+        };
+
+        this.connections.push(newConnectionObj);
+    }
+
+    private findPeerConnection(remote: string) : PeerConnections | undefined {
+        return this.connections.find((item) => item.remote === remote);
+    }
+
+    /**
      * Creates new P2P object, creates offer and sends it.
      * Adds created p2p object to class's connections[]
      * @param remote username of the remote peer
      */
-    initConnectionWith(remote: string) : void {
+    initConnectionWith(
+        remote: string,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+        handleReceivedStreamCallback: (data: any, sender?: string) => void,
+    ) : void {
         const { peerConnection, dataChannel } = this.preparePeerConnection();
 
+        this.addPeerConnection(remote, peerConnection, dataChannel);
+
         // eslint-disable-next-line max-len
-        peerConnection.ontrack = (ev: RTCTrackEvent) => { this.handleReceivedStreamRef(ev.streams, remote); };
+        dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedStreamCallback(ev.data); };
+        // eslint-disable-next-line max-len
+        peerConnection.ontrack = (ev: RTCTrackEvent) => { handleReceivedStreamCallback(ev.streams, remote); };
 
         peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
             if (ev.candidate) {
-                this.sendDataCallbackRef(ev.candidate, 'ICE', remote);
+                sendDataCallback(ev.candidate, 'ICE', remote);
             }
         };
 
         peerConnection.createOffer()
         .then((offer) => {
             peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-            this.sendDataCallbackRef(offer, 'OFFER', remote);
+            sendDataCallback(offer, 'OFFER', remote);
         })
         .catch((err) => console.error(err));
-
-        const newConnectionObj: PeerConnections = {
-            remote,
-            connection: peerConnection,
-            dataChannel,
-        };
-
-        this.connections.push(newConnectionObj);
     }
 
     /**
@@ -116,26 +138,28 @@ export class TalkService {
      * @param remote username of remote peer
      * @param offer SessionDescription of remote peer
      */
-    // eslint-disable-next-line no-undef
-    handleOffer(remote: string, offer: RTCSessionDescriptionInit) {
+    handleOffer(
+        remote: string,
+        // eslint-disable-next-line no-undef
+        offer: RTCSessionDescriptionInit,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+        handleReceivedStreamCallback: (data: any, sender?: string) => void,
+    ) {
         const { peerConnection, dataChannel } = this.preparePeerConnection();
+
+        // eslint-disable-next-line max-len
+        dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedStreamCallback(ev.data); };
+
+        this.addPeerConnection(remote, peerConnection, dataChannel);
 
         peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
         peerConnection.createAnswer()
             .then((answer) => {
                 peerConnection.setLocalDescription(answer);
-                this.sendDataCallbackRef(answer, 'OFFER_ANSWER', remote);
+                sendDataCallback(answer, 'OFFER_ANSWER', remote);
             })
             .catch((err) => console.error(err));
-
-        const newConnectionObj: PeerConnections = {
-            remote,
-            connection: peerConnection,
-            dataChannel,
-        };
-
-        this.connections.push(newConnectionObj);
     }
 
     /**
@@ -145,7 +169,7 @@ export class TalkService {
      */
     // eslint-disable-next-line no-undef
     handleAnswer(remote: string, answer: RTCSessionDescriptionInit) {
-        const peerConnection = this.connections.find((item) => item.remote === remote);
+        const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined') {
             peerConnection.connection.setRemoteDescription(new RTCSessionDescription(answer));
@@ -161,7 +185,7 @@ export class TalkService {
      */
     // eslint-disable-next-line no-undef
     handleCandidate(remote: string, candidate: RTCIceCandidateInit) {
-        const peerConnection = this.connections.find((item) => item.remote === remote);
+        const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined') {
             peerConnection.connection.addIceCandidate(new RTCIceCandidate(candidate));
@@ -170,13 +194,13 @@ export class TalkService {
         }
     }
 
-    addTrack(remote: string, track?: MediaStreamTrack) {
-        const peerConnection = this.connections.find((item) => item.remote === remote);
+    addTrack(remote: string, track: MediaStreamTrack) {
+        const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
             peerConnection.connection.addTrack(track);
         } else {
-            console.error('TalkService.handleCandidate(), peer', remote, 'or track', track?.id, 'not found');
+            console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
         }
     }
 

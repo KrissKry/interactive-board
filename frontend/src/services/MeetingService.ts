@@ -18,9 +18,10 @@ export class MeetingService {
     }
 
     // eslint-disable-next-line max-len
-    createClient(successCallback:() => void, login: string, roomId: string, password?: string) : void {
+    createClient(successCallback: (id: string) => void, login: string, roomId: string, password?: string) : Promise<void> {
+        console.log(login, roomId, password);
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/room',
+            brokerURL: 'ws://192.168.0.10:8080/room',
             connectHeaders: {
                 login,
                 roomId,
@@ -30,7 +31,7 @@ export class MeetingService {
                 console.log('Client connected to ws://');
                 this.connected = true;
                 this.id = roomId;
-                successCallback();
+                successCallback(roomId);
             },
             onStompError: (frame: IFrame) => {
                 console.log('Broker reported error: ', frame.headers.message);
@@ -39,9 +40,24 @@ export class MeetingService {
             onDisconnect: () => {
                 this.connected = false;
             },
+            onWebSocketClose: (evt) => { console.log('ay', evt); },
+            onWebSocketError: (evt) => { console.log('aaa', evt); },
         });
 
-        this.client.activate();
+        // this.client.activate();
+        // return Promise.resolve();
+        // return new Promise.resolve();
+        console.log(this.client, this.connected);
+        if (this.client === null) throw new TypeError('Client is null');
+        return Promise.resolve();
+    }
+
+    activateClient() : void {
+        this.client?.activate();
+    }
+
+    deactivateClient() : void {
+        this.client?.deactivate();
     }
 
     static getInstance(): MeetingService {
@@ -80,16 +96,24 @@ export class MeetingService {
         }
     }
 
-    addSubscription(destination: string, callback: (message: IMessage) => void) : void {
-        console.log('Subscribe to', destination);
+    addSubscription(destination: string, callback: (message: IMessage) => void) : Promise<string> {
         if (this.connected && this.client !== null) {
-            this.client.subscribe(destination, (message: IMessage) => callback(message));
+            // eslint-disable-next-line max-len
+            const sub = this.client.subscribe(destination, (message: IMessage) => callback(message));
+            console.log('Subscribe to', destination, 'with id', sub.id);
+            return Promise.resolve(sub.id);
         }
+
+        throw new TypeError('Client not connected or client is null');
     }
+
+    // removeSubscription(destination: string) : Promise<void> {
+    //     this.client.un
+    // }
 
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
-        const url = 'http://localhost:8080/api/room/create';
+        const url = 'http://192.168.0.10:8080/api/room/create';
 
         const data = {
             // name,

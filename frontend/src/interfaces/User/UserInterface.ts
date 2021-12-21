@@ -1,12 +1,11 @@
+type UserStatus = 'CONNECTED' | 'DISCONNECTED';
+
 /**
- * @property avatar
  * @property name
- * @property active
+ * @property status
  */
 export interface UserInterface {
-    avatar: string;
-
     name: string;
 
-    active: boolean;
+    status: UserStatus;
 }

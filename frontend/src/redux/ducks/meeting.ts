@@ -175,11 +175,10 @@ const meetingSlice = createSlice({
             const users: meetingUser[] = JSON.parse(JSON.stringify(state.currentUsers));
             const userIndex = users.findIndex((u) => u.name === action.payload.name);
 
-            if (userIndex !== -1) {
-                users[userIndex].status = action.payload.status;
+            if (action.payload.status === 'DISCONNECTED') {
                 return {
                     ...state,
-                    currentUsers: users,
+                    currentUsers: users.filter((u) => u.name !== action.payload.name),
                 };
             }
 
@@ -188,6 +187,14 @@ const meetingSlice = createSlice({
                 currentUsers: [...users, action.payload],
             };
         },
+        meetingUserAdd: (state, action: PayloadAction<meetingUser>) => ({
+            ...state,
+            currentUsers: [...state.currentUsers, action.payload],
+        }),
+        meetingUserRemove: (state, action: PayloadAction<meetingUser>) => ({
+            ...state,
+            currentUsers: state.currentUsers.filter((u) => u.status === action.payload.name),
+        }),
         meetingCanvasCleanupInitial: (state) => ({
             ...state,
             pixels: [],
@@ -203,13 +210,12 @@ const {
     meetingFetchSuccess,
     meetingFetchError,
     meetingChatAddMessage,
-    // meetingCanvasAddChanges,
-    // meetingCanvasActivateChanges,
-    // meetingCanvasFinishChanges,
     meetingCanvasPushChange,
     meetingCanvasPopChange,
     meetingCanvasCleanupInitial,
     meetingUserUpdate,
+    meetingUserAdd,
+    meetingUserRemove,
 } = meetingSlice.actions;
 
 export {
@@ -218,13 +224,12 @@ export {
     meetingFetchSuccess,
     meetingFetchError,
     meetingChatAddMessage,
-    // meetingCanvasAddChanges,
-    // meetingCanvasActivateChanges,
-    // meetingCanvasFinishChanges,
     meetingCanvasPushChange,
     meetingCanvasPopChange,
     meetingCanvasCleanupInitial,
     meetingUserUpdate,
+    meetingUserAdd,
+    meetingUserRemove,
 };
 
 /**

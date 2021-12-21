@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable max-len */
+import React, { useState } from 'react';
+import { IonSpinner } from '@ionic/react';
+import { IFrame } from '@stomp/stompjs';
 
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { meetingSetID } from '../../redux/ducks/meeting';
+import {
+    // eslint-disable-next-line max-len
+    meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove, meetingUserUpdate,
+} from '../../redux/ducks/meeting';
+
 import { MeetingService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
@@ -11,12 +18,27 @@ import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
 import { SimpleIonicInput } from '../../components/Input';
 import { setUsername } from '../../redux/ducks/user';
+import type { PixelChanges } from '../../interfaces/Canvas';
+import type { ChatMessageInterface } from '../../interfaces/Chat';
+import { p2p } from '../../interfaces/Meeting';
+import { UserInterface } from '../../interfaces/User/UserInterface';
+
+type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P';
+type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
+
+interface MeetingSubObject {
+    id: string;
+
+    type: MeetingEndpointSub;
+}
 
 const MeetingTab = () => {
     const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
     const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
-    // const [user, setUser] = useState<string>('');
-    const [potentialId, setPotentialId] = useState<string>('');
+    const [meetingSubs, setMeetingSubs] = useState<MeetingSubObject[]>([]);
+    const [connectionStatus, setConnectionStatus] = useState<MeetingConnectionStatus>('INIT');
+    const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
+    const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
@@ -27,7 +49,6 @@ const MeetingTab = () => {
         user: state.user.username,
     }));
 
-    const [noMeetingState, setNoMeetingState] = useState<boolean>(parseInt(meetingState.id, 10) === -1 || meetingState.id === '');
     const meetingService = MeetingService.getInstance();
 
     const showModalCallback = (mode: meetingModalModes) : void => {
@@ -39,6 +60,8 @@ const MeetingTab = () => {
         setShowMeetingModal(false);
         setMeetingModalMode('JOIN');
     };
+
+    const updateMediaStream = (newMediaStream: MediaStream) : void => { setOwnMediaStream(newMediaStream); };
 
     const buttons: ButtonProps[] = [
         {
@@ -57,82 +80,129 @@ const MeetingTab = () => {
         },
     ];
 
-    const getMeetingContent = () : JSX.Element => {
-        if (noMeetingState) {
-            return (
-                <NoMeeting buttons={buttons} />
-            );
-        }
-
-        /* if meeting is active */
-        return (
-            <OngoingMeeting />
-        );
+    const boardUpdateCallback = (message: IFrame) : void => {
+        const resp: PixelChanges = JSON.parse(message.body);
+        dispatch(meetingCanvasPushChange(resp));
     };
 
-    const dispatchMeetingUpdate = () : void => { dispatch(meetingSetID(potentialId)); };
-    const updateid = (id: string) : void => { setPotentialId(id); };
+    const meetingUpdateCallback = (message: IFrame) : void => {
+        const resp = JSON.parse(message.body);
+        dispatch(meetingUpdateMiddleware(resp));
+    };
 
-    const createMeetingCallback = (name: string, pass?: string) : void => {
-        // promise for new meeting endpoint
-        MeetingService.requestNewMeeting(name, pass)
-        .then((response) => {
-            console.log('createMeetingCallback', response);
-            const { data } = response;
+    const newUserUpdateCallback = (message: IFrame) : void => {
+        const payload: UserInterface = JSON.parse(message.body);
+        if (payload.name === meetingState.user) return;
+        if (payload.status === 'CONNECTED') dispatch(meetingUserAdd(payload));
+        else dispatch(meetingUserRemove(payload));
+    };
 
-            // eslint-disable-next-line max-len
-            meetingService.createClient(() => updateid(data as string), meetingState.user, data as string, pass);
+    const chatUpdateCallback = (message: IFrame) => {
+        const recvMessage: ChatMessageInterface = JSON.parse(message.body);
+        dispatch(meetingChatAddMessage(recvMessage));
+    };
+
+    const p2pUpdateCallback = (message: IFrame) => {
+        const msg: p2p.p2pMessage = JSON.parse(message.body);
+        setP2PMessageQ([...p2pMessagesQ, msg]);
+    };
+
+    const popP2PMessageQ = () => {
+        if (p2pMessagesQ.length > 1) setP2PMessageQ(p2pMessagesQ.slice(1));
+        else setP2PMessageQ([]);
+    };
+    // eslint-disable-next-line max-len
+    const newMeetingSub = (id: string, type: MeetingEndpointSub) : MeetingSubObject => ({ id, type });
+
+    const subscribeToEndpoints = (id: string) : void => {
+        meetingService.addSubscription(`/api/room/connect/${id}`, meetingUpdateCallback)
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'INIT')]);
+            return meetingService.addSubscription(`/topic/room.connected.${id}`, newUserUpdateCallback);
+        })
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'USER')]);
+            return meetingService.addSubscription(`/topic/board.listen.${id}`, boardUpdateCallback);
+        })
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'BOARD')]);
+            return meetingService.addSubscription(`/topic/chat.listen.${id}`, chatUpdateCallback);
+        })
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'CHAT')]);
+            return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
+        })
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'P2P')]);
+
+            // smieszny timeout aka optymalizacyjny punkt XD
+            setTimeout(() => {
+                setConnectionStatus('CONNECTED');
+            }, 2000);
         })
         .catch((err) => {
-            console.warn('FAKAP Żądania');
             console.error(err);
+            setConnectionStatus('ERROR');
         });
     };
 
-    useEffect(() => {
-        dispatchMeetingUpdate();
-    }, [potentialId]);
+    const joinMeetingCallback = (id: string, pass?: string) : Promise<void> => {
+        setConnectionStatus('CONNECTING');
 
-    const joinMeetingCallback = (id: string, pass?: string) : void => {
-        // promise for meeting already in progress endpoint
-        // const promise = MeetingService.fetchMeetingDataByID(id, pass);
-        // dispatch(meetingRequestValidation(promise));
-        meetingService.createClient(() => updateid(id), meetingState.user, id, pass);
+        return meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
+        .then(() => meetingService.activateClient())
+        .catch((err) => {
+            meetingService.deactivateClient();
+            console.error(err);
+            setConnectionStatus('ERROR');
+        });
+    };
+
+    const createMeetingCallback = (name: string, pass?: string) : void => {
+        MeetingService.requestNewMeeting(name, pass)
+        .then((response) => {
+            const { data } = response;
+            joinMeetingCallback(data as string, pass);
+        })
+        .catch((err) => {
+            console.error(err);
+            setConnectionStatus('ERROR');
+        });
     };
 
     const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
 
-    useEffect(() => {
-        setNoMeetingState(parseInt(meetingState.id, 10) === -1 || meetingState.id === '');
-    }, [meetingState.id]);
+    const defaultReturn = () : JSX.Element => (
+        <>
+            <NoMeeting buttons={buttons} />
+            <div className="ee-flex--column ee-align-cross--center">
 
-    useEffect(() => {
-        console.log('STAN', meetingState);
-    }, [meetingState]);
+                <div className="ee-width--50p">
+                    <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
+                    <p>{meetingState.user}</p>
+                </div>
+
+                <MeetingModal
+                    isOpen={showMeetingModal}
+                    closeCallback={hideModalCallback}
+                    // eslint-disable-next-line no-nested-ternary
+                    callback={meetingModalMode === 'JOIN' ? joinMeetingCallback : createMeetingCallback}
+                    mode={meetingModalMode}
+                />
+            </div>
+        </>
+    );
+
+    const getMeetingContent = () : JSX.Element => {
+        if (connectionStatus === 'CONNECTED') return (<OngoingMeeting ownMediaStream={ownMediaStream} setOwnMediaStreamCallback={updateMediaStream} p2pMessages={p2pMessagesQ} popP2PMessageQ={popP2PMessageQ} />);
+        // eslint-disable-next-line no-else-return
+        else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
+        else return defaultReturn();
+    };
 
     return (
         <GenericTab title={meetingState.id}>
             {getMeetingContent()}
-
-            {noMeetingState && (
-                <div className="ee-flex--column ee-align-cross--center">
-
-                    <div className="ee-width--50p">
-                        <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
-                        <p>{meetingState.user}</p>
-                    </div>
-
-                    <MeetingModal
-                        isOpen={showMeetingModal}
-                        closeCallback={hideModalCallback}
-                        // eslint-disable-next-line no-nested-ternary
-                        callback={meetingModalMode === 'JOIN'
-                            ? joinMeetingCallback : meetingModalMode === 'CREATE'
-                                ? createMeetingCallback : () => console.warn('[EE] Incorrect meeting modal mode')}
-                        mode={meetingModalMode}
-                    />
-                </div>
-            )}
         </GenericTab>
     );
 };
