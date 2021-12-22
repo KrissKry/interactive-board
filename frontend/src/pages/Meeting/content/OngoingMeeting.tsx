@@ -106,24 +106,28 @@ const OngoingMeeting = ({
         meetingService.sendP2PMessage(message);
     };
 
-    const handleReceivedStream = (data: MediaStream[], sender?: string) : void => {
+    const handleReceivedStream = (data: any, sender?: string) : void => {
         console.log('ReceivedStream', data, 'from', sender);
     };
 
     const handleNewOffer = (from: string, data: any) : void => {
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
+            console.log('handling new Offer');
             talkService.handleOffer(from, data, sendP2PCommunication, handleReceivedStream);
             talkService.addTrack(from, ownMediaStream.getAudioTracks()[0]);
         } else {
+            console.log('timeout for offer');
             setTimeout(() => handleNewOffer(from, data), 1000);
         }
     };
 
     const handleNewAnswer = (from: string, data: any) : void => {
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
+            console.log('handling new answer');
             talkService.handleAnswer(from, data);
             talkService.addTrack(from, ownMediaStream.getAudioTracks()[0]);
         } else {
+            console.log('timeout new answer');
             setTimeout(() => handleNewAnswer(from, data), 1000);
         }
     };

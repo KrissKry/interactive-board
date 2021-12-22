@@ -149,9 +149,16 @@ export class TalkService {
 
         // eslint-disable-next-line max-len
         dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedStreamCallback(ev.data); };
+        // eslint-disable-next-line max-len
+        peerConnection.ontrack = (ev: RTCTrackEvent) => { handleReceivedStreamCallback(ev.streams, remote); };
 
         this.addPeerConnection(remote, peerConnection, dataChannel);
 
+        peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
+            if (ev.candidate) {
+                sendDataCallback(ev.candidate, 'ICE', remote);
+            }
+        };
         peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
         peerConnection.createAnswer()
@@ -186,7 +193,7 @@ export class TalkService {
     // eslint-disable-next-line no-undef
     handleCandidate(remote: string, candidate: RTCIceCandidateInit) {
         const peerConnection = this.findPeerConnection(remote);
-
+        console.log('new ICE Candidate from remote', remote, 'data', candidate);
         if (typeof peerConnection !== 'undefined') {
             peerConnection.connection.addIceCandidate(new RTCIceCandidate(candidate));
         } else {
@@ -199,6 +206,7 @@ export class TalkService {
         const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
+            console.log('adding track', track, 'to remote', remote, peerConnection);
             peerConnection.connection.addTrack(track);
         } else {
             console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
