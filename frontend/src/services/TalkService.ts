@@ -125,6 +125,9 @@ export class TalkService {
                 handleReceivedStreamCallback(ev.streams, remote);
             });
 
+            // eslint-disable-next-line no-param-reassign
+            peerConnection.ontrack = (ev: RTCTrackEvent) => { console.log('CHUJ KURWA I CHUJ'); };
+
             peerConnection.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => {
                 if (ev.candidate === null) console.log('[P2P] All ICECandidates Sent (got null)');
                 if (ev.candidate) {
@@ -226,17 +229,23 @@ export class TalkService {
         }
     }
 
-    addTrack(remote: string, track: MediaStreamTrack) {
+    addTransceiver(remote: string, track: MediaStreamTrack, stream: MediaStream) {
         const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
-            console.log('adding track', track, 'to remote', remote, peerConnection);
-            // peerConnection.connection.addTrack(track);
-            // const transceivers = peerConnection.connection.getTransceivers();
-            // if (transceivers.length) transceivers[0]
             peerConnection.connection.addTransceiver(track, {
-                direction: 'sendonly',
+                streams: [stream],
             });
+        } else {
+            console.error('TalkService.addTransceiver(), peer', remote, 'or track', track?.id, 'not found');
+        }
+    }
+
+    addTrack(remote: string, track: MediaStreamTrack, stream: MediaStream) {
+        const peerConnection = this.findPeerConnection(remote);
+
+        if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
+            peerConnection.connection.addTrack(track, stream);
         } else {
             console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
         }

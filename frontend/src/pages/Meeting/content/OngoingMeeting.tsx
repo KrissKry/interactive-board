@@ -113,7 +113,7 @@ const OngoingMeeting = ({
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
             console.log('handling new Offer');
             talkService.handleOffer(from, data, sendP2PCommunication, handleReceivedStream);
-            talkService.addTrack(from, ownMediaStream.getAudioTracks()[0]);
+            talkService.addTransceiver(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
         } else {
             console.log('timeout for offer');
             setTimeout(() => handleNewOffer(from, data), 1000);
@@ -124,7 +124,7 @@ const OngoingMeeting = ({
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
             console.log('handling new answer');
             talkService.handleAnswer(from, data);
-            talkService.addTrack(from, ownMediaStream.getAudioTracks()[0]);
+            talkService.addTrack(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
         } else {
             console.log('timeout new answer');
             setTimeout(() => handleNewAnswer(from, data), 1000);
