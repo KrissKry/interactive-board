@@ -21,7 +21,7 @@ export class MeetingService {
     createClient(successCallback: (id: string) => void, login: string, roomId: string, password?: string) : Promise<void> {
         console.log(login, roomId, password);
         this.client = new Client({
-            brokerURL: 'ws://192.168.0.10:8080/room',
+            brokerURL: `${process.env.REACT_APP_API_WEBSOCKET}/room`,
             connectHeaders: {
                 login,
                 roomId,
@@ -113,7 +113,7 @@ export class MeetingService {
 
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
-        const url = 'http://192.168.0.10:8080/api/room/create';
+        const url = `${process.env.REACT_APP_API_HTTP}/api/room/create`;
 
         const data = {
             // name,

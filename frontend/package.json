@@ -27,6 +27,7 @@
     "@types/react-router-dom": "^5.1.7",
     "axios": "^0.23.0",
     "classnames": "^2.3.1",
+    "env-cmd": "^10.1.0",
     "ionicons": "^5.4.0",
     "p5": "^1.4.0",
     "react": "^17.0.1",
@@ -55,8 +56,8 @@
     "workbox-streams": "^5.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build && npx cap sync",
+    "start": "env-cmd -f .env.webapp react-scripts start",
+    "build": "env-cmd -f .env.webapp react-scripts build && npx cap sync",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

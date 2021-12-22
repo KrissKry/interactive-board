@@ -111,6 +111,21 @@ const MeetingTab = () => {
         if (p2pMessagesQ.length > 1) setP2PMessageQ(p2pMessagesQ.slice(1));
         else setP2PMessageQ([]);
     };
+
+    /**
+     *     on rare occurence ICE Candidate is received before remote description
+     *     that message must be moved to the end of the Q as ICE can't be set without remote description
+     *     as per WebRTC standard
+     */
+    const moveToEndP2PMessageQ = () => {
+        const msg = p2pMessagesQ[0];
+        if (p2pMessagesQ.length > 1) setP2PMessageQ([...p2pMessagesQ.slice(1), msg]);
+        else {
+            setP2PMessageQ([]);
+            setP2PMessageQ([msg]);
+        }
+    };
+
     // eslint-disable-next-line max-len
     const newMeetingSub = (id: string, type: MeetingEndpointSub) : MeetingSubObject => ({ id, type });
 
@@ -146,10 +161,10 @@ const MeetingTab = () => {
         });
     };
 
-    const joinMeetingCallback = (id: string, pass?: string) : Promise<void> => {
+    const joinMeetingCallback = (id: string, pass?: string) : void => {
         setConnectionStatus('CONNECTING');
 
-        return meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
+        meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
         .then(() => meetingService.activateClient())
         .catch((err) => {
             meetingService.deactivateClient();
@@ -165,6 +180,7 @@ const MeetingTab = () => {
             joinMeetingCallback(data as string, pass);
         })
         .catch((err) => {
+            meetingService.deactivateClient();
             console.error(err);
             setConnectionStatus('ERROR');
         });
@@ -194,9 +210,18 @@ const MeetingTab = () => {
     );
 
     const getMeetingContent = () : JSX.Element => {
-        if (connectionStatus === 'CONNECTED') return (<OngoingMeeting ownMediaStream={ownMediaStream} setOwnMediaStreamCallback={updateMediaStream} p2pMessages={p2pMessagesQ} popP2PMessageQ={popP2PMessageQ} />);
+        if (connectionStatus === 'CONNECTED') {
+            return (
+            <OngoingMeeting
+                ownMediaStream={ownMediaStream}
+                setOwnMediaStreamCallback={updateMediaStream}
+                p2pMessages={p2pMessagesQ}
+                popP2PMessageQ={popP2PMessageQ}
+                moveToEndP2PMessageQ={moveToEndP2PMessageQ}
+            />
+            );
         // eslint-disable-next-line no-else-return
-        else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
+        } else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
         else return defaultReturn();
     };
 

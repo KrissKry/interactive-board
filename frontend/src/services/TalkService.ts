@@ -190,7 +190,8 @@ export class TalkService {
         if (typeof peerConnection !== 'undefined') {
             peerConnection.connection.addIceCandidate(new RTCIceCandidate(candidate));
         } else {
-            console.error('TalkService.handleCandidate(), peer', remote, 'not found');
+            console.log('TalkService.handleCandidate(), peer', remote, 'not found in', this.connections);
+            throw new ReferenceError('ICE Received before session description');
         }
     }
 

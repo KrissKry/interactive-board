@@ -35,6 +35,8 @@ interface MeetingProps {
     p2pMessages: p2p.p2pMessage[];
 
     popP2PMessageQ: () => void;
+
+    moveToEndP2PMessageQ: () => void;
 }
 
 const OngoingMeeting = ({
@@ -42,6 +44,7 @@ const OngoingMeeting = ({
     setOwnMediaStreamCallback,
     p2pMessages,
     popP2PMessageQ,
+    moveToEndP2PMessageQ,
 } : MeetingProps) : JSX.Element => {
     /* communication */
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
@@ -163,7 +166,11 @@ const OngoingMeeting = ({
 
             /* new ice candidate sent by one peer to the other */
             case 'ICE':
-                talkService.handleCandidate(message.from, message.data);
+                try {
+                    talkService.handleCandidate(message.from, message.data);
+                } catch (error) {
+                    if (error instanceof ReferenceError) moveToEndP2PMessageQ();
+                }
                 break;
 
             /* unknown message type */
