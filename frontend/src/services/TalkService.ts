@@ -100,6 +100,40 @@ export class TalkService {
     }
 
     /**
+     * Adds event listeners to datachannel and peerconnection
+     * @param remote remote username
+     * @param peerConnection remote peer connection
+     * @param dataChannel remote peer datachannel
+     * @param sendDataCallback
+     * @param handleReceivedStreamCallback
+     */
+    // eslint-disable-next-line class-methods-use-this
+    private setupP2P(
+        remote: string,
+        peerConnection: RTCPeerConnection,
+        dataChannel: RTCDataChannel,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+        handleReceivedStreamCallback: (data: any, sender?: string) => void,
+        ) {
+            dataChannel.addEventListener('message', (ev: MessageEvent<any>) => {
+                console.log('[P2P] New message event', ev);
+                handleReceivedStreamCallback(ev.data);
+            });
+
+            peerConnection.addEventListener('track', (ev: RTCTrackEvent) => {
+                console.log('[P2P] New track event', ev);
+                handleReceivedStreamCallback(ev.streams, remote);
+            });
+
+            peerConnection.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => {
+                console.log('[P2P] New icecandidate event', ev);
+                if (ev.candidate) {
+                    sendDataCallback(ev.candidate, 'ICE', remote);
+                }
+            });
+    }
+
+    /**
      * Creates new P2P object, creates offer and sends it.
      * Adds created p2p object to class's connections[]
      * @param remote username of the remote peer
@@ -114,15 +148,7 @@ export class TalkService {
         this.addPeerConnection(remote, peerConnection, dataChannel);
 
         // eslint-disable-next-line max-len
-        dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedStreamCallback(ev.data); };
-        // eslint-disable-next-line max-len
-        peerConnection.ontrack = (ev: RTCTrackEvent) => { handleReceivedStreamCallback(ev.streams, remote); };
-
-        peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
-            if (ev.candidate) {
-                sendDataCallback(ev.candidate, 'ICE', remote);
-            }
-        };
+        this.setupP2P(remote, peerConnection, dataChannel, sendDataCallback, handleReceivedStreamCallback);
 
         peerConnection.createOffer()
         .then((offer) => {
@@ -147,18 +173,11 @@ export class TalkService {
     ) {
         const { peerConnection, dataChannel } = this.preparePeerConnection();
 
-        // eslint-disable-next-line max-len
-        dataChannel.onmessage = (ev: MessageEvent<any>) => { handleReceivedStreamCallback(ev.data); };
-        // eslint-disable-next-line max-len
-        peerConnection.ontrack = (ev: RTCTrackEvent) => { handleReceivedStreamCallback(ev.streams, remote); };
-
         this.addPeerConnection(remote, peerConnection, dataChannel);
 
-        peerConnection.onicecandidate = (ev: RTCPeerConnectionIceEvent) => {
-            if (ev.candidate) {
-                sendDataCallback(ev.candidate, 'ICE', remote);
-            }
-        };
+        // eslint-disable-next-line max-len
+        this.setupP2P(remote, peerConnection, dataChannel, sendDataCallback, handleReceivedStreamCallback);
+
         peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
         peerConnection.createAnswer()
@@ -193,7 +212,7 @@ export class TalkService {
     // eslint-disable-next-line no-undef
     handleCandidate(remote: string, candidate: RTCIceCandidateInit) {
         const peerConnection = this.findPeerConnection(remote);
-        console.log('new ICE Candidate from remote', remote, 'data', candidate);
+
         if (typeof peerConnection !== 'undefined') {
             peerConnection.connection.addIceCandidate(new RTCIceCandidate(candidate));
         } else {

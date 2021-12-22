@@ -132,13 +132,9 @@ const OngoingMeeting = ({
         }
     };
 
-    const testDataLog = () : void => {
-        // eslint-disable-next-line no-console
-        console.log(p2pMessages, ownMediaStream, ownMediaStream?.getAudioTracks());
-    };
-
     const handleP2PCommunication = () : void => {
         const message = p2pMessages[0];
+
         /* This app instance is the receiver end */
         if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user) {
         switch (message.type) {
@@ -154,17 +150,11 @@ const OngoingMeeting = ({
 
             /* received offer from remote */
             case 'OFFER':
-                // talkService.handleOffer(message.from, message.data);
-                // if (typeof ownMediaStream !== 'undefined') talkService.addTrack(message.from, ownMediaStream?.getAudioTracks()[0]);
-                // testDataLog();
                 handleNewOffer(message.from, message.data);
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
-                // talkService.handleAnswer(message.from, message.data);
-                // if (typeof ownMediaStream !== 'undefined') talkService.addTrack(message.from, ownMediaStream.getAudioTracks()[0]);
-                // testDataLog();
                 handleNewAnswer(message.from, message.data);
                 break;
 
@@ -183,7 +173,9 @@ const OngoingMeeting = ({
                 break;
         }
     } else {
-        console.log('[P2P] omitting', message.type, 'message from', message.from, 'to', message.to);
+        const isSender = message.from === meetingState.user;
+        const isReceiver = message.to === 'ANY' || message.to === meetingState.user;
+        console.log('[P2P] omitting', message.type, 'IS_SENDER', isSender, 'IS_RECV', isReceiver);
     }
         popP2PMessageQ();
     };
