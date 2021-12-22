@@ -173,7 +173,6 @@ const meetingSlice = createSlice({
         // }),
         meetingUserUpdate: (state, action: PayloadAction<meetingUser>) => {
             const users: meetingUser[] = JSON.parse(JSON.stringify(state.currentUsers));
-            const userIndex = users.findIndex((u) => u.name === action.payload.name);
 
             if (action.payload.status === 'DISCONNECTED') {
                 return {
@@ -193,7 +192,7 @@ const meetingSlice = createSlice({
         }),
         meetingUserRemove: (state, action: PayloadAction<meetingUser>) => ({
             ...state,
-            currentUsers: state.currentUsers.filter((u) => u.status === action.payload.name),
+            currentUsers: state.currentUsers.filter((u) => u.name !== action.payload.name),
         }),
         meetingCanvasCleanupInitial: (state) => ({
             ...state,

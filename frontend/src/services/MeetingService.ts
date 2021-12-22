@@ -44,10 +44,6 @@ export class MeetingService {
             onWebSocketError: (evt) => { console.log('aaa', evt); },
         });
 
-        // this.client.activate();
-        // return Promise.resolve();
-        // return new Promise.resolve();
-        console.log(this.client, this.connected);
         if (this.client === null) throw new TypeError('Client is null');
         return Promise.resolve();
     }

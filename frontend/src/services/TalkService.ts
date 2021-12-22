@@ -20,7 +20,7 @@ interface PeerConnections {
 export class TalkService {
     private static instance: TalkService;
 
-    private connections: PeerConnections[];
+    connections: PeerConnections[];
 
     // sendDataCallbackRef: (data: any, type: p2pEvent, receiver?: string) => void;
 
@@ -232,10 +232,38 @@ export class TalkService {
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
             console.log('adding track', track, 'to remote', remote, peerConnection);
             // peerConnection.connection.addTrack(track);
-            peerConnection.connection.addTransceiver(track);
+            // const transceivers = peerConnection.connection.getTransceivers();
+            // if (transceivers.length) transceivers[0]
+            peerConnection.connection.addTransceiver(track, {
+                direction: 'sendonly',
+            });
         } else {
             console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
         }
+    }
+
+    cleanupPrevious() {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const p2p of this.connections) {
+            p2p.dataChannel.close();
+            p2p.connection.close();
+            p2p.remote = '';
+        }
+        this.connections = [];
+    }
+
+    getTranceivers() {
+        const tranceivers = [];
+        // eslint-disable-next-line no-restricted-syntax
+        for (const p2p of this.connections) {
+            const obj = {
+                remote: p2p.remote,
+                ttt: p2p.connection.getTransceivers(),
+            };
+            tranceivers.push({ ...obj });
+        }
+
+        return tranceivers;
     }
 
     hasRemote(remote: string) : boolean {

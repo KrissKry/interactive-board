@@ -24,7 +24,6 @@ import { ControlButtonPanel } from '../../../interfaces/Buttons';
 import type { PixelChanges } from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
-import { UserInterface } from '../../../interfaces/User/UserInterface';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -195,7 +194,10 @@ const OngoingMeeting = ({
         sendP2PCommunication({}, 'QUERY');
 
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        .then((str) => setOwnMediaStreamCallback(str))
+        .then((str) => {
+            console.log('NOWY STRUMIEŃ', str);
+            setOwnMediaStreamCallback(str);
+        })
         .catch((err) => console.error('media strim fakap', err));
 
         // cleanup all tracks
@@ -205,6 +207,10 @@ const OngoingMeeting = ({
     useEffect(() => {
         if (p2pMessages.length) handleP2PCommunication();
     }, [p2pMessages]);
+
+    useEffect(() => {
+        console.log(talkService.getTranceivers());
+    }, [talkService.connections]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
