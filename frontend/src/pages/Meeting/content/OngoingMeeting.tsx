@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
+import { IonButton } from '@ionic/react';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -234,6 +235,11 @@ const OngoingMeeting = ({
         },
     ];
 
+    const printTransceivers = () : void => {
+        const tt = talkService.getTranceivers();
+        console.log(tt);
+    };
+
     return (
         <div className="ee-flex--row">
             <Canvas
@@ -255,6 +261,7 @@ const OngoingMeeting = ({
 
             <ButtonsPanel buttons={controlButtons} />
 
+            <IonButton onClick={() => printTransceivers()}>pika</IonButton>
             <audio id="strimAudio"><track kind="captions" /></audio>
         </div>
     );
