@@ -131,6 +131,10 @@ export class TalkService {
                     sendDataCallback(ev.candidate, 'ICE', remote);
                 }
             });
+
+            peerConnection.addEventListener('connectionstatechange', (ev: Event) => {
+                console.log('CONNECTION_STATE CHANGE', ev);
+            });
     }
 
     /**
