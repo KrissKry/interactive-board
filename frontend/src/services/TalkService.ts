@@ -126,14 +126,15 @@ export class TalkService {
             });
 
             peerConnection.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => {
-                console.log('[P2P] New icecandidate event', ev);
+                if (ev.candidate === null) console.log('[P2P] All ICECandidates Sent (got null)');
                 if (ev.candidate) {
                     sendDataCallback(ev.candidate, 'ICE', remote);
                 }
             });
 
             peerConnection.addEventListener('connectionstatechange', (ev: Event) => {
-                console.log('CONNECTION_STATE CHANGE', ev);
+                // @ts-ignore
+                console.log('[P2P]', remote, 'CONNECTION_STATE CHANGE TO', ev.target?.connectionState);
             });
     }
 
@@ -230,7 +231,8 @@ export class TalkService {
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
             console.log('adding track', track, 'to remote', remote, peerConnection);
-            peerConnection.connection.addTrack(track);
+            // peerConnection.connection.addTrack(track);
+            peerConnection.connection.addTransceiver(track);
         } else {
             console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
         }

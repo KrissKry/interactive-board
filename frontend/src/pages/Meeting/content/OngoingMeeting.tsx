@@ -175,7 +175,7 @@ const OngoingMeeting = ({
     } else {
         const isSender = message.from === meetingState.user;
         const isReceiver = message.to === 'ANY' || message.to === meetingState.user;
-        console.log('[P2P] omitting', message.type, 'IS_SENDER', isSender, 'IS_RECV', isReceiver);
+        // console.log('[P2P] omitting', message.type, 'IS_SENDER', isSender, 'IS_RECV', isReceiver);
     }
         popP2PMessageQ();
     };
