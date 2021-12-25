@@ -114,7 +114,10 @@ const OngoingMeeting = ({
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
             console.log('handling new Offer');
             talkService.handleOffer(from, data, sendP2PCommunication, handleReceivedStream);
-            talkService.addTransceiver(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+            setTimeout(() => {
+                console.log('After timeout, adding transceiver');
+                talkService.addTransceiver(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+            }, 2000);
         } else {
             console.log('timeout for offer');
             setTimeout(() => handleNewOffer(from, data), 1000);
@@ -125,7 +128,10 @@ const OngoingMeeting = ({
         if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
             console.log('handling new answer');
             talkService.handleAnswer(from, data);
-            talkService.addTrack(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+            setTimeout(() => {
+                console.log('After timeout, adding track');
+                talkService.addTrack(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+            }, 2000);
         } else {
             console.log('timeout new answer');
             setTimeout(() => handleNewAnswer(from, data), 1000);
@@ -166,7 +172,23 @@ const OngoingMeeting = ({
                     if (error instanceof ReferenceError) moveToEndP2PMessageQ();
                 }
                 break;
-
+            case 'NEG_SYN':
+                // SYN -> SYN_ACK -> ACK || 3-way handshake jak w TCP
+                // info z kim, szukamy jego połączenia
+                // potem aktualizujemy swój deskryptor i odsyłamy negotiate answer
+                talkService.handleNegotiateSyn(message.from, sendP2PCommunication);
+                break;
+            case 'NEG_SYN_ACK':
+                // info z kim, jw
+                // aktualizacja remote deskryptora, tworzymy swojego lokalnego,
+                // odsylamy
+                talkService.handleNegotiateSynAck(message.from, message.data, sendP2PCommunication);
+                break;
+            case 'NEG_ACK':
+                // ostateczna odpowiedz mamy juz lokal sdp, dostajemy remote sdp,
+                // aktualizujemy go
+                talkService.handleNegotiateAck(message.from, message.data);
+                break;
             /* unknown message type */
             default:
                 console.warn('[P2P] Unknown message type', message);

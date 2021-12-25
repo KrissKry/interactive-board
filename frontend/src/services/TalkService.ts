@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { p2pEvent } from '../interfaces/Meeting/p2p';
 
 /* eslint-disable no-unused-vars */
@@ -139,6 +140,11 @@ export class TalkService {
                 // @ts-ignore
                 console.log('[P2P]', remote, 'CONNECTION_STATE CHANGE TO', ev.target?.connectionState);
             });
+
+            peerConnection.addEventListener('negotiationneeded', (ev: Event) => {
+                console.log('NEGOTIATING with', remote, ev);
+                sendDataCallback({}, 'NEG_SYN', remote);
+            });
     }
 
     /**
@@ -229,13 +235,77 @@ export class TalkService {
         }
     }
 
+    handleNegotiateSyn(
+        remote: string,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+    ) {
+        const p2p = this.findPeerConnection(remote);
+
+        if (typeof p2p !== 'undefined') {
+            p2p.connection.createOffer()
+            .then((sdp) => {
+                p2p.connection.setLocalDescription(new RTCSessionDescription(sdp));
+                sendDataCallback(sdp, 'NEG_SYN_ACK', remote);
+            })
+            .catch((err) => {
+                console.error('FAKAP NEGOTIATING', err);
+                // throw new ReferenceError('Negotiate fuckup, offer not created');
+            });
+        } else {
+            console.error('TalkService.handleNegotiateSyn(), peer', remote, 'not found in', this.connections);
+            // throw new ReferenceError('ICE Received before session description');
+        }
+    }
+
+    handleNegotiateSynAck(
+        remote: string,
+        // eslint-disable-next-line no-undef
+        remoteSdp: RTCSessionDescriptionInit,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+    ) {
+        const p2p = this.findPeerConnection(remote);
+
+        if (typeof p2p !== 'undefined') {
+            p2p.connection.setRemoteDescription(new RTCSessionDescription(remoteSdp));
+
+            p2p.connection.createAnswer()
+            .then((sdp) => {
+                p2p.connection.setLocalDescription(new RTCSessionDescription(sdp));
+                sendDataCallback(sdp, 'NEG_ACK');
+            })
+            .catch((err) => {
+                console.error('FAKAP NEGOTIATING', err);
+                // throw new ReferenceError('Negotiate fuckup, offer not created');
+            });
+        } else {
+            console.error('TalkService.hnadleNegotiateSynAck(), peer', remote, 'not found');
+        }
+    }
+
+    handleNegotiateAck(
+        remote: string,
+        // eslint-disable-next-line no-undef
+        remoteSdp: RTCSessionDescriptionInit,
+    ) {
+        const p2p = this.findPeerConnection(remote);
+
+        if (typeof p2p !== 'undefined') {
+            p2p.connection.setRemoteDescription(new RTCSessionDescription(remoteSdp));
+        } else {
+            console.error('TalkService.handleNegotiateAck(), peer', remote, 'not found');
+        }
+    }
+
     addTransceiver(remote: string, track: MediaStreamTrack, stream: MediaStream) {
         const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
+            console.log(peerConnection.connection.getTransceivers(), peerConnection.connection.signalingState, peerConnection.connection.connectionState);
             peerConnection.connection.addTransceiver(track, {
                 streams: [stream],
             });
+            peerConnection.connection.addTrack(track, stream);
+            console.log(peerConnection.connection.getTransceivers(), peerConnection.connection.signalingState, peerConnection.connection.connectionState);
         } else {
             console.error('TalkService.addTransceiver(), peer', remote, 'or track', track?.id, 'not found');
         }
@@ -245,7 +315,9 @@ export class TalkService {
         const peerConnection = this.findPeerConnection(remote);
 
         if (typeof peerConnection !== 'undefined' && typeof track !== 'undefined') {
+            console.log(peerConnection.connection.getTransceivers(), peerConnection.connection.signalingState, peerConnection.connection.connectionState);
             peerConnection.connection.addTrack(track, stream);
+            console.log(peerConnection.connection.getTransceivers(), peerConnection.connection.signalingState, peerConnection.connection.connectionState);
         } else {
             console.error('TalkService.addTrack(), peer', remote, 'or track', track?.id, 'not found');
         }
