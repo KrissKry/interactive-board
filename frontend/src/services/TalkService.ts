@@ -16,6 +16,11 @@ interface PeerConnections {
      * Remote username the connection is with
      */
     remote: string;
+
+    /**
+     * Stream source (tracks) from remote
+     */
+    remoteStreamSrc?: MediaStream;
 }
 
 export class TalkService {
@@ -23,14 +28,8 @@ export class TalkService {
 
     connections: PeerConnections[];
 
-    // sendDataCallbackRef: (data: any, type: p2pEvent, receiver?: string) => void;
-
-    // handleReceivedStreamRef: (data: any, sender?: string) => void
-
     private constructor() {
         this.connections = [];
-        // this.sendDataCallbackRef = () => console.log('sendDataRef');
-        // this.handleReceivedStreamRef = () => console.log('handleMessageRef');
     }
 
     /**
@@ -43,19 +42,6 @@ export class TalkService {
 
         return TalkService.instance;
     }
-
-    /**
-     * Sets data streams callbacks
-     * @param sendDataCallback callback function which handles connecting between peers
-     * @param handleReceivedStreamCallback callback function
-     */
-    // setCallbacks(
-    //     sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
-    //     handleReceivedStreamCallback: (data: any, sender?: string) => void,
-    // ) {
-    //     this.sendDataCallbackRef = sendDataCallback;
-    //     this.handleReceivedStreamRef = handleReceivedStreamCallback;
-    // }
 
     /**
      * Creates new peer connection object
@@ -122,12 +108,9 @@ export class TalkService {
             });
 
             peerConnection.addEventListener('track', (ev: RTCTrackEvent) => {
-                console.log('[P2P] New track event', ev);
-                handleReceivedStreamCallback(ev.streams, remote);
+                // console.log('[P2P] New track event from remote', remote, ev);
+                handleReceivedStreamCallback(ev, remote);
             });
-
-            // eslint-disable-next-line no-param-reassign
-            peerConnection.ontrack = (ev: RTCTrackEvent) => { console.log('CHUJ KURWA I CHUJ'); };
 
             peerConnection.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => {
                 if (ev.candidate === null) console.log('[P2P] All ICECandidates Sent (got null)');
@@ -142,7 +125,7 @@ export class TalkService {
             });
 
             peerConnection.addEventListener('negotiationneeded', (ev: Event) => {
-                console.log('NEGOTIATING with', remote, ev);
+                console.log('negotiationneeded with', remote, ev);
                 sendDataCallback({}, 'NEG_SYN', remote);
             });
     }

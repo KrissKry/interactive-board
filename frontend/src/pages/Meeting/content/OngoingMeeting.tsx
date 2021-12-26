@@ -49,6 +49,8 @@ const OngoingMeeting = ({
     /* communication */
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(false);
+    const [remotesWOTrack, setRemotesWOTrack] = useState<string[]>([]);
+
     // const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
@@ -96,6 +98,17 @@ const OngoingMeeting = ({
 
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
+        console.log('[P2P] Sending', type, 'to', remote);
+        if (type === 'OFFER' || type === 'OFFER_ANSWER') console.warn('SENDING DESCRIPTOR:', data);
+
+        // https://github.com/webrtc/samples/blob/55fc14e1e978eb48dcc97e840c0d2dfa1c6e12a0/src/content/peerconnection/webaudio-input/js/main.js
+        // https://webrtc.github.io/samples/src/content/peerconnection/upgrade/
+        /**
+         * a
+         * a
+         * a
+         *
+         */
         const message: p2p.p2pMessage = {
             from: meetingState.user,
             to: remote || 'ANY',
@@ -106,37 +119,30 @@ const OngoingMeeting = ({
         meetingService.sendP2PMessage(message);
     };
 
-    const handleReceivedStream = (data: any, sender?: string) : void => {
-        console.log('ReceivedStream', data, 'from', sender);
+    const handleReceivedStream = (data: RTCTrackEvent, remote?: string) : void => {
+        console.log('ReceivedStream', data, 'from', remote);
     };
 
-    const handleNewOffer = (from: string, data: any) : void => {
-        if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
-            console.log('handling new Offer');
-            talkService.handleOffer(from, data, sendP2PCommunication, handleReceivedStream);
-            setTimeout(() => {
-                console.log('After timeout, adding transceiver');
-                talkService.addTransceiver(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
-            }, 2000);
-        } else {
-            console.log('timeout for offer');
-            setTimeout(() => handleNewOffer(from, data), 1000);
+    const updateTrackForRemote = () : void => {
+        const remote = remotesWOTrack[0];
+        setRemotesWOTrack([...remotesWOTrack.filter((item, index) => index !== 0)]);
+
+        if (typeof ownMediaStream !== 'undefined') {
+            // get first audio track
+            const track = ownMediaStream.getAudioTracks()[0];
+
+            // if track exists
+            if (track !== null && typeof track !== 'undefined') {
+                // if adding track to remote fails
+                if (talkService.addTrackToRemote(remote, track, ownMediaStream) === false) {
+                    // re-add to remotes without track
+                    setRemotesWOTrack([...remotesWOTrack, remote]);
+                }
+            }
         }
     };
 
-    const handleNewAnswer = (from: string, data: any) : void => {
-        if (typeof ownMediaStream !== 'undefined' && ownMediaStream.getAudioTracks().length) {
-            console.log('handling new answer');
-            talkService.handleAnswer(from, data);
-            setTimeout(() => {
-                console.log('After timeout, adding track');
-                talkService.addTrack(from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
-            }, 2000);
-        } else {
-            console.log('timeout new answer');
-            setTimeout(() => handleNewAnswer(from, data), 1000);
-        }
-    };
+    const addRemoteWithoutTrack = (remote: string): void => { setRemotesWOTrack([...remotesWOTrack, remote]); };
 
     const handleP2PCommunication = () : void => {
         const message = p2pMessages[0];
@@ -144,50 +150,61 @@ const OngoingMeeting = ({
         /* This app instance is the receiver end */
         if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user) {
         switch (message.type) {
-            /* On new user joining, respond with simple query answer */
+            /* On new user joining, respond with offer */
             case 'QUERY':
-                sendP2PCommunication({}, 'QUERY_ANSWER', message.from);
+                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
+                talkService.createOffer(message.from, sendP2PCommunication);
+                // sendP2PCommunication({}, 'QUERY_ANSWER', message.from);
                 break;
 
             /* initial response from another user in the meeting */
             case 'QUERY_ANSWER':
-                talkService.initConnectionWith(message.from, sendP2PCommunication, handleReceivedStream);
+                // talkService.initConnectionWith(message.from, sendP2PCommunication, handleReceivedStream);
                 break;
 
-            /* received offer from remote */
+            /* received offer from remote, sends back answer */
             case 'OFFER':
-                handleNewOffer(message.from, message.data);
+                talkService.receiveOffer(message.from, message.data, sendP2PCommunication, handleReceivedStream);
+                addRemoteWithoutTrack(message.from);
+                // handleNewOffer(message.from, message.data);
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
-                handleNewAnswer(message.from, message.data);
+                talkService.receiveAnswer(message.from, message.data);
+                addRemoteWithoutTrack(message.from);
+                // handleNewAnswer(message.from, message.data);
                 break;
 
             /* new ice candidate sent by one peer to the other */
             case 'ICE':
-                try {
-                    talkService.handleCandidate(message.from, message.data);
-                } catch (error) {
-                    if (error instanceof ReferenceError) moveToEndP2PMessageQ();
-                }
+                talkService.receiveICE(message.from, message.data)
+                .then(
+                    () => console.log('[M] Added ICE'),
+                    (err) => console.error('[M]', err),
+                );
+                // try {
+                //     talkService.handleCandidate(message.from, message.data);
+                // } catch (error) {
+                //     if (error instanceof ReferenceError) moveToEndP2PMessageQ();
+                // }
                 break;
             case 'NEG_SYN':
                 // SYN -> SYN_ACK -> ACK || 3-way handshake jak w TCP
                 // info z kim, szukamy jego połączenia
                 // potem aktualizujemy swój deskryptor i odsyłamy negotiate answer
-                talkService.handleNegotiateSyn(message.from, sendP2PCommunication);
+                // talkService.handleNegotiateSyn(message.from, sendP2PCommunication);
                 break;
             case 'NEG_SYN_ACK':
                 // info z kim, jw
                 // aktualizacja remote deskryptora, tworzymy swojego lokalnego,
                 // odsylamy
-                talkService.handleNegotiateSynAck(message.from, message.data, sendP2PCommunication);
+                // talkService.handleNegotiateSynAck(message.from, message.data, sendP2PCommunication);
                 break;
             case 'NEG_ACK':
                 // ostateczna odpowiedz mamy juz lokal sdp, dostajemy remote sdp,
                 // aktualizujemy go
-                talkService.handleNegotiateAck(message.from, message.data);
+                // talkService.handleNegotiateAck(message.from, message.data);
                 break;
             /* unknown message type */
             default:
@@ -219,21 +236,22 @@ const OngoingMeeting = ({
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         .then((str) => {
             console.log('NOWY STRUMIEŃ', str);
+            // str.getAudioTracks().forEach((track) => talkService.add)
             setOwnMediaStreamCallback(str);
         })
-        .catch((err) => console.error('media strim fakap', err));
+        .catch((err) => alert('W celu połączenia z mikrofonem, odśwież stronę'));
 
         // cleanup all tracks
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
 
     useEffect(() => {
-        if (p2pMessages.length) handleP2PCommunication();
-    }, [p2pMessages]);
+        updateTrackForRemote();
+    }, [remotesWOTrack]);
 
     useEffect(() => {
-        console.log(talkService.getTranceivers());
-    }, [talkService.connections]);
+        if (p2pMessages.length) handleP2PCommunication();
+    }, [p2pMessages]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -258,7 +276,7 @@ const OngoingMeeting = ({
     ];
 
     const printTransceivers = () : void => {
-        const tt = talkService.getTranceivers();
+        const tt = talkService.peers;
         console.log(tt);
     };
 

@@ -1,4 +1,4 @@
 import { MeetingService } from './MeetingService';
-import { TalkService } from './TalkService';
+import { TalkService } from './TalkServiceNew';
 
 export { MeetingService, TalkService };
