@@ -61,8 +61,8 @@ export class TalkService {
 
         pc.addEventListener('negotiationneeded', (ev: Event) => {
             // if not null, then was set at least once
-            if (pc.currentRemoteDescription !== null) {
-                console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN');
+            if (pc.currentRemoteDescription !== null && pc.currentLocalDescription !== null) {
+                console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN', pc);
                 sendDataCallback({}, 'NEG_BEGIN', remote);
             } else {
                 console.warn('[P2P] Connection with', remote, 'needs negotiation, but remoteSdp is null');

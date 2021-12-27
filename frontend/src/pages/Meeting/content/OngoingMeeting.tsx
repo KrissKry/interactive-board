@@ -145,11 +145,13 @@ const OngoingMeeting = ({
         const message = p2pMessages[0];
 
         /* This app instance is the receiver end */
-        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user) {
+        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user && typeof ownMediaStream !== 'undefined') {
+            console.log('[P2P] Received', message.type, 'from', message.from);
         switch (message.type) {
             /* On new user joining, respond with offer */
             case 'QUERY':
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
+                talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
                 talkService.createOffer(message.from, sendP2PCommunication);
                 console.log(talkService.getRemote(message.from));
                 break;
@@ -157,15 +159,16 @@ const OngoingMeeting = ({
             /* received offer from remote, sends back answer */
             case 'OFFER':
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
+                talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
                 talkService.receiveOffer(message.from, message.data, sendP2PCommunication);
-                addRemoteWithoutTrack(message.from);
+                // addRemoteWithoutTrack(message.from);
                 console.log(talkService.getRemote(message.from));
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
                 talkService.receiveAnswer(message.from, message.data);
-                addRemoteWithoutTrack(message.from);
+                // addRemoteWithoutTrack(message.from);
                 console.log(talkService.getRemote(message.from));
                 break;
 
@@ -222,14 +225,13 @@ const OngoingMeeting = ({
 
     // opem media stream on meeting join & send p2p query
     useEffect(() => {
-        sendP2PCommunication({}, 'QUERY');
-
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         .then((str) => {
             console.log('NOWY STRUMIEŃ', str);
             // str.getAudioTracks().forEach((track) => talkService.add)
             setOwnMediaStreamCallback(str);
         })
+        .then(() => sendP2PCommunication({}, 'QUERY'))
         .catch((err) => alert('W celu połączenia z mikrofonem, odśwież stronę'));
 
         // cleanup all tracks
