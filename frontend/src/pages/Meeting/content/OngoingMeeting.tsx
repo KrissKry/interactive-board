@@ -115,6 +115,13 @@ const OngoingMeeting = ({
 
     const handleReceivedStream = (data: any, remote?: string) : void => {
         console.log('ReceivedStream', data, 'from', remote);
+        const aud = document.getElementById('strimAudio');
+
+        if (!(aud instanceof HTMLMediaElement)) {
+            console.error('Audio element not an instance of HTMLMediaElement', aud);
+        } else {
+            aud.srcObject = data;
+        }
     };
 
     const updateTrackForRemote = () : void => {
@@ -295,7 +302,9 @@ const OngoingMeeting = ({
             <ButtonsPanel buttons={controlButtons} />
 
             <IonButton onClick={() => printTransceivers()}>pika</IonButton>
-            <audio id="strimAudio"><track kind="captions" /></audio>
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <audio id="strimAudio" autoPlay controls />
+            {/* <track kind="captions" /></audio> */}
         </div>
     );
 };
