@@ -52,7 +52,7 @@ export class TalkService {
     ): void {
         pc.addEventListener('track', (ev: RTCTrackEvent) => this.handleNewStream(ev, remote, handleReceivedStreamCallback));
 
-        pc.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => sendDataCallback(ev.candidate, 'ICE', remote));
+        pc.addEventListener('icecandidate', (ev: RTCPeerConnectionIceEvent) => (ev.candidate ? sendDataCallback(ev.candidate, 'ICE', remote) : console.log('[P2P] All ICE Candidates sent (created null candidate).')));
 
         pc.addEventListener('icecandidateerror', (ev: Event) => console.error('[P2P] ICE Candidate Error', remote));
 
