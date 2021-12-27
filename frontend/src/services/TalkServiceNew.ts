@@ -60,8 +60,13 @@ export class TalkService {
         pc.addEventListener('connectionstatechange', (ev: Event) => console.log('[P2P] Connection state with', remote, 'changed to', ev.target.connectionState));
 
         pc.addEventListener('negotiationneeded', (ev: Event) => {
-            console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEGOTIATE_BEGIN');
-            sendDataCallback({}, 'NEGOTIATE_BEGIN', remote);
+            // if not null, then was set at least once
+            if (pc.currentRemoteDescription !== null) {
+                console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN');
+                sendDataCallback({}, 'NEG_BEGIN', remote);
+            } else {
+                console.warn('[P2P] Connection with', remote, 'needs negotiation, but remoteSdp is null');
+            }
         });
     }
 
@@ -185,6 +190,52 @@ export class TalkService {
         const p2p = this.findRemoteP2P(remote);
 
         return p2p.connection.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+
+    public createRenegotiatedOffer(
+        remote: string,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+    ): void {
+        const p2p = this.findRemoteP2P(remote);
+
+        p2p.connection.createOffer()
+        .then(
+            (sdp) => {
+                p2p.connection.setLocalDescription(new RTCSessionDescription(sdp));
+                sendDataCallback(sdp, 'NEG_RECV_OFFER', remote);
+            },
+            (err) => console.error('[P2P] Failed to create negotiation offer'),
+        );
+    }
+
+    public receiveRenegotiatedOffer(
+        remote: string,
+        // eslint-disable-next-line no-undef
+        offer: RTCSessionDescriptionInit,
+        sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
+    ): void {
+        const p2p = this.findRemoteP2P(remote);
+
+        p2p.connection.setRemoteDescription(new RTCSessionDescription(offer))
+        .then(() => p2p.connection.createAnswer())
+        .then(
+            (sdp) => {
+                p2p.connection.setLocalDescription(new RTCSessionDescription(sdp));
+                sendDataCallback(sdp, 'NEG_RECV_ANS', remote);
+            },
+            (err) => console.error('[P2P] Couldn`t create answer', err),
+        )
+        .catch((err) => console.error('[P2P] Failed on receiving new offer', err));
+    }
+
+    public receiveRenegotiatedAns(
+        remote: string,
+        // eslint-disable-next-line no-undef
+        answer: RTCSessionDescriptionInit,
+    ): void {
+        const p2p = this.findRemoteP2P(remote);
+
+        p2p.connection.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
     public addTrackToRemote(

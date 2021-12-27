@@ -99,16 +99,10 @@ const OngoingMeeting = ({
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
         console.log('[P2P] Sending', type, 'to', remote);
-        if (type === 'OFFER' || type === 'OFFER_ANSWER') console.warn('SENDING DESCRIPTOR:', data);
+        if (type !== 'ICE' && type !== 'QUERY' && type !== 'NEG_BEGIN') console.warn('SENDING DESCRIPTOR:', data);
 
         // https://github.com/webrtc/samples/blob/55fc14e1e978eb48dcc97e840c0d2dfa1c6e12a0/src/content/peerconnection/webaudio-input/js/main.js
         // https://webrtc.github.io/samples/src/content/peerconnection/upgrade/
-        /**
-         * a
-         * a
-         * a
-         *
-         */
         const message: p2p.p2pMessage = {
             from: meetingState.user,
             to: remote || 'ANY',
@@ -180,9 +174,19 @@ const OngoingMeeting = ({
                 );
                 break;
 
-            /* Negotiation request received from remote (update offer & answer) */
-            case 'NEGOTIATE_BEGIN':
-                talkService.createOffer(message.from, sendP2PCommunication);
+            /* Negotiation request received from remote (create new offer and send it) */
+            case 'NEG_BEGIN':
+                talkService.createRenegotiatedOffer(message.from, sendP2PCommunication);
+                break;
+
+            /* Negotiation offer received from remote (update remote sdp and create ans) */
+            case 'NEG_RECV_OFFER':
+                talkService.receiveRenegotiatedOffer(message.from, message.data, sendP2PCommunication);
+                break;
+
+            /* Negotiation answer received from remote (update remote sdp) */
+            case 'NEG_RECV_ANS':
+                talkService.receiveRenegotiatedAns(message.from, message.data);
                 break;
 
             /* unknown message type */
