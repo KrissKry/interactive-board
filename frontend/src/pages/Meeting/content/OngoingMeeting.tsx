@@ -151,6 +151,7 @@ const OngoingMeeting = ({
             case 'QUERY':
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
                 talkService.createOffer(message.from, sendP2PCommunication);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* received offer from remote, sends back answer */
@@ -158,12 +159,14 @@ const OngoingMeeting = ({
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
                 talkService.receiveOffer(message.from, message.data, sendP2PCommunication);
                 addRemoteWithoutTrack(message.from);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
                 talkService.receiveAnswer(message.from, message.data);
                 addRemoteWithoutTrack(message.from);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* new ice candidate sent by one peer to the other */
@@ -173,21 +176,25 @@ const OngoingMeeting = ({
                     () => console.log('[M] Added ICE'),
                     (err) => console.error('[M]', err),
                 );
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation request received from remote (create new offer and send it) */
             case 'NEG_BEGIN':
                 talkService.createRenegotiatedOffer(message.from, sendP2PCommunication);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation offer received from remote (update remote sdp and create ans) */
             case 'NEG_RECV_OFFER':
                 talkService.receiveRenegotiatedOffer(message.from, message.data, sendP2PCommunication);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation answer received from remote (update remote sdp) */
             case 'NEG_RECV_ANS':
                 talkService.receiveRenegotiatedAns(message.from, message.data);
+                console.log(talkService.getRemote(message.from));
                 break;
 
             /* unknown message type */

@@ -255,4 +255,6 @@ export class TalkService {
     }
 
     public get peers(): PeerConnection[] { return this.connections; }
+
+    public getRemote(remote: string): RTCPeerConnection { return this.findRemoteP2P(remote).connection; }
 }
