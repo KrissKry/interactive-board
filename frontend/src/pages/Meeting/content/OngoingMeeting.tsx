@@ -113,7 +113,7 @@ const OngoingMeeting = ({
         meetingService.sendP2PMessage(message);
     };
 
-    const handleReceivedStream = (data: RTCTrackEvent, remote?: string) : void => {
+    const handleReceivedStream = (data: any, remote?: string) : void => {
         console.log('ReceivedStream', data, 'from', remote);
     };
 
@@ -155,7 +155,8 @@ const OngoingMeeting = ({
 
             /* received offer from remote, sends back answer */
             case 'OFFER':
-                talkService.receiveOffer(message.from, message.data, sendP2PCommunication, handleReceivedStream);
+                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
+                talkService.receiveOffer(message.from, message.data, sendP2PCommunication);
                 addRemoteWithoutTrack(message.from);
                 break;
 

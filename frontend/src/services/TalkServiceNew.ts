@@ -148,7 +148,6 @@ export class TalkService {
         // eslint-disable-next-line no-undef
         offer: RTCSessionDescriptionInit,
         sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
-        handleReceivedStreamCallback: (data: any, sender?: string) => void,
     ): void {
         try {
             const p2p = this.findRemoteP2P(remote);
