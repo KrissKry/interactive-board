@@ -139,6 +139,8 @@ const OngoingMeeting = ({
                     setRemotesWOTrack([...remotesWOTrack, remote]);
                 }
             }
+        } else {
+            console.warn('[P2P] No tracks can be added as stream is', typeof ownMediaStream);
         }
     };
 
@@ -154,26 +156,18 @@ const OngoingMeeting = ({
             case 'QUERY':
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
                 talkService.createOffer(message.from, sendP2PCommunication);
-                // sendP2PCommunication({}, 'QUERY_ANSWER', message.from);
-                break;
-
-            /* initial response from another user in the meeting */
-            case 'QUERY_ANSWER':
-                // talkService.initConnectionWith(message.from, sendP2PCommunication, handleReceivedStream);
                 break;
 
             /* received offer from remote, sends back answer */
             case 'OFFER':
                 talkService.receiveOffer(message.from, message.data, sendP2PCommunication, handleReceivedStream);
                 addRemoteWithoutTrack(message.from);
-                // handleNewOffer(message.from, message.data);
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
                 talkService.receiveAnswer(message.from, message.data);
                 addRemoteWithoutTrack(message.from);
-                // handleNewAnswer(message.from, message.data);
                 break;
 
             /* new ice candidate sent by one peer to the other */
@@ -183,29 +177,13 @@ const OngoingMeeting = ({
                     () => console.log('[M] Added ICE'),
                     (err) => console.error('[M]', err),
                 );
-                // try {
-                //     talkService.handleCandidate(message.from, message.data);
-                // } catch (error) {
-                //     if (error instanceof ReferenceError) moveToEndP2PMessageQ();
-                // }
                 break;
-            case 'NEG_SYN':
-                // SYN -> SYN_ACK -> ACK || 3-way handshake jak w TCP
-                // info z kim, szukamy jego połączenia
-                // potem aktualizujemy swój deskryptor i odsyłamy negotiate answer
-                // talkService.handleNegotiateSyn(message.from, sendP2PCommunication);
+
+            /* Negotiation request received from remote (update offer & answer) */
+            case 'NEGOTIATE_BEGIN':
+                talkService.createOffer(message.from, sendP2PCommunication);
                 break;
-            case 'NEG_SYN_ACK':
-                // info z kim, jw
-                // aktualizacja remote deskryptora, tworzymy swojego lokalnego,
-                // odsylamy
-                // talkService.handleNegotiateSynAck(message.from, message.data, sendP2PCommunication);
-                break;
-            case 'NEG_ACK':
-                // ostateczna odpowiedz mamy juz lokal sdp, dostajemy remote sdp,
-                // aktualizujemy go
-                // talkService.handleNegotiateAck(message.from, message.data);
-                break;
+
             /* unknown message type */
             default:
                 console.warn('[P2P] Unknown message type', message);

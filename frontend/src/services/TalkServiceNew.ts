@@ -59,7 +59,10 @@ export class TalkService {
         // @ts-ignore
         pc.addEventListener('connectionstatechange', (ev: Event) => console.log('[P2P] Connection state with', remote, 'changed to', ev.target.connectionState));
 
-        pc.addEventListener('negotiationneeded', (ev: Event) => console.warn('[P2P] Connection with', remote, 'needs negotiation'));
+        pc.addEventListener('negotiationneeded', (ev: Event) => {
+            console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEGOTIATE_BEGIN');
+            sendDataCallback({}, 'NEGOTIATE_BEGIN', remote);
+        });
     }
 
     private findRemoteP2P(remote: string): PeerConnection {
