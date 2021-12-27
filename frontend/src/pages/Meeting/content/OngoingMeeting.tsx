@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
-import { IonButton } from '@ionic/react';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -36,25 +35,31 @@ interface MeetingProps {
 
     popP2PMessageQ: () => void;
 
-    moveToEndP2PMessageQ: () => void;
 }
+
+interface AudioIdentificator {
+    username: string;
+
+    streamId: string;
+}
+
+type rtcStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'ERROR';
 
 const OngoingMeeting = ({
     ownMediaStream,
     setOwnMediaStreamCallback,
     p2pMessages,
     popP2PMessageQ,
-    moveToEndP2PMessageQ,
 } : MeetingProps) : JSX.Element => {
     /* communication */
+    // use RTC-State to indicate whether user is connecting to P2P (TO-DO)
+    const [rtcState, setRTCState] = useState<rtcStatus>('INIT');
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(false);
-    const [remotesWOTrack, setRemotesWOTrack] = useState<string[]>([]);
+    const [audioIdentificators, setAudioIdentificators] = useState<AudioIdentificator[]>([]);
 
-    // const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
-    // const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([]);
 
     /* settings */
     const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
@@ -76,11 +81,6 @@ const OngoingMeeting = ({
         user: state.user.username,
     }));
 
-    // const mappedUsers: UserInterface[] = meetingState.users.map((u) => ({
-    //     name: u.name,
-    //     status: u.status,
-    // }));
-
     /* chat */
     const chatSendMessageCallback = (text: string) => {
         const newMessage: ChatMessageInterface = {
@@ -99,10 +99,7 @@ const OngoingMeeting = ({
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
         console.log('[P2P] Sending', type, 'to', remote);
-        if (type !== 'ICE' && type !== 'QUERY' && type !== 'NEG_BEGIN') console.warn('SENDING DESCRIPTOR:', data);
 
-        // https://github.com/webrtc/samples/blob/55fc14e1e978eb48dcc97e840c0d2dfa1c6e12a0/src/content/peerconnection/webaudio-input/js/main.js
-        // https://webrtc.github.io/samples/src/content/peerconnection/upgrade/
         const message: p2p.p2pMessage = {
             from: meetingState.user,
             to: remote || 'ANY',
@@ -113,40 +110,33 @@ const OngoingMeeting = ({
         meetingService.sendP2PMessage(message);
     };
 
-    const handleReceivedStream = (data: any, remote?: string) : void => {
+    const createAudio = (stream: MediaStream) : HTMLMediaElement => {
+        const newAudioEle = document.createElement('audio');
+
+        newAudioEle.setAttribute('id', stream.id);
+        newAudioEle.setAttribute('style', 'display: none;');
+        newAudioEle.autoplay = true;
+        newAudioEle.controls = false;
+        newAudioEle.srcObject = stream;
+        // will ye update?
+        newAudioEle.volume = Number(volumeOn);
+        return newAudioEle;
+    };
+
+    const handleReceivedStream = (data: MediaStream, remote?: string) : void => {
         console.log('ReceivedStream', data, 'from', remote);
-        const aud = document.getElementById('strimAudio');
 
-        if (!(aud instanceof HTMLMediaElement)) {
-            console.error('Audio element not an instance of HTMLMediaElement', aud);
-        } else {
-            aud.srcObject = data;
-        }
+        const newAudioEle = createAudio(data);
+        const newAudioId: AudioIdentificator = {
+            username: remote || '',
+
+            streamId: data.id,
+        };
+        setAudioIdentificators([...audioIdentificators, newAudioId]);
+
+        const meetingDiv = document.getElementById('meetingDiv');
+        meetingDiv?.appendChild(newAudioEle);
     };
-
-    const updateTrackForRemote = () : void => {
-        if (!remotesWOTrack.length) return;
-
-        const remote = remotesWOTrack[0];
-
-        if (typeof ownMediaStream !== 'undefined') {
-            // get first audio track
-            const track = ownMediaStream.getAudioTracks()[0];
-
-            // if track exists
-            if (track !== null && typeof track !== 'undefined') {
-                // if adding track to remote fails
-                if (talkService.addTrackToRemote(remote, track, ownMediaStream) === true) {
-                    // remove from remotes without track
-                    setRemotesWOTrack([...remotesWOTrack.filter((item, index) => index !== 0)]);
-                }
-            }
-        } else {
-            console.warn('[P2P] No tracks can be added as stream is', typeof ownMediaStream);
-        }
-    };
-
-    const addRemoteWithoutTrack = (remote: string): void => { setRemotesWOTrack([...remotesWOTrack, remote]); };
 
     const handleP2PCommunication = () : void => {
         const message = p2pMessages[0];
@@ -160,7 +150,6 @@ const OngoingMeeting = ({
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
                 talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
                 talkService.createOffer(message.from, sendP2PCommunication);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* received offer from remote, sends back answer */
@@ -168,15 +157,11 @@ const OngoingMeeting = ({
                 talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
                 talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
                 talkService.receiveOffer(message.from, message.data, sendP2PCommunication);
-                // addRemoteWithoutTrack(message.from);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* received answer to own offer */
             case 'OFFER_ANSWER':
                 talkService.receiveAnswer(message.from, message.data);
-                // addRemoteWithoutTrack(message.from);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* new ice candidate sent by one peer to the other */
@@ -186,25 +171,21 @@ const OngoingMeeting = ({
                     () => console.log('[M] Added ICE'),
                     (err) => console.error('[M]', err),
                 );
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation request received from remote (create new offer and send it) */
             case 'NEG_BEGIN':
                 talkService.createRenegotiatedOffer(message.from, sendP2PCommunication);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation offer received from remote (update remote sdp and create ans) */
             case 'NEG_RECV_OFFER':
                 talkService.receiveRenegotiatedOffer(message.from, message.data, sendP2PCommunication);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* Negotiation answer received from remote (update remote sdp) */
             case 'NEG_RECV_ANS':
                 talkService.receiveRenegotiatedAns(message.from, message.data);
-                console.log(talkService.getRemote(message.from));
                 break;
 
             /* unknown message type */
@@ -212,10 +193,6 @@ const OngoingMeeting = ({
                 console.warn('[P2P] Unknown message type', message);
                 break;
         }
-    } else {
-        const isSender = message.from === meetingState.user;
-        const isReceiver = message.to === 'ANY' || message.to === meetingState.user;
-        // console.log('[P2P] omitting', message.type, 'IS_SENDER', isSender, 'IS_RECV', isReceiver);
     }
         popP2PMessageQ();
     };
@@ -232,22 +209,25 @@ const OngoingMeeting = ({
 
     // opem media stream on meeting join & send p2p query
     useEffect(() => {
+        setRTCState('CONNECTING');
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         .then((str) => {
             console.log('NOWY STRUMIEŃ', str);
-            // str.getAudioTracks().forEach((track) => talkService.add)
             setOwnMediaStreamCallback(str);
         })
-        .then(() => sendP2PCommunication({}, 'QUERY'))
-        .catch((err) => alert('W celu połączenia z mikrofonem, odśwież stronę'));
+        .then(() => {
+            sendP2PCommunication({}, 'QUERY');
+            setRTCState('CONNECTED');
+        })
+        .catch((err) => {
+            setRTCState('ERROR');
+            console.error(err);
+            alert('W celu połączenia z mikrofonem, odśwież stronę');
+        });
 
         // cleanup all tracks
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
-
-    useEffect(() => {
-        updateTrackForRemote();
-    }, [remotesWOTrack]);
 
     useEffect(() => {
         if (p2pMessages.length) handleP2PCommunication();
@@ -275,13 +255,8 @@ const OngoingMeeting = ({
         },
     ];
 
-    const printTransceivers = () : void => {
-        const tt = talkService.peers;
-        console.log(tt);
-    };
-
     return (
-        <div className="ee-flex--row">
+        <div className="ee-flex--row" id="meetingDiv">
             <Canvas
                 brushWidth={1}
                 changesWaiting={!!meetingState.boardChangesWaiting}
@@ -301,10 +276,6 @@ const OngoingMeeting = ({
 
             <ButtonsPanel buttons={controlButtons} />
 
-            <IonButton onClick={() => printTransceivers()}>pika</IonButton>
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <audio id="strimAudio" autoPlay controls />
-            {/* <track kind="captions" /></audio> */}
         </div>
     );
 };

@@ -44,6 +44,13 @@ export class TalkService {
         return new RTCPeerConnection();
     }
 
+    /**
+     * Adds correct event handlers to peer connection events
+     * @param pc PeerConnection obj that needs event handlers set
+     * @param remote username of remote peer
+     * @param sendDataCallback signaling handler
+     * @param handleReceivedStreamCallback on stream received handler
+     */
     private setupConnectionObj(
         pc: RTCPeerConnection,
         remote: string,
@@ -70,6 +77,11 @@ export class TalkService {
         });
     }
 
+    /**
+     * Finds remote connection object for given remote user.
+     * @param remote username of remote peer
+     * @returns Either found Peer Connection or throws Error
+     */
     private findRemoteP2P(remote: string): PeerConnection {
         const p2p = this.connections.find((pc) => pc.remote === remote);
 
@@ -78,6 +90,12 @@ export class TalkService {
         return p2p;
     }
 
+    /**
+     * Local remote stream handler, calls callback after some operations
+     * @param e new track added event
+     * @param remote username of remote peer
+     * @param handleReceivedStreamCallback calls some other class / component method to handle the stream
+     */
     private handleNewStream(e: RTCTrackEvent, remote: string, handleReceivedStreamCallback: (data: any, sender?: string) => void): void {
         try {
             const p2p = this.findRemoteP2P(remote);
@@ -90,6 +108,12 @@ export class TalkService {
         }
     }
 
+    /**
+     * Removes old peer connection with remote (if exists) and creates new local PeerConnection obj with ref.
+     * Stores the object in this.connections
+     * @param pc fresh PeerConnection created for remote
+     * @param remote username of remote peer
+     */
     private addNewPeer(pc: RTCPeerConnection, remote: string): void {
         const prevIndex = this.connections.findIndex((connection) => connection.remote === remote);
 
@@ -113,6 +137,14 @@ export class TalkService {
         this.connections.push(newP2P);
     }
 
+    /**
+     * Creates new RTCPeerConnection.
+     * Then sets proper event handlers for it.
+     * Then pushes reference to local this.connections for later use
+     * @param remote username of remote peer
+     * @param sendDataCallback signaling handler
+     * @param handleReceivedStreamCallback calls some other class / component method to handle the stream
+     */
     public receiveQuery(
         remote: string,
         sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
@@ -123,6 +155,11 @@ export class TalkService {
         this.addNewPeer(pc, remote);
     }
 
+    /**
+     * Finds P2P object for remote peer. Then creates offer descriptor, sets as local and calls signaling method to handle the rest
+     * @param remote username of remote peer
+     * @param sendDataCallback signaling handler
+     */
     public createOffer(
         remote: string,
         sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
@@ -143,6 +180,13 @@ export class TalkService {
         }
     }
 
+    /**
+     * Finds P2P object for remote peer. Then sets remote SDP for it. Then creates an answer SDP to that offer,
+     * stores it as local and calls signaling method to handle the rest
+     * @param remote username of remote peer
+     * @param offer Peer offer SDP
+     * @param sendDataCallback signaling handler
+     */
     public receiveOffer(
         remote: string,
         // eslint-disable-next-line no-undef
@@ -167,6 +211,11 @@ export class TalkService {
         }
     }
 
+    /**
+     * Finds P2P object for remote peer. Then sets remote SDP for it.
+     * @param remote username of remote peer
+     * @param answer Peer answer SDP
+     */
     public receiveAnswer(
         remote: string,
         // eslint-disable-next-line no-undef
@@ -181,6 +230,12 @@ export class TalkService {
         }
     }
 
+    /**
+     * Finds P2P object for remote peer, then adds ICE candidate to it
+     * @param remote username of remote peer
+     * @param candidate ICE Candidate SDP
+     * @returns promise to handle in some HOC
+     */
     public receiveICE(
         remote: string,
         // eslint-disable-next-line no-undef
@@ -237,6 +292,13 @@ export class TalkService {
         p2p.connection.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
+    /**
+     * Finds P2P object for remote peer, then adds track to that RTCPeerConnection
+     * @param remote username of remote peer
+     * @param track MediaStreamTrack (audio input)
+     * @param stream MediaStream that the audio is inserted from
+     * @returns whether track add was successful
+     */
     public addTrackToRemote(
         remote: string,
         track: MediaStreamTrack,
@@ -254,7 +316,15 @@ export class TalkService {
         }
     }
 
+    /**
+     * Get all P2P Objects stored in class
+     */
     public get peers(): PeerConnection[] { return this.connections; }
 
+    /**
+     * Get a single RTCPeerConnection for requested remote peer
+     * @param remote username of remote peer
+     * @returns Either RTCPeerConnection or throws error
+     */
     public getRemote(remote: string): RTCPeerConnection { return this.findRemoteP2P(remote).connection; }
 }
