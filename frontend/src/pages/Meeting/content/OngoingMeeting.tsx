@@ -124,8 +124,9 @@ const OngoingMeeting = ({
     };
 
     const updateTrackForRemote = () : void => {
+        if (!remotesWOTrack.length) return;
+
         const remote = remotesWOTrack[0];
-        setRemotesWOTrack([...remotesWOTrack.filter((item, index) => index !== 0)]);
 
         if (typeof ownMediaStream !== 'undefined') {
             // get first audio track
@@ -134,9 +135,9 @@ const OngoingMeeting = ({
             // if track exists
             if (track !== null && typeof track !== 'undefined') {
                 // if adding track to remote fails
-                if (talkService.addTrackToRemote(remote, track, ownMediaStream) === false) {
-                    // re-add to remotes without track
-                    setRemotesWOTrack([...remotesWOTrack, remote]);
+                if (talkService.addTrackToRemote(remote, track, ownMediaStream) === true) {
+                    // remove from remotes without track
+                    setRemotesWOTrack([...remotesWOTrack.filter((item, index) => index !== 0)]);
                 }
             }
         } else {
