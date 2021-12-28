@@ -9,3 +9,11 @@ export interface p2pMessage {
 
     data: any;
 }
+
+export interface PeerAudioIdentifier {
+    username: string;
+
+    streamId: string;
+}
+
+export type rtcStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'ERROR';

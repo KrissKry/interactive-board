@@ -25,6 +25,11 @@ import type { PixelChanges } from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
+/* util */
+import {
+    addAudio, createAudio, toggleIncomingAudio, toggleOutgoingAudio,
+} from '../../../util/Meeting';
+
 interface MeetingProps {
     ownMediaStream?: MediaStream;
 
@@ -37,14 +42,6 @@ interface MeetingProps {
 
 }
 
-interface AudioIdentificator {
-    username: string;
-
-    streamId: string;
-}
-
-type rtcStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'ERROR';
-
 const OngoingMeeting = ({
     ownMediaStream,
     setOwnMediaStreamCallback,
@@ -53,10 +50,10 @@ const OngoingMeeting = ({
 } : MeetingProps) : JSX.Element => {
     /* communication */
     // use RTC-State to indicate whether user is connecting to P2P (TO-DO)
-    const [rtcState, setRTCState] = useState<rtcStatus>('INIT');
+    const [rtcState, setRTCState] = useState<p2p.rtcStatus>('INIT');
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(false);
-    const [audioIdentificators, setAudioIdentificators] = useState<AudioIdentificator[]>([]);
+    const [audioIdentificators, setAudioIdentificators] = useState<p2p.PeerAudioIdentifier[]>([]);
 
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
@@ -110,32 +107,16 @@ const OngoingMeeting = ({
         meetingService.sendP2PMessage(message);
     };
 
-    const createAudio = (stream: MediaStream) : HTMLMediaElement => {
-        const newAudioEle = document.createElement('audio');
-
-        newAudioEle.setAttribute('id', stream.id);
-        newAudioEle.setAttribute('style', 'display: none;');
-        newAudioEle.autoplay = true;
-        newAudioEle.controls = false;
-        newAudioEle.srcObject = stream;
-        // will ye update?
-        newAudioEle.volume = Number(volumeOn);
-        return newAudioEle;
-    };
-
     const handleReceivedStream = (data: MediaStream, remote?: string) : void => {
-        console.log('ReceivedStream', data, 'from', remote);
-
         const newAudioEle = createAudio(data);
-        const newAudioId: AudioIdentificator = {
+        addAudio(newAudioEle, 'meetingDiv');
+
+        const newAudioId: p2p.PeerAudioIdentifier = {
             username: remote || '',
 
             streamId: data.id,
         };
         setAudioIdentificators([...audioIdentificators, newAudioId]);
-
-        const meetingDiv = document.getElementById('meetingDiv');
-        meetingDiv?.appendChild(newAudioEle);
     };
 
     const handleP2PCommunication = () : void => {
@@ -198,14 +179,12 @@ const OngoingMeeting = ({
     };
 
     useEffect(() => {
-        if (typeof ownMediaStream !== 'undefined') {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const track of ownMediaStream.getAudioTracks()) {
-                track.enabled = microphoneOn;
-                console.log(track.kind, track.id, track.enabled);
-            }
-        }
+        toggleOutgoingAudio(microphoneOn, ownMediaStream);
     }, [microphoneOn]);
+
+    useEffect(() => {
+        toggleIncomingAudio(volumeOn, audioIdentificators);
+    }, [volumeOn]);
 
     // opem media stream on meeting join & send p2p query
     useEffect(() => {
