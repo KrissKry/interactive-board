@@ -1,0 +1,42 @@
+.ee-user {
+    &-panel {
+        position: relative;
+        height: fit-content;
+
+        &--active {
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0.25rem;
+                // right: 0.25rem;
+                left: 2rem;
+                width: .5rem;
+                height: .5rem;
+                border-radius: 10rem;
+                background-color: limegreen;
+            }
+        }
+
+        img {
+            height: 80%;
+            max-height: 3rem;
+            width: 80%;
+            max-width: 3rem;
+            margin: 10%;
+            object-fit:scale-down;
+        }
+    }
+ 
+    &-list {
+        height: fit-content;
+        max-height: 30rem;
+        overflow-y: auto;
+    }
+}
+
+.ee-rtc-config {
+    &--icon {
+        width: 2rem;
+        height: 2rem;
+    }
+}

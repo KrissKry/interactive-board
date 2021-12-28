@@ -1,0 +1,18 @@
+.ee-generic-pointer {
+    cursor: pointer;
+}
+
+.ee-flex {
+    display: flex;
+
+    &--row {
+        @extend .ee-flex;
+        flex-direction: row;
+    }
+
+    &--column {
+        @extend .ee-flex;
+        flex-direction: column;
+    }
+
+}

@@ -1,146 +1,156 @@
-import React from 'react';
-import { Socket } from 'socket.io';
+/* eslint-disable object-curly-newline */
+import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
-import { Client, IFrame, Message } from '@stomp/stompjs';
 
 import { initialFillColor } from '../../helpers/initial';
-import { RGBColor } from '../../interfaces/Canvas';
+import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
+import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
+import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
 
 interface CanvasProps {
-    socket?: Socket;
+    /**
+     * Optional color of the brush
+     */
+    brushColor?: RGBColor;
+
+    brushWidth: number;
+
+    /**
+     * Canvas updates queued
+     */
+    currentChanges: PixelChanges[];
+
+    /**
+     * At least 1 Canvas update is waiting to be applied
+     */
+    changesWaiting: boolean;
+
+    /**
+     * Canvas initial state (removed after update)
+     */
+    initialChanges: PixelUpdate[];
+
+    /**
+     * Called on finished canvas update on initial connection
+     */
+    cleanupInitialCallback: () => void;
+
+    popChangeCallback:() => void;
+    /**
+     * Called every time pixel change is calculated
+     */
+    // eslint-disable-next-line no-unused-vars
+    sendChangesCallback: (changes: PixelChanges) => void;
+
 }
 
-const Canvas = ({ socket } : CanvasProps) : JSX.Element => {
-    let color : RGBColor = initialFillColor;
-    let isDrawing = false;
+const Canvas = ({
+    brushColor,
+    brushWidth,
+    currentChanges,
+    changesWaiting,
+    initialChanges,
+    cleanupInitialCallback,
+    popChangeCallback,
+    sendChangesCallback,
 
-    const mousePressed = () => {
-        // console.log('clicked');
-        isDrawing = true;
-    };
+} : CanvasProps) : JSX.Element => {
+    const [p5Instance, setP5Instance] = useState<p5Types>();
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
+    const [isDrawing, setIsDrawing] = useState<boolean>(false);
+    const drawingColor = brushColor || initialFillColor;
 
-    const mouseReleased = () => {
-        // console.log('released');
-        isDrawing = false;
-    };
+    const canvasWidth = 500;
+    const canvasHeight = 500;
 
-    const changeColor = () => {
-        const newColor : RGBColor = {
-            r: 255,
-            g: 0,
-            b: 0,
-        };
-        // console.log(color, newColor);
+    const mousePressed = () => { setIsDrawing(true); };
+    const mouseReleased = () => { setIsDrawing(false); };
 
-        color = newColor;
-    };
-
+    /* create canvas and set background + copy p5 reference */
     const setup = (p5: p5Types, canvasParentRef: Element) => {
-        p5.createCanvas(500, 500).parent(canvasParentRef);
-        p5.strokeWeight(20);
-        p5.background(200, 200, 200);
-        socket?.on('DRAWING', (data) => {
-            p5.strokeWeight(10);
-            p5.line(data.mouseX, data.mouseY, data.pmouseX, data.pmouseY);
-            // console.log(data);
-        });
+        p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
+        p5.background('white');
+        p5.strokeWeight(brushWidth);
+        setP5Instance(p5);
     };
 
-    // const draw = (p5: p5Types) => {
-    //     p5.fill(color.r, color.g, color.b);
-    //     p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-    // };
-
-    // 1. rysuje lokalnie
-    // 2. difference z synchronizowanym serwerową - wyciągnięcie kwadratu - małęgo obszaru
-    // 3. przesyłam zmiany na serwer
-    // 4. serwer wysyła wszystko co zmienione do klientów
-    // 5. klient odbiera tablice zmian pikselowych
-    // 6. na podstawie tej tablicy edytujemy pojedyncze piksele
-
+    /* draw on mouse drag if not updating */
     const mouseDragged = (p5: p5Types) => {
-        if (isDrawing) {
-            // p5.fill(color.r, color.g, color.b);
-            p5.stroke(color.r, color.g, color.b);
+        if (!isUpdating && isDrawing) {
+            // eslint-disable-next-line max-len
+            const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
+
+            const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+            p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
+            p5.strokeWeight(brushWidth);
             p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-            // console.log(x.get(0, 0, 20, 20));
-            const pixls = p5.get(0, 0, 10, 10);
-            pixls.loadPixels();
-            // console.log(pixls.pixels);
-            socket?.emit('DRAWING', {
-                mouseX: p5.mouseX,
-                mouseY: p5.mouseY,
-                // p - previous mouse pos
-                pMouseX: p5.pmouseX,
-                pMouseY: p5.pmouseY,
-            });
+
+            const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+            // eslint-disable-next-line max-len
+            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, drawingColor);
+
+            if (pixelsComparison.points && pixelsComparison.points.length) {
+                sendChangesCallback(pixelsComparison);
+            }
         }
     };
 
-    /* SOCKET :D */
-    // brokerURL: 'ws://localhost:15674/ws',
-    // const client = new Client({
-    //     brokerURL: 'ws://127.0.0.1:8080/board',
-    //     reconnectDelay: 20000,
-    //     heartbeatIncoming: 4000,
-    //     heartbeatOutgoing: 4000,
-    // });
-    const client = new Client({
-        brokerURL: 'ws://localhost:8080/board',
-        connectHeaders: {
-            chuj: 'xD',
-        },
-    });
-    // client.brokerURL = 'ws://localhost:8080/board';
+    useEffect(() => {
+        /* won't update until drawing complete or if no changes are present */
+        if (isDrawing || !changesWaiting || isUpdating) return;
 
-    client.onConnect = (frame: IFrame) : void => {
-        console.log('hehe', frame);
-        const resp = client.subscribe('/board/update', (chuj: any) => {
-            console.log('mapa', chuj);
-        });
-        console.log('resp', resp);
+        /* begin updating */
+        setIsUpdating(true);
+        // beginChangesCallback();
+    }, [changesWaiting, isDrawing, isUpdating]);
+
+    const renderPixelChange = () : void => {
+        if (typeof p5Instance !== 'undefined') {
+            const change = currentChanges[0];
+
+            p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
+            p5Instance.strokeWeight(brushWidth);
+
+            // eslint-disable-next-line no-restricted-syntax
+            for (const changedPixel of change.points) {
+                p5Instance.point(changedPixel.x, changedPixel.y);
+            }
+
+            popChangeCallback();
+            setIsUpdating(false);
+        }
     };
 
-    client.onDisconnect = (frame: IFrame) => {
-        console.log('Disconnected!');
-    };
+    useEffect(() => {
+        if (isUpdating) {
+            renderPixelChange();
+        }
+    }, [isUpdating]);
 
-    client.onStompError = (frame: IFrame) => {
-        console.log('Broker reported error: ', frame.headers.message);
-        console.log('Additional details: ', frame.body);
-    };
+    useEffect(() => {
+        if (initialChanges.length && typeof p5Instance !== 'undefined') {
+            p5Instance.strokeWeight(1);
 
-    client.onWebSocketError = (evt: any) => {
-        console.log(evt);
-    };
+            // eslint-disable-next-line no-restricted-syntax
+            for (const pixel of initialChanges) {
+                p5Instance.stroke(pixel.color.red, pixel.color.green, pixel.color.blue);
+                p5Instance.point(pixel.point.x, pixel.point.y);
+            }
 
-    client.beforeConnect = () => {
-        console.log('beforeConnect');
-    };
-
-    client.activate();
-
-    const sendName = () : void => {
-        client.publish({
-            destination: '/app/updated',
-            body: 'CHUJ ALE PATRIOTA',
-            skipContentLengthHeader: true,
-        });
-    };
+            cleanupInitialCallback();
+        }
+    }, [initialChanges, p5Instance]);
 
     return (
-        <>
             <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
-            <button type="button" onClick={() => changeColor()}>Czerwony</button>
-            {/* <button type="button" onClick={() => getCanvas()}>Print kanvas</button> */}
-            <button type="button" onClick={() => sendName()}>Wyślij imie :DDD</button>
-        </>
     );
 };
 
 Canvas.defaultProps = {
-    socket: undefined,
+    brushColor: undefined,
 };
 
 export default Canvas;
