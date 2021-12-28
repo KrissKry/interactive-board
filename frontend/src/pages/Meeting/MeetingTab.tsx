@@ -217,6 +217,7 @@ const MeetingTab = () => {
                 setOwnMediaStreamCallback={updateMediaStream}
                 p2pMessages={p2pMessagesQ}
                 popP2PMessageQ={popP2PMessageQ}
+                moveToEndP2PMessageQ={moveToEndP2PMessageQ}
             />
             );
         // eslint-disable-next-line no-else-return

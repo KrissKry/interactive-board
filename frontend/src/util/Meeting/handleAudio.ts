@@ -1,4 +1,4 @@
-export const createAudio = (stream: MediaStream) : HTMLMediaElement => {
+export const createAudio = (stream: MediaStream, volume: boolean) : HTMLMediaElement => {
     const newAudioEle = document.createElement('audio');
 
     newAudioEle.setAttribute('id', stream.id);
@@ -7,7 +7,7 @@ export const createAudio = (stream: MediaStream) : HTMLMediaElement => {
     newAudioEle.controls = false;
     newAudioEle.srcObject = stream;
     // will ye update?
-    newAudioEle.volume = 1;
+    newAudioEle.volume = volume ? 1 : 0;
     return newAudioEle;
 };
 

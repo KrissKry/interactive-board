@@ -40,6 +40,7 @@ interface MeetingProps {
 
     popP2PMessageQ: () => void;
 
+    moveToEndP2PMessageQ: () => void;
 }
 
 const OngoingMeeting = ({
@@ -47,6 +48,7 @@ const OngoingMeeting = ({
     setOwnMediaStreamCallback,
     p2pMessages,
     popP2PMessageQ,
+    moveToEndP2PMessageQ,
 } : MeetingProps) : JSX.Element => {
     /* communication */
     // use RTC-State to indicate whether user is connecting to P2P (TO-DO)
@@ -108,7 +110,7 @@ const OngoingMeeting = ({
     };
 
     const handleReceivedStream = (data: MediaStream, remote?: string) : void => {
-        const newAudioEle = createAudio(data);
+        const newAudioEle = createAudio(data, volumeOn);
         addAudio(newAudioEle, 'meetingDiv');
 
         const newAudioId: p2p.PeerAudioIdentifier = {
@@ -150,7 +152,12 @@ const OngoingMeeting = ({
                 talkService.receiveICE(message.from, message.data)
                 .then(
                     () => console.log('[M] Added ICE'),
-                    (err) => console.error('[M]', err),
+                    (err) => {
+                        console.error('[M]', err);
+                        moveToEndP2PMessageQ();
+                        // eslint-disable-next-line no-useless-return
+                        return;
+                    },
                 );
                 break;
 
@@ -180,7 +187,7 @@ const OngoingMeeting = ({
 
     useEffect(() => {
         toggleOutgoingAudio(microphoneOn, ownMediaStream);
-    }, [microphoneOn]);
+    }, [microphoneOn, ownMediaStream]);
 
     useEffect(() => {
         toggleIncomingAudio(volumeOn, audioIdentificators);
