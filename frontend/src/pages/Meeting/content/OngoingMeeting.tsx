@@ -167,7 +167,13 @@ const OngoingMeeting = ({
                         // eslint-disable-next-line no-useless-return
                         return;
                     },
-                );
+                )
+                .catch((err) => {
+                    console.error('[ICE]', err);
+                    moveToEndP2PMessageQ();
+                    // eslint-disable-next-line no-useless-return
+                    return;
+                });
                 break;
 
             /* Negotiation request received from remote (create new offer and send it) */
