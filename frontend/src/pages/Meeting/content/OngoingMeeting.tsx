@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
-import { useIonPopover } from '@ionic/react';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -60,18 +59,16 @@ const OngoingMeeting = ({
     const [availableInputs, setAvailableInputs] = useState<p2p.AudioDevice[]>([]);
     const [currentInputDevice, setCurrentInputDevice] = useState<p2p.AudioDevice>();
     const [audioIdentificators, setAudioIdentificators] = useState<p2p.PeerAudioIdentifier[]>([]);
+    const [streamStarted, setStreamStarted] = useState<boolean>(false);
 
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
-    const updateInputDevice = (device: p2p.AudioDevice) => setCurrentInputDevice(device);
+    const updateInputDevice = (device: p2p.AudioDevice) => { setCurrentInputDevice(device); };
 
     /* settings */
-    const [present, dismiss] = useIonPopover(SettingsPopover, {
-        closePopup: () => dismiss(),
-        title: 'Wejście Audio',
-        availableInputs,
-        currentInput: availableInputs[0],
-        setInput: updateInputDevice,
+    const [settingsPopover, setSettingsPopover] = useState({
+        showPopover: false,
+        event: undefined,
     });
 
     /* state */
@@ -137,20 +134,20 @@ const OngoingMeeting = ({
         const message = p2pMessages[0];
 
         /* This app instance is the receiver end */
-        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user && typeof ownMediaStream !== 'undefined') {
+        if ((message.to === 'ANY' || message.to === meetingState.user) && message.from !== meetingState.user) {
             console.log('[P2P] Received', message.type, 'from', message.from);
         switch (message.type) {
-            /* On new user joining, respond with offer */
+            /* On new user joining, respond with offer, owner is the one sending QUERY */
             case 'QUERY':
-                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
-                talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream, message.from);
+                talkService.addTrackToRemote(message.from, ownMediaStream?.getAudioTracks()[0], ownMediaStream);
                 talkService.createOffer(message.from, sendP2PCommunication);
                 break;
 
             /* received offer from remote, sends back answer */
             case 'OFFER':
-                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream);
-                talkService.addTrackToRemote(message.from, ownMediaStream.getAudioTracks()[0], ownMediaStream);
+                talkService.receiveQuery(message.from, sendP2PCommunication, handleReceivedStream, meetingState.user);
+                talkService.addTrackToRemote(message.from, ownMediaStream?.getAudioTracks()[0], ownMediaStream);
                 talkService.receiveOffer(message.from, message.data, sendP2PCommunication);
                 break;
 
@@ -197,43 +194,141 @@ const OngoingMeeting = ({
         popP2PMessageQ();
     };
 
-    const updateDevices = () : Promise<void> => navigator.mediaDevices.enumerateDevices()
-        .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
-        .then((inputDevices) => getUniqueAudioDevices(inputDevices))
-        .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
-        .catch((err) => console.error(err));
+    const createStream = (): Promise<void> => navigator
+        .mediaDevices
+        .getUserMedia({
+            audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
+            video: false,
+        })
+        .then((stream) => setOwnMediaStreamCallback(stream));
 
-    const updateStream = (stream: MediaStream) : void => setOwnMediaStreamCallback(stream);
-
-    const updateP2PStatus = () : void => {
-        sendP2PCommunication({}, 'QUERY');
-        setRTCState('CONNECTED');
+    const handleAudioDevicesChange = (): void => {
+        navigator.mediaDevices.enumerateDevices()
+            .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
+            .then((inputDevices) => getUniqueAudioDevices(inputDevices))
+            .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
+            .then(() => {
+                if (availableInputs.length) {
+                    // stream not started previously
+                    if (!streamStarted) {
+                        createStream()
+                            .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
+                            .then(() => setStreamStarted(true))
+                            .catch((err: any) => console.error(err));
+                    // stream started previously
+                    } else {
+                        // used a device that is on the new list
+                        // eslint-disable-next-line no-lonely-if
+                        if (typeof currentInputDevice !== 'undefined') {
+                            // assumption that the device has not been disconnected
+                            if (availableInputs.includes(currentInputDevice)) {
+                                // do nth
+                            // current device is not on the received device list
+                            } else {
+                                setCurrentInputDevice(undefined);
+                            }
+                        // stream started previously but current device is undefined
+                        // and devices are found
+                        // change current input device, replace audio tracks for all connections
+                        } else {
+                            setCurrentInputDevice(availableInputs[0]);
+                            talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
+                        }
+                    }
+                } else {
+                    // do nth
+                    setCurrentInputDevice(undefined);
+                }
+            });
+            // .catch((err) => console.error(err));
     };
 
+    const handleAudioDevicePick = (): void => {
+        if (streamStarted) {
+                createStream()
+                // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
+                .then(() => talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]))
+                .catch((err) => console.error(err));
+        } else {
+            createStream()
+                .then(() => setStreamStarted(true))
+                .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
+                .catch((err) => console.error(err));
+        }
+    };
+
+    useEffect(() => {
+        createStream()
+        .then(() => sendP2PCommunication({}, 'QUERY'))
+        .catch(() => sendP2PCommunication({}, 'QUERY'));
+
+        navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
+        // event listener for device changes
+        // try creating stream
+        // send QUERY despite stream
+        return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
+    }, []);
+
+    // on device change:
+    // if no stream started, try creating a stream
+    // if success add tracks to all
+    // else not then fuck off
+    // else if stream started
+
+    // const updateDevices = () : Promise<void> => navigator.mediaDevices.enumerateDevices()
+    //     .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
+    //     .then((inputDevices) => getUniqueAudioDevices(inputDevices))
+    //     .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
+    //     .catch((err) => console.error(err));
+
+    // const updateStream = (stream: MediaStream) : void => setOwnMediaStreamCallback(stream);
+
+    // const updateP2PStatus = () : void => {
+    //     sendP2PCommunication({}, 'QUERY');
+    //     setRTCState('CONNECTED');
+    // };
+
+    // const getUserMedia = (): Promise<void> => navigator
+    //     .mediaDevices
+    //     .getUserMedia({
+    //         audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
+    //         video: false,
+    //     })
+    //     .then(updateStream)
+    //     .then(updateDevices);
+
+    useEffect(() => { handleAudioDevicePick(); }, [currentInputDevice]);
     useEffect(() => { toggleOutgoingAudio(microphoneOn, ownMediaStream); }, [microphoneOn, ownMediaStream]);
     useEffect(() => { toggleIncomingAudio(volumeOn, audioIdentificators); }, [volumeOn]);
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
+    // useEffect(() => { if (typeof currentInputDevice !== 'undefined') getUserMedia(); }, [currentInputDevice]);
+    // useEffect(() => {
+    //     if (availableInputs.length) {
+    //         if (typeof currentInputDevice === 'undefined') setCurrentInputDevice(availableInputs[0]);
+    //     } else {
+    //         setCurrentInputDevice(undefined);
+    //     }
+    // }, [availableInputs]);
 
+    // useEffect(() => {
+    //     if (typeof ownMediaStream !== 'undefined') talkService.replaceAudioTrack(ownMediaStream.getAudioTracks()[0]);
+    // }, [currentInputDevice]);
     // open media stream on meeting join & send p2p query
-    useEffect(() => {
-        setRTCState('CONNECTING');
-
-        navigator.mediaDevices
-            .getUserMedia({ audio: true, video: false })
-            .then(updateStream)
-            .then(updateDevices)
-            .then(updateP2PStatus)
-            .catch((err) => {
-                setRTCState('ERROR');
-                console.error(err);
-                alert('W celu połączenia z komunikacją audio, odśwież stronę');
-            });
-
-        navigator.mediaDevices.addEventListener('devicechange', updateDevices);
-
-        // cleanup all tracks
-        return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
-    }, []);
+    // useEffect(() => {
+    //     // setRTCState('CONNECTING');
+    //     // getUserMedia()
+    //     // .then(updateP2PStatus)
+    //     // .then(() => navigator.mediaDevices.addEventListener('devicechange', updateDevices))
+    //     // .catch((err) => {
+    //     //     console.log('Fakap na urz', currentInputDevice);
+    //     //     setRTCState('ERROR');
+    //     //     console.error(err);
+    //     //     alert('W celu połączenia z komunikacją audio, odśwież stronę');
+    //     // });
+    //     navigator.mediaDevices.addEventListener('devicechange', () => console.log('new devices lmao'));
+    //     // cleanup all tracks
+    //     return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
+    // }, []);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -253,7 +348,10 @@ const OngoingMeeting = ({
         {
             id: 'settings',
             icon: ellipsisHorizontalOutline,
-            callback: (e: any) => present({ event: e.nativeEvent }),
+            callback: (e: any) => {
+                e.persist();
+                setSettingsPopover({ showPopover: true, event: e });
+            },
         },
     ];
 
@@ -278,6 +376,15 @@ const OngoingMeeting = ({
 
             <ButtonsPanel buttons={controlButtons} />
 
+            <SettingsPopover
+                isOpen={settingsPopover.showPopover}
+                popoverEvent={settingsPopover.event}
+                setInput={updateInputDevice}
+                currentInput={currentInputDevice}
+                availableInputs={availableInputs}
+                title="Ustawienia"
+                closePopup={() => setSettingsPopover({ showPopover: false, event: undefined })}
+            />
         </div>
     );
 };

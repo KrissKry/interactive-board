@@ -1,0 +1,13 @@
+.ee-c-popover .popover-content {
+    width: fit-content;
+
+    p {
+        font-style: italic;
+    }
+}
+
+.ee-c-popover--select {
+    min-width: 15rem !important;
+    max-width: 15rem !important;
+    margin-left: 3rem;
+}
