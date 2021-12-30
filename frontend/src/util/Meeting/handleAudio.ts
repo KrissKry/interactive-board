@@ -1,3 +1,5 @@
+import { AudioDevice } from '../../interfaces/Meeting/p2p';
+
 export const createAudio = (stream: MediaStream, volume: boolean) : HTMLMediaElement => {
     const newAudioEle = document.createElement('audio');
 
@@ -31,3 +33,17 @@ export const removeAudio = (id: string): void => {
         throw new TypeError('Element is null (not found)');
     }
 };
+
+export const getAudioVideoDevicesId = (
+    devices: MediaDeviceInfo[],
+    // eslint-disable-next-line no-undef
+    kind: MediaDeviceKind,
+): AudioDevice[] => devices
+        .filter((device) => device.kind === kind)
+        .map((device) => ({
+            deviceId: device.deviceId,
+            label: device.label,
+        }));
+
+// [...new Set(a)] would be better but
+export const getUniqueAudioDevices = (devices: AudioDevice[]): AudioDevice[] => devices.filter((val) => val.deviceId !== 'default' && val.deviceId !== 'communications');

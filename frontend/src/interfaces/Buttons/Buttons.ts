@@ -7,5 +7,5 @@ export interface ControlButtonPanel {
 
     state?: boolean;
 
-    callback: () => void;
+    callback: (e?: any) => void;
 }

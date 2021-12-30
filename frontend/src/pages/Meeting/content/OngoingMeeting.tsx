@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
+import { useIonPopover } from '@ionic/react';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -27,8 +28,9 @@ import { p2p } from '../../../interfaces/Meeting';
 
 /* util */
 import {
-    addAudio, createAudio, toggleIncomingAudio, toggleOutgoingAudio,
+    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
+import { SettingsPopover } from '../../../components/Popover';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -55,14 +57,22 @@ const OngoingMeeting = ({
     const [rtcState, setRTCState] = useState<p2p.rtcStatus>('INIT');
     const [microphoneOn, setMicrophoneOn] = useState<boolean>(false);
     const [volumeOn, setVolumeOn] = useState<boolean>(false);
+    const [availableInputs, setAvailableInputs] = useState<p2p.AudioDevice[]>([]);
+    const [currentInputDevice, setCurrentInputDevice] = useState<p2p.AudioDevice>();
     const [audioIdentificators, setAudioIdentificators] = useState<p2p.PeerAudioIdentifier[]>([]);
 
     const toggleMicrophone = () : void => { setMicrophoneOn(!microphoneOn); };
     const toggleVolume = () : void => { setVolumeOn(!volumeOn); };
+    const updateInputDevice = (device: p2p.AudioDevice) => setCurrentInputDevice(device);
 
     /* settings */
-    const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
-    const settingsCallback = () : void => { setSettingsVisible(!settingsVisible); };
+    const [present, dismiss] = useIonPopover(SettingsPopover, {
+        closePopup: () => dismiss(),
+        title: 'Wejście Audio',
+        availableInputs,
+        currentInput: availableInputs[0],
+        setInput: updateInputDevice,
+    });
 
     /* state */
     const dispatch = useAppDispatch();
@@ -122,6 +132,8 @@ const OngoingMeeting = ({
     };
 
     const handleP2PCommunication = () : void => {
+        if (!p2pMessages.length) return;
+
         const message = p2pMessages[0];
 
         /* This app instance is the receiver end */
@@ -185,39 +197,43 @@ const OngoingMeeting = ({
         popP2PMessageQ();
     };
 
-    useEffect(() => {
-        toggleOutgoingAudio(microphoneOn, ownMediaStream);
-    }, [microphoneOn, ownMediaStream]);
+    const updateDevices = () : Promise<void> => navigator.mediaDevices.enumerateDevices()
+        .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
+        .then((inputDevices) => getUniqueAudioDevices(inputDevices))
+        .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
+        .catch((err) => console.error(err));
 
-    useEffect(() => {
-        toggleIncomingAudio(volumeOn, audioIdentificators);
-    }, [volumeOn]);
+    const updateStream = (stream: MediaStream) : void => setOwnMediaStreamCallback(stream);
 
-    // opem media stream on meeting join & send p2p query
+    const updateP2PStatus = () : void => {
+        sendP2PCommunication({}, 'QUERY');
+        setRTCState('CONNECTED');
+    };
+
+    useEffect(() => { toggleOutgoingAudio(microphoneOn, ownMediaStream); }, [microphoneOn, ownMediaStream]);
+    useEffect(() => { toggleIncomingAudio(volumeOn, audioIdentificators); }, [volumeOn]);
+    useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
+
+    // open media stream on meeting join & send p2p query
     useEffect(() => {
         setRTCState('CONNECTING');
-        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        .then((str) => {
-            console.log('NOWY STRUMIEŃ', str);
-            setOwnMediaStreamCallback(str);
-        })
-        .then(() => {
-            sendP2PCommunication({}, 'QUERY');
-            setRTCState('CONNECTED');
-        })
-        .catch((err) => {
-            setRTCState('ERROR');
-            console.error(err);
-            alert('W celu połączenia z mikrofonem, odśwież stronę');
-        });
+
+        navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then(updateStream)
+            .then(updateDevices)
+            .then(updateP2PStatus)
+            .catch((err) => {
+                setRTCState('ERROR');
+                console.error(err);
+                alert('W celu połączenia z komunikacją audio, odśwież stronę');
+            });
+
+        navigator.mediaDevices.addEventListener('devicechange', updateDevices);
 
         // cleanup all tracks
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
-
-    useEffect(() => {
-        if (p2pMessages.length) handleP2PCommunication();
-    }, [p2pMessages]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -237,7 +253,7 @@ const OngoingMeeting = ({
         {
             id: 'settings',
             icon: ellipsisHorizontalOutline,
-            callback: settingsCallback,
+            callback: (e: any) => present({ event: e.nativeEvent }),
         },
     ];
 

@@ -17,3 +17,9 @@ export interface PeerAudioIdentifier {
 }
 
 export type rtcStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'ERROR';
+
+export interface AudioDevice {
+    deviceId: string;
+
+    label: string;
+}
