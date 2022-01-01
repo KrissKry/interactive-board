@@ -251,8 +251,9 @@ const OngoingMeeting = ({
     };
 
     const handleStreamChange = (): void => {
+        console.log('handleStreamChange()');
         if (typeof ownMediaStream === 'undefined') {
-            console.warn('handleStreamChange(): typeof ownMediaStream === undefined');
+            console.log('typeof ownMediaStream === undefined');
             return;
         }
 
@@ -264,7 +265,7 @@ const OngoingMeeting = ({
         console.warn('handleAudioDevicesChange()');
         navigator.mediaDevices.enumerateDevices()
             .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
-            .then((inputDevices) => getUniqueAudioDevices(inputDevices))
+            // .then((inputDevices) => getUniqueAudioDevices(inputDevices))
             .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
             // .then(() => {
             //     if (availableInputs.length) {
