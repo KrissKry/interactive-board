@@ -272,7 +272,7 @@ const OngoingMeeting = ({
         console.warn('handleAudioDevicesChange()');
         navigator.mediaDevices.enumerateDevices()
             .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
-            // .then((inputDevices) => getUniqueAudioDevices(inputDevices))
+            .then((inputDevices) => getUniqueAudioDevices(inputDevices))
             .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
             // .then(() => {
             //     if (availableInputs.length) {
@@ -329,6 +329,7 @@ const OngoingMeeting = ({
         .then(() => sendP2PCommunication({}, 'QUERY'))
         .catch(() => sendP2PCommunication({}, 'QUERY'));
 
+        handleAudioDevicesChange();
         navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
         // event listener for device changes
         // try creating stream

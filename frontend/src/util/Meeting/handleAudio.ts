@@ -34,21 +34,8 @@ export const removeAudio = (id: string): void => {
     }
 };
 
-// used custom interface as on some devices InputDeviceInfo is returned instead of MediaDeviceInfo
-// (which is undef for some reason)
-interface DeviceInfo {
-    deviceId: string;
-
-    groupId: string;
-
-    // eslint-disable-next-line no-undef
-    kind: MediaDeviceKind;
-
-    label: string;
-}
-
 export const getAudioVideoDevicesId = (
-    devices: DeviceInfo[],
+    devices: MediaDeviceInfo[],
     // eslint-disable-next-line no-undef
     kind: MediaDeviceKind,
 ): AudioDevice[] => devices
