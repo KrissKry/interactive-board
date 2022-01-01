@@ -208,45 +208,88 @@ const OngoingMeeting = ({
         })
         .then((stream) => setOwnMediaStreamCallback(stream));
 
+    const handleAvailableDeviceChanges = () : void => {
+        if (availableInputs.length) {
+            console.log('availableInputs.length');
+            // stream not started previously
+            if (!streamStarted) {
+                console.log('!streamStarted');
+                createStream()
+                    .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
+                    .then(() => setStreamStarted(true))
+                    .catch((err: any) => console.error(err));
+            // stream started previously
+            } else {
+                console.log('streamStarted');
+                // used a device that is on the new list
+                // eslint-disable-next-line no-lonely-if
+                if (typeof currentInputDevice !== 'undefined') {
+                    console.log('typeof currentInputDevice !== undefined');
+                    // assumption that the device has not been disconnected
+                    if (availableInputs.includes(currentInputDevice)) {
+                        // do nth
+                        console.log('availableInputs.includes(currentInputDevice)');
+                    // current device is not on the received device list
+                    } else {
+                        console.log('!!!availableInputs.includes(currentInputDevice)');
+                        setCurrentInputDevice(undefined);
+                    }
+                // stream started previously but current device is undefined
+                // and devices are found
+                // change current input device, replace audio tracks for all connections
+                } else {
+                    console.log('typeof currentInputDevice ===== undefined');
+                    setCurrentInputDevice(availableInputs[0]);
+                    talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
+                }
+            }
+        } else {
+            console.log('!!!availableInputs.length');
+            // do nth
+            setCurrentInputDevice(undefined);
+        }
+    };
+
     const handleAudioDevicesChange = (): void => {
+        console.warn('handleAudioDevicesChange()');
         navigator.mediaDevices.enumerateDevices()
             .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
             .then((inputDevices) => getUniqueAudioDevices(inputDevices))
             .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
-            .then(() => {
-                if (availableInputs.length) {
-                    // stream not started previously
-                    if (!streamStarted) {
-                        createStream()
-                            .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
-                            .then(() => setStreamStarted(true))
-                            .catch((err: any) => console.error(err));
-                    // stream started previously
-                    } else {
-                        // used a device that is on the new list
-                        // eslint-disable-next-line no-lonely-if
-                        if (typeof currentInputDevice !== 'undefined') {
-                            // assumption that the device has not been disconnected
-                            if (availableInputs.includes(currentInputDevice)) {
-                                // do nth
-                            // current device is not on the received device list
-                            } else {
-                                setCurrentInputDevice(undefined);
-                            }
-                        // stream started previously but current device is undefined
-                        // and devices are found
-                        // change current input device, replace audio tracks for all connections
-                        } else {
-                            setCurrentInputDevice(availableInputs[0]);
-                            talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
-                        }
-                    }
-                } else {
-                    // do nth
-                    setCurrentInputDevice(undefined);
-                }
-            });
-            // .catch((err) => console.error(err));
+            // .then(() => {
+            //     if (availableInputs.length) {
+            //         // stream not started previously
+            //         if (!streamStarted) {
+            //             createStream()
+            //                 .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
+            //                 .then(() => setStreamStarted(true))
+            //                 .catch((err: any) => console.error(err));
+            //         // stream started previously
+            //         } else {
+            //             // used a device that is on the new list
+            //             // eslint-disable-next-line no-lonely-if
+            //             if (typeof currentInputDevice !== 'undefined') {
+            //                 // assumption that the device has not been disconnected
+            //                 if (availableInputs.includes(currentInputDevice)) {
+            //                     // do nth
+            //                 // current device is not on the received device list
+            //                 } else {
+            //                     setCurrentInputDevice(undefined);
+            //                 }
+            //             // stream started previously but current device is undefined
+            //             // and devices are found
+            //             // change current input device, replace audio tracks for all connections
+            //             } else {
+            //                 setCurrentInputDevice(availableInputs[0]);
+            //                 talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
+            //             }
+            //         }
+            //     } else {
+            //         // do nth
+            //         setCurrentInputDevice(undefined);
+            //     }
+            // });
+            .catch((err) => console.error(err));
     };
 
     const handleAudioDevicePick = (): void => {
@@ -307,6 +350,7 @@ const OngoingMeeting = ({
     useEffect(() => { toggleOutgoingAudio(microphoneOn, ownMediaStream); }, [microphoneOn, ownMediaStream]);
     useEffect(() => { toggleIncomingAudio(volumeOn, audioIdentificators); }, [volumeOn]);
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
+    useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     // useEffect(() => { if (typeof currentInputDevice !== 'undefined') getUserMedia(); }, [currentInputDevice]);
     // useEffect(() => {
     //     if (availableInputs.length) {

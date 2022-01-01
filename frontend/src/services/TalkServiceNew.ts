@@ -77,6 +77,8 @@ export class TalkService {
                     if (this.findRemoteP2P(remote).owner !== remote) {
                         console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN', pc);
                         sendDataCallback({}, 'NEG_BEGIN', remote);
+                    } else {
+                        console.log('[P2P] Reneg needed but not owner of the connection', this.findRemoteP2P(remote).owner, remote);
                     }
                 } catch (error) {
                     console.error('[P2P] Couldnt find remote, no negotiation sent');
