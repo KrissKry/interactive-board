@@ -215,8 +215,8 @@ const OngoingMeeting = ({
             if (!streamStarted) {
                 console.log('!streamStarted');
                 createStream()
-                    .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
-                    .then(() => setStreamStarted(true))
+                    // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
+                    // .then(() => setStreamStarted(true))
                     .catch((err: any) => console.error(err));
             // stream started previously
             } else {
@@ -248,6 +248,16 @@ const OngoingMeeting = ({
             // do nth
             setCurrentInputDevice(undefined);
         }
+    };
+
+    const handleStreamChange = (): void => {
+        if (typeof ownMediaStream === 'undefined') {
+            console.warn('handleStreamChange(): typeof ownMediaStream === undefined');
+            return;
+        }
+
+        talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream);
+        setStreamStarted(true);
     };
 
     const handleAudioDevicesChange = (): void => {
@@ -351,6 +361,7 @@ const OngoingMeeting = ({
     useEffect(() => { toggleIncomingAudio(volumeOn, audioIdentificators); }, [volumeOn]);
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
+    useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
     // useEffect(() => { if (typeof currentInputDevice !== 'undefined') getUserMedia(); }, [currentInputDevice]);
     // useEffect(() => {
     //     if (availableInputs.length) {
