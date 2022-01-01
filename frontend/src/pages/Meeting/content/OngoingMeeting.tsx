@@ -257,8 +257,15 @@ const OngoingMeeting = ({
             return;
         }
 
-        talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream);
-        setStreamStarted(true);
+        // try {
+
+        // } catch (error)
+        // if (streamStarted) {
+            talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream);
+            talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
+        // } else {
+            setStreamStarted(true);
+        // }
     };
 
     const handleAudioDevicesChange = (): void => {
@@ -304,17 +311,17 @@ const OngoingMeeting = ({
     };
 
     const handleAudioDevicePick = (): void => {
-        if (streamStarted) {
-                createStream()
-                // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
-                .then(() => talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]))
-                .catch((err) => console.error(err));
-        } else {
-            createStream()
-                .then(() => setStreamStarted(true))
-                .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
-                .catch((err) => console.error(err));
-        }
+        // if (streamStarted) {
+        //         createStream()
+        //         // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
+        //         .then(() => talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]))
+        //         .catch((err) => console.error(err));
+        // } else {
+        //     createStream()
+        //         .then(() => setStreamStarted(true))
+        //         .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
+        //         .catch((err) => console.error(err));
+        // }
     };
 
     useEffect(() => {
@@ -357,7 +364,7 @@ const OngoingMeeting = ({
     //     .then(updateStream)
     //     .then(updateDevices);
 
-    useEffect(() => { handleAudioDevicePick(); }, [currentInputDevice]);
+    useEffect(() => { createStream(); }, [currentInputDevice]);
     useEffect(() => { toggleOutgoingAudio(microphoneOn, ownMediaStream); }, [microphoneOn, ownMediaStream]);
     useEffect(() => { toggleIncomingAudio(volumeOn, audioIdentificators); }, [volumeOn]);
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
