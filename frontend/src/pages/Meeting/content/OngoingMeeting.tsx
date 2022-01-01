@@ -214,10 +214,11 @@ const OngoingMeeting = ({
             // stream not started previously
             if (!streamStarted) {
                 console.log('!streamStarted');
-                createStream()
-                    // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
-                    // .then(() => setStreamStarted(true))
-                    .catch((err: any) => console.error(err));
+                if (typeof currentInputDevice === 'undefined') {
+                    setCurrentInputDevice(availableInputs[0]);
+                }
+
+                createStream().catch((err: any) => console.error(err));
             // stream started previously
             } else {
                 console.log('streamStarted');
@@ -251,77 +252,19 @@ const OngoingMeeting = ({
     };
 
     const handleStreamChange = (): void => {
-        console.log('handleStreamChange()');
-        if (typeof ownMediaStream === 'undefined') {
-            console.log('typeof ownMediaStream === undefined');
-            return;
-        }
+        if (typeof ownMediaStream === 'undefined') return;
 
-        // try {
-
-        // } catch (error)
-        // if (streamStarted) {
-            talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream);
-            talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
-        // } else {
-            setStreamStarted(true);
-        // }
+        talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream);
+        talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
+        setStreamStarted(true);
     };
 
     const handleAudioDevicesChange = (): void => {
-        console.warn('handleAudioDevicesChange()');
         navigator.mediaDevices.enumerateDevices()
             .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
             .then((inputDevices) => getUniqueAudioDevices(inputDevices))
             .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
-            // .then(() => {
-            //     if (availableInputs.length) {
-            //         // stream not started previously
-            //         if (!streamStarted) {
-            //             createStream()
-            //                 .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0], ownMediaStream))
-            //                 .then(() => setStreamStarted(true))
-            //                 .catch((err: any) => console.error(err));
-            //         // stream started previously
-            //         } else {
-            //             // used a device that is on the new list
-            //             // eslint-disable-next-line no-lonely-if
-            //             if (typeof currentInputDevice !== 'undefined') {
-            //                 // assumption that the device has not been disconnected
-            //                 if (availableInputs.includes(currentInputDevice)) {
-            //                     // do nth
-            //                 // current device is not on the received device list
-            //                 } else {
-            //                     setCurrentInputDevice(undefined);
-            //                 }
-            //             // stream started previously but current device is undefined
-            //             // and devices are found
-            //             // change current input device, replace audio tracks for all connections
-            //             } else {
-            //                 setCurrentInputDevice(availableInputs[0]);
-            //                 talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
-            //             }
-            //         }
-            //     } else {
-            //         // do nth
-            //         setCurrentInputDevice(undefined);
-            //     }
-            // });
             .catch((err) => console.error(err));
-    };
-
-    const handleAudioDevicePick = (): void => {
-        // if (streamStarted) {
-        //         createStream()
-        //         // .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
-        //         .then(() => talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]))
-        //         .catch((err) => console.error(err));
-        // } else {
-        //     createStream()
-        //         .then(() => setStreamStarted(true))
-        //         .then(() => talkService.addAudioTrackToAll(ownMediaStream?.getAudioTracks()[0]))
-        //         .catch((err) => console.error(err));
-        // }
     };
 
     useEffect(() => {
@@ -331,39 +274,9 @@ const OngoingMeeting = ({
 
         handleAudioDevicesChange();
         navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
-        // event listener for device changes
-        // try creating stream
-        // send QUERY despite stream
+
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
-
-    // on device change:
-    // if no stream started, try creating a stream
-    // if success add tracks to all
-    // else not then fuck off
-    // else if stream started
-
-    // const updateDevices = () : Promise<void> => navigator.mediaDevices.enumerateDevices()
-    //     .then((devices) => getAudioVideoDevicesId(devices, 'audioinput'))
-    //     .then((inputDevices) => getUniqueAudioDevices(inputDevices))
-    //     .then((uniqueInputDevices) => setAvailableInputs(uniqueInputDevices))
-    //     .catch((err) => console.error(err));
-
-    // const updateStream = (stream: MediaStream) : void => setOwnMediaStreamCallback(stream);
-
-    // const updateP2PStatus = () : void => {
-    //     sendP2PCommunication({}, 'QUERY');
-    //     setRTCState('CONNECTED');
-    // };
-
-    // const getUserMedia = (): Promise<void> => navigator
-    //     .mediaDevices
-    //     .getUserMedia({
-    //         audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
-    //         video: false,
-    //     })
-    //     .then(updateStream)
-    //     .then(updateDevices);
 
     useEffect(() => { createStream(); }, [currentInputDevice]);
     useEffect(() => { toggleOutgoingAudio(microphoneOn, ownMediaStream); }, [microphoneOn, ownMediaStream]);
@@ -371,34 +284,6 @@ const OngoingMeeting = ({
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
-    // useEffect(() => { if (typeof currentInputDevice !== 'undefined') getUserMedia(); }, [currentInputDevice]);
-    // useEffect(() => {
-    //     if (availableInputs.length) {
-    //         if (typeof currentInputDevice === 'undefined') setCurrentInputDevice(availableInputs[0]);
-    //     } else {
-    //         setCurrentInputDevice(undefined);
-    //     }
-    // }, [availableInputs]);
-
-    // useEffect(() => {
-    //     if (typeof ownMediaStream !== 'undefined') talkService.replaceAudioTrack(ownMediaStream.getAudioTracks()[0]);
-    // }, [currentInputDevice]);
-    // open media stream on meeting join & send p2p query
-    // useEffect(() => {
-    //     // setRTCState('CONNECTING');
-    //     // getUserMedia()
-    //     // .then(updateP2PStatus)
-    //     // .then(() => navigator.mediaDevices.addEventListener('devicechange', updateDevices))
-    //     // .catch((err) => {
-    //     //     console.log('Fakap na urz', currentInputDevice);
-    //     //     setRTCState('ERROR');
-    //     //     console.error(err);
-    //     //     alert('W celu połączenia z komunikacją audio, odśwież stronę');
-    //     // });
-    //     navigator.mediaDevices.addEventListener('devicechange', () => console.log('new devices lmao'));
-    //     // cleanup all tracks
-    //     return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
-    // }, []);
 
     const controlButtons : ControlButtonPanel[] = [
         {
