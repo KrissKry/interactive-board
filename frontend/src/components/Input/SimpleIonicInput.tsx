@@ -9,16 +9,21 @@ interface InputProps {
     placeholder?: string;
 
     resetOnCallback?: boolean;
+
+    allowEmpty?: boolean;
 }
 
 const SimpleIonicInput = ({
     sendCallback,
     placeholder,
     resetOnCallback = true,
+    allowEmpty = true,
 } : InputProps) : JSX.Element => {
     const [text, setText] = useState<string>('');
 
     const handleSend = () => {
+        if (!text.length && !allowEmpty) return;
+
         sendCallback(text);
         if (resetOnCallback) setText('');
     };

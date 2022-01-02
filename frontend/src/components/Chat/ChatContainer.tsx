@@ -23,12 +23,12 @@ interface ChatProps {
 }
 
 const ChatContainer = ({ title, messages, sendMessageCallback } : ChatProps) : JSX.Element => (
-    <div className="ee-chat-container">
-        <ChatHeader title={title} />
+    <div className="ee-chat-container-2">
+        {/* <ChatHeader title={title} /> */}
 
         <ChatMessages messages={messages} />
 
-        <SimpleIonicInput sendCallback={sendMessageCallback} />
+        <SimpleIonicInput sendCallback={sendMessageCallback} allowEmpty={false} />
     </div>
 );
 
