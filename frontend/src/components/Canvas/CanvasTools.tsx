@@ -17,12 +17,12 @@ const CanvasTools = ({ activeToolId, tools }: ToolsProps) : JSX.Element => (
                 type="button"
                 title={item.id}
                 onClick={item.callback}
-                className="ee-canvas-toolbar--tool"
+                className={['ee-canvas-toolbar--tool', item.customClass].join(' ')}
             >
                 <IonIcon
                     icon={item.icon}
                     title={item.id}
-                    className={['ee-canvas-toolbar--icon', item.id === activeToolId ? 'ee-canvas-toolbar--icon-active' : ''].join(' ')}
+                    className={['ee-canvas-toolbar--icon', item.id === activeToolId || item.customId === activeToolId ? 'ee-canvas-toolbar--icon-active' : ''].join(' ')}
                 />
             </button>
         ))}

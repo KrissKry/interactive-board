@@ -8,8 +8,12 @@ export type CanvasToolMode = 'PENCIL' | 'ERASER' | 'BUCKET' | 'RESET' | 'SAVE';
 export interface CanvasTool {
     id?: CanvasToolMode;
 
+    customId?: string;
+
     icon: string;
 
     // eslint-disable-next-line no-unused-vars
     callback: (e?: any) => void;
+
+    customClass?: string;
 }

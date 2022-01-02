@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     colorFillOutline,
-    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
+    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOffOutline, radioButtonOnOutline, radioOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 
 /* redux */
@@ -108,6 +108,7 @@ const OngoingMeeting = ({
 
     /* board section */
     const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
+    const [brushWidth, setBrushWidth] = useState<number>(1);
     const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
     const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
     const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
@@ -135,7 +136,7 @@ const OngoingMeeting = ({
             setBrushColor(initialFillColor);
         }
     };
-
+    const boardBrushSetWidth = (width: number): void => { setBrushWidth(width); };
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
         console.log('[P2P] Sending', type, 'to', remote);
@@ -379,6 +380,33 @@ const OngoingMeeting = ({
             },
         },
     ];
+
+    const brushTools: CanvasTool[] = [
+        {
+            customId: '1',
+            customClass: 'ee-canvas-toolbar--tool-tiny',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(1),
+        },
+        {
+            customId: '2',
+            customClass: 'ee-canvas-toolbar--tool-small',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(2),
+        },
+        {
+            customId: '3',
+            customClass: 'ee-canvas-toolbar--tool-regular',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(3),
+        },
+        {
+            customId: '5',
+            customClass: 'ee-canvas-toolbar--tool-large',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(5),
+        },
+    ];
     const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
 
@@ -387,7 +415,7 @@ const OngoingMeeting = ({
             <Canvas
                 brushColor={brushColor}
                 brushMode={brushMode}
-                brushWidth={1}
+                brushWidth={brushWidth}
                 changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
                 initialChanges={meetingState.boardInitialChanges}
@@ -430,6 +458,8 @@ const OngoingMeeting = ({
                 currentColor={brushColor}
                 pickColor={boardBrushUpdate}
                 tools={canvasTools}
+                brushTools={brushTools}
+                activeBrushId={brushWidth.toString()}
             />
         </div>
     );

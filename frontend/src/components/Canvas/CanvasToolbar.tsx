@@ -13,6 +13,10 @@ interface ToolbarProps {
     activeToolId: string;
 
     tools: CanvasTool[];
+
+    activeBrushId: string;
+
+    brushTools: CanvasTool[];
 }
 const colors = [
     '#1ABC9C',
@@ -38,7 +42,9 @@ const colors = [
 ];
 
 const CanvasToolbar = ({
+    activeBrushId,
     activeToolId,
+    brushTools,
     tools,
     currentColor,
     pickColor,
@@ -53,6 +59,8 @@ const CanvasToolbar = ({
             <CanvasColorGrid colors={colors} pickColor={pickColor} />
 
             <CanvasTools tools={tools} activeToolId={activeToolId} />
+
+            <CanvasTools tools={brushTools} activeToolId={activeBrushId} />
         </div>
     );
 };
