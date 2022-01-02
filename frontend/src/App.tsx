@@ -21,7 +21,7 @@ import '@ionic/react/css/structure.css';
 import '@ionic/react/css/typography.css';
 
 /* Theme variables */
-import './theme/variables.css';
+// import './theme/variables.css';
 
 /* main css */
 import './styles/main.scss';
