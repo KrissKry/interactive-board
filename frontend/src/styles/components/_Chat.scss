@@ -6,3 +6,44 @@
         overflow-y: auto;
     }
 }
+
+.ee-chat-container-2 {
+    width: 15rem;
+    height: 30rem;
+}
+
+.ee-message {
+    &--container {
+        margin: 0.2rem;
+        width: auto;
+        height: auto;
+        max-width: 80%;
+        // width: fit-content;
+        // height: fit-content;
+
+        // p {
+        //     margin: 0;
+        // }
+    }
+
+
+    &--foreign {
+        border-radius: 1rem;
+        background-color: $bg-message-foreign;
+    }
+
+    &--self {
+        border-radius: 1rem;
+        background-color: $bg-message-self;
+    }
+    &--username {
+        margin: 0 0.5rem;
+    }
+    &--message {
+        margin: 0.25rem;
+    }
+    &--content {
+        width: fit-content;
+        // height: fit-content;
+    }
+}
