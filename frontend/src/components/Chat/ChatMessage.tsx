@@ -17,7 +17,7 @@ const ChatMessage = ({ message }: MessageProps) : JSX.Element => {
             <div className="ee-message--container">
                 <p className="ee-text-size--tiny ee-text-color--grey ee-message--username" style={{ display: message.username === user ? 'none' : 'block' }}>{message.username}</p>
 
-                <div className={message.username === user ? 'ee-message--self' : 'ee-message--foreign'}>
+                <div className={[message.username === user ? 'ee-message--self' : 'ee-message--foreign', ' ee-message--content'].join(' ')}>
 
                     <div className="ee-padding--035">
                         <p className="ee-text-size--regular ee-text-color--white ee-message--message">{message.text}</p>

@@ -15,9 +15,11 @@
 .ee-message {
     &--container {
         margin: 0.2rem;
+        width: auto;
+        height: auto;
         max-width: 80%;
-        width: fit-content;
-        height: fit-content;
+        // width: fit-content;
+        // height: fit-content;
 
         // p {
         //     margin: 0;
@@ -39,5 +41,9 @@
     }
     &--message {
         margin: 0.25rem;
+    }
+    &--content {
+        width: fit-content;
+        // height: fit-content;
     }
 }
