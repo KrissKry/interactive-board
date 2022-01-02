@@ -2,3 +2,18 @@
     width: 40rem;
     height: 40rem;
 }
+
+.ee-canvas-toolbar {
+    &--colors {
+        display: grid;
+        grid-template-rows: 2rem 2rem;
+        gap: 0.25rem 0.25rem;
+        grid-template-columns: repeat(10, 2rem);
+        button {
+            width: 2rem;
+            height: 2rem;
+            margin: 0;
+            padding: 0;
+        }
+    }
+}

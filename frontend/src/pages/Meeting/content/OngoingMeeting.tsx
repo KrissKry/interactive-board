@@ -21,7 +21,7 @@ import ChatContainer from '../../../components/Chat/ChatContainer';
 
 /* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
-import type { PixelChanges } from '../../../interfaces/Canvas';
+import type { PixelChanges, RGBColor } from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
@@ -30,6 +30,9 @@ import {
     addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
 import { SettingsPopover } from '../../../components/Popover';
+import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
+import { initialFillColor } from '../../../helpers/initial';
+import { getRGBFromHex } from '../../../util/Canvas';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -98,9 +101,17 @@ const OngoingMeeting = ({
     };
 
     /* board section */
+    const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
     const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
+    const boardBrushUpdate = (color: string) => {
+        try {
+            setBrushColor(getRGBFromHex(color));
+        } catch (error) {
+            setBrushColor(initialFillColor);
+        }
+    };
 
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
@@ -313,6 +324,7 @@ const OngoingMeeting = ({
     return (
         <div className="ee-flex--row" id="meetingDiv">
             <Canvas
+                brushColor={brushColor}
                 brushWidth={1}
                 changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
@@ -340,6 +352,8 @@ const OngoingMeeting = ({
                 title="Ustawienia"
                 closePopup={() => setSettingsPopover({ showPopover: false, event: undefined })}
             />
+
+            <CanvasToolbar pickColor={boardBrushUpdate} />
         </div>
     );
 };
