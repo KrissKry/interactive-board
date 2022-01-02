@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
-    ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
+    colorFillOutline,
+    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 
 /* redux */
@@ -21,7 +22,9 @@ import ChatContainer from '../../../components/Chat/ChatContainer';
 
 /* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
-import type { PixelChanges, RGBColor } from '../../../interfaces/Canvas';
+import {
+    CanvasTool, CanvasToolID, PixelChanges, RGBColor,
+} from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
@@ -102,6 +105,7 @@ const OngoingMeeting = ({
 
     /* board section */
     const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
+    const [activeTool, setActiveTool] = useState<CanvasToolID>('PENCIL');
     const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
     const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
@@ -321,6 +325,23 @@ const OngoingMeeting = ({
         },
     ];
 
+    const canvasTools: CanvasTool[] = [
+        {
+            id: 'PENCIL',
+            icon: pencilSharp,
+            callback: () => setActiveTool('PENCIL'),
+        },
+        {
+            id: 'BUCKET',
+            icon: colorFillOutline,
+            callback: () => setActiveTool('BUCKET'),
+        },
+        {
+            id: 'ERASER',
+            icon: prismOutline,
+            callback: () => setActiveTool('ERASER'),
+        },
+    ];
     return (
         <div className="ee-flex--row" id="meetingDiv">
             <Canvas
@@ -353,7 +374,12 @@ const OngoingMeeting = ({
                 closePopup={() => setSettingsPopover({ showPopover: false, event: undefined })}
             />
 
-            <CanvasToolbar pickColor={boardBrushUpdate} />
+            <CanvasToolbar
+                activeToolId={activeTool}
+                currentColor={brushColor}
+                pickColor={boardBrushUpdate}
+                tools={canvasTools}
+            />
         </div>
     );
 };
