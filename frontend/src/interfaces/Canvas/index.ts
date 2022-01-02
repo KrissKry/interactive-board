@@ -1,8 +1,8 @@
 import type { BrushLine } from './BrushLine';
-import type { CanvasTool, CanvasToolID } from './CanvasTool';
+import type { CanvasTool, CanvasToolMode } from './CanvasTool';
 import type { PixelChanges } from './PixelChanges';
 import type { RGBColor } from './RGBColor';
 
 export type {
-    BrushLine, CanvasTool, CanvasToolID, PixelChanges, RGBColor,
+    BrushLine, CanvasTool, CanvasToolMode, PixelChanges, RGBColor,
 };

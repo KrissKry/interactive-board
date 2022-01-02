@@ -3,16 +3,19 @@ import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
 
-import { initialFillColor } from '../../helpers/initial';
-import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
-import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
+import { initialFillColor, whiteFillColor } from '../../helpers/initial';
+import { CanvasToolMode, PixelChanges, RGBColor } from '../../interfaces/Canvas';
+import { getComparedPixels, getHexFromRGB, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
+import { CanvasEventType } from '../../interfaces/Canvas/CanvasEvent';
 
 interface CanvasProps {
     /**
      * Optional color of the brush
      */
     brushColor?: RGBColor;
+
+    brushMode: CanvasToolMode;
 
     brushWidth: number;
 
@@ -43,10 +46,13 @@ interface CanvasProps {
     // eslint-disable-next-line no-unused-vars
     sendChangesCallback: (changes: PixelChanges) => void;
 
+    // sendEventCallback: (type) => void;
+    sendFillEventCallback: () => void;
 }
 
 const Canvas = ({
     brushColor,
+    brushMode,
     brushWidth,
     currentChanges,
     changesWaiting,
@@ -54,6 +60,7 @@ const Canvas = ({
     cleanupInitialCallback,
     popChangeCallback,
     sendChangesCallback,
+    sendFillEventCallback,
 
 } : CanvasProps) : JSX.Element => {
     const [p5Instance, setP5Instance] = useState<p5Types>();
@@ -75,26 +82,40 @@ const Canvas = ({
         setP5Instance(p5);
     };
 
+    const fillCanvas = (p5: p5Types) => {
+        console.log(drawingColor, getHexFromRGB(drawingColor));
+        p5.background(getHexFromRGB(drawingColor).substring(1));
+
+        sendFillEventCallback();
+    };
+
+    const draw = (p5: p5Types) => {
+        // eslint-disable-next-line max-len
+        const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
+
+        const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+        if (brushMode === 'PENCIL') p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
+        else p5.stroke(255, 255, 255);
+
+        p5.strokeWeight(brushWidth);
+        p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
+
+        const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+        // eslint-disable-next-line max-len
+        const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, brushMode === 'PENCIL' ? drawingColor : whiteFillColor);
+
+        if (pixelsComparison.points && pixelsComparison.points.length) {
+            sendChangesCallback(pixelsComparison);
+        }
+    };
+
     /* draw on mouse drag if not updating */
     const mouseDragged = (p5: p5Types) => {
         if (!isUpdating && isDrawing) {
-            // eslint-disable-next-line max-len
-            const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
-
-            const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
-
-            p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
-            p5.strokeWeight(brushWidth);
-            p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-
-            const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
-
-            // eslint-disable-next-line max-len
-            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, drawingColor);
-
-            if (pixelsComparison.points && pixelsComparison.points.length) {
-                sendChangesCallback(pixelsComparison);
-            }
+            if (brushMode === 'BUCKET') fillCanvas(p5);
+            else draw(p5);
         }
     };
 

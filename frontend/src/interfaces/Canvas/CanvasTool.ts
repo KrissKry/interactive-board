@@ -1,4 +1,4 @@
-export type CanvasToolID = 'PENCIL' | 'ERASER' | 'BUCKET';
+export type CanvasToolMode = 'PENCIL' | 'ERASER' | 'BUCKET' | 'RESET' | 'SAVE';
 
 /**
  * @param id - id
@@ -6,9 +6,10 @@ export type CanvasToolID = 'PENCIL' | 'ERASER' | 'BUCKET';
  * @param callback - method to call on tool press
  */
 export interface CanvasTool {
-    id?: CanvasToolID;
+    id?: CanvasToolMode;
 
     icon: string;
 
-    callback: () => void;
+    // eslint-disable-next-line no-unused-vars
+    callback: (e?: any) => void;
 }

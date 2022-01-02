@@ -1,6 +1,7 @@
 import { Client, IFrame, IMessage } from '@stomp/stompjs';
 import axios, { AxiosResponse } from 'axios';
 import { PixelChanges } from '../interfaces/Canvas';
+import { CanvasEventMessage } from '../interfaces/Canvas/CanvasEvent';
 import { ChatMessageInterface } from '../interfaces/Chat';
 import { p2pMessage } from '../interfaces/Meeting/p2p';
 
@@ -87,6 +88,15 @@ export class MeetingService {
         if (this.connected && this.client !== null) {
             this.client.publish({
                 destination: `/topic/p2p.listen.${this.id}`,
+                body: JSON.stringify(message),
+            });
+        }
+    }
+
+    sendCanvasEvent(message: CanvasEventMessage): void {
+        if (this.connected && this.client !== null) {
+            this.client.publish({
+                destination: `/api/board/event/${this.id}`,
                 body: JSON.stringify(message),
             });
         }

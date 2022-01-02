@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     colorFillOutline,
-    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, volumeHighOutline, volumeMuteOutline,
+    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 
 /* redux */
@@ -23,7 +23,7 @@ import ChatContainer from '../../../components/Chat/ChatContainer';
 /* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
 import {
-    CanvasTool, CanvasToolID, PixelChanges, RGBColor,
+    CanvasTool, CanvasToolMode, PixelChanges, RGBColor,
 } from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
@@ -32,10 +32,11 @@ import { p2p } from '../../../interfaces/Meeting';
 import {
     addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
-import { SettingsPopover } from '../../../components/Popover';
+import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
 import { initialFillColor } from '../../../helpers/initial';
-import { getRGBFromHex } from '../../../util/Canvas';
+import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
+import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -49,6 +50,8 @@ interface MeetingProps {
 
     moveToEndP2PMessageQ: () => void;
 }
+
+type CanvasPopoverType = 'SAVE' | 'RESET';
 
 const OngoingMeeting = ({
     ownMediaStream,
@@ -105,10 +108,26 @@ const OngoingMeeting = ({
 
     /* board section */
     const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
-    const [activeTool, setActiveTool] = useState<CanvasToolID>('PENCIL');
-    const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
-    const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
-    const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
+    const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
+    const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
+    const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
+    const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
+    const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
+    const [canvasChangePopover, setCanvasChangePopover] = useState({
+        showPopover: false,
+        event: undefined,
+    });
+    const closeCanvasPopover = (): void => setCanvasChangePopover({ showPopover: false, event: undefined });
+
+    const boardSendFillEvent = (): void => { meetingService.sendCanvasEvent(createCanvasEventFillMsg(brushColor)); };
+    const boardSendSaveEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasEventSave(meetingState.user));
+        closeCanvasPopover();
+    };
+    const boardSendResetEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasReset());
+        closeCanvasPopover();
+    };
     const boardBrushUpdate = (color: string) => {
         try {
             setBrushColor(getRGBFromHex(color));
@@ -329,23 +348,45 @@ const OngoingMeeting = ({
         {
             id: 'PENCIL',
             icon: pencilSharp,
-            callback: () => setActiveTool('PENCIL'),
-        },
-        {
-            id: 'BUCKET',
-            icon: colorFillOutline,
-            callback: () => setActiveTool('BUCKET'),
+            callback: () => setBrushMode('PENCIL'),
         },
         {
             id: 'ERASER',
             icon: prismOutline,
-            callback: () => setActiveTool('ERASER'),
+            callback: () => setBrushMode('ERASER'),
+        },
+        {
+            id: 'BUCKET',
+            icon: colorFillOutline,
+            callback: () => setBrushMode('BUCKET'),
+        },
+        {
+            id: 'RESET',
+            icon: trashOutline,
+            callback: (e: any) => {
+                e.persist();
+                setCanvasPopoverType('RESET');
+                setCanvasChangePopover({ showPopover: true, event: e });
+            },
+        },
+        {
+            id: 'SAVE',
+            icon: saveOutline,
+            callback: (e: any) => {
+                e.persist();
+                setCanvasPopoverType('SAVE');
+                setCanvasChangePopover({ showPopover: true, event: e });
+            },
         },
     ];
+    const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
+    const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
+
     return (
         <div className="ee-flex--row" id="meetingDiv">
             <Canvas
                 brushColor={brushColor}
+                brushMode={brushMode}
                 brushWidth={1}
                 changesWaiting={!!meetingState.boardChangesWaiting}
                 currentChanges={meetingState.boardChanges}
@@ -353,6 +394,7 @@ const OngoingMeeting = ({
                 cleanupInitialCallback={boardCleanupInitialCallback}
                 popChangeCallback={boardPopChange}
                 sendChangesCallback={boardSendChangesCallback}
+                sendFillEventCallback={boardSendFillEvent}
             />
             <ChatContainer
                 messages={meetingState.messages}
@@ -374,8 +416,17 @@ const OngoingMeeting = ({
                 closePopup={() => setSettingsPopover({ showPopover: false, event: undefined })}
             />
 
+            <BoolPopover
+                isOpen={canvasChangePopover.showPopover}
+                popoverEvent={canvasChangePopover.event}
+                confirmCallback={canvasPopoverType === 'SAVE' ? boardSendSaveEvent : boardSendResetEvent}
+                cancelCallback={closeCanvasPopover}
+                title="Czy na pewno?"
+                contentText={canvasPopoverType === 'SAVE' ? saveText : resetText}
+            />
+
             <CanvasToolbar
-                activeToolId={activeTool}
+                activeToolId={brushMode}
                 currentColor={brushColor}
                 pickColor={boardBrushUpdate}
                 tools={canvasTools}
