@@ -1,6 +1,8 @@
 import { PeerAudioIdentifier } from '../../interfaces/Meeting/p2p';
 
 export const toggleOutgoingAudio = (microphoneOn: boolean, ownMediaStream?: MediaStream): void => {
+    console.log(microphoneOn, ownMediaStream?.getAudioTracks());
+
     if (typeof ownMediaStream !== 'undefined') {
         // eslint-disable-next-line no-restricted-syntax
         for (const track of ownMediaStream.getAudioTracks()) {
