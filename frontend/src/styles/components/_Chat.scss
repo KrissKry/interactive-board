@@ -19,9 +19,9 @@
         width: fit-content;
         height: fit-content;
 
-        p {
-            margin: 0;
-        }
+        // p {
+        //     margin: 0;
+        // }
     }
 
 
@@ -33,5 +33,11 @@
     &--self {
         border-radius: 1rem;
         background-color: $bg-message-self;
+    }
+    &--username {
+        margin: 0 0.5rem;
+    }
+    &--message {
+        margin: 0.25rem;
     }
 }
