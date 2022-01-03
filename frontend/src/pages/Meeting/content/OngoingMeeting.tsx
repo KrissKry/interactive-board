@@ -1,8 +1,10 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
+    arrowDownOutline,
     colorFillOutline, ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
+import p5Types from 'p5';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -108,6 +110,7 @@ const OngoingMeeting = ({
     };
 
     /* board section */
+    const [p5Instance, setP5Instance] = useState<p5Types>();
     const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
     const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
     const [brushWidth, setBrushWidth] = useState<number>(1);
@@ -406,6 +409,11 @@ const OngoingMeeting = ({
                 setCanvasChangePopover({ showPopover: true, event: e });
             },
         },
+        {
+            id: 'DOWNLOAD',
+            icon: arrowDownOutline,
+            callback: () => p5Instance?.save(`${meetingState.id}-${(new Date()).toISOString()}.jpg`),
+        },
     ];
 
     const brushTools: CanvasTool[] = [
@@ -449,10 +457,12 @@ const OngoingMeeting = ({
                     changesWaiting={!!meetingState.boardChangesWaiting}
                     currentChanges={meetingState.boardChanges}
                     initialChanges={meetingState.boardInitialChanges}
+                    p5Instance={p5Instance}
                     cleanupInitialCallback={boardCleanupInitialCallback}
                     popChangeCallback={boardPopChange}
                     sendChangesCallback={boardSendChangesCallback}
                     sendFillEventCallback={boardSendFillEvent}
+                    setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
                 />
                 <CanvasToolbar
                     activeToolId={brushMode}

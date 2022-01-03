@@ -1,4 +1,4 @@
-export type CanvasToolMode = 'PENCIL' | 'ERASER' | 'BUCKET' | 'RESET' | 'SAVE';
+export type CanvasToolMode = 'PENCIL' | 'ERASER' | 'BUCKET' | 'RESET' | 'SAVE' | 'DOWNLOAD';
 
 /**
  * @param id - id

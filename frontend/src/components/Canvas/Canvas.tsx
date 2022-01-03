@@ -35,6 +35,8 @@ interface CanvasProps {
      */
     initialChanges: PixelUpdate[];
 
+    p5Instance?: p5Types;
+
     /**
      * Called on finished canvas update on initial connection
      */
@@ -49,6 +51,8 @@ interface CanvasProps {
 
     // sendEventCallback: (type) => void;
     sendFillEventCallback: () => void;
+
+    setP5InstanceCallback: (p5: p5Types) => void;
 }
 
 const Canvas = ({
@@ -59,13 +63,15 @@ const Canvas = ({
     currentChanges,
     changesWaiting,
     initialChanges,
+    p5Instance,
     cleanupInitialCallback,
     popChangeCallback,
     sendChangesCallback,
     sendFillEventCallback,
+    setP5InstanceCallback,
 
 } : CanvasProps) : JSX.Element => {
-    const [p5Instance, setP5Instance] = useState<p5Types>();
+    // const [p5Instance, setP5Instance] = useState<p5Types>();
     const [isUpdating, setIsUpdating] = useState<boolean>(false);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const drawingColor = brushColor || initialFillColor;
@@ -81,7 +87,7 @@ const Canvas = ({
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
         p5.background('white');
         p5.strokeWeight(brushWidth);
-        setP5Instance(p5);
+        setP5InstanceCallback(p5);
     };
 
     const fillCanvas = (p5: p5Types) => {
