@@ -1,9 +1,12 @@
 .ee-canvas {
-    width: 40rem;
-    height: 40rem;
+    width: fit-content;
+    height: fit-content;
+    // border: 1px solid black;
+    filter: drop-shadow(0 0 0.5rem #ddd);
 }
 
 .ee-canvas-toolbar {
+
     &--colors {
         display: grid;
         grid-template-rows: 2rem 2rem;
@@ -23,14 +26,14 @@
         transition: background-color 0.25s ease-in-out;
     }
     &--tool {
-        background-color: white;
+        background-color: rgba(0,0,0,0);
         font-size: 2rem;
         margin: 1rem 0.25rem;
 
-        &-tiny      { font-size: 0.8rem;   margin: 1.6rem 0.25rem;  }
-        &-small     { font-size: 1rem;     margin: 1.5rem 0.25rem;  }
-        &-regular   { font-size: 1.5rem;   margin: 1.25rem 0.25rem; }
-        &-large     { font-size: 2rem;     margin: 1rem 0.25rem;    }
+        &-tiny      { font-size: 0.8rem; } //   margin: 1.6rem 0.25rem;  }
+        &-small     { font-size: 1rem; } //    margin: 1.5rem 0.25rem;  }
+        &-regular   { font-size: 1.5rem; } //  margin: 1.25rem 0.25rem; }
+        &-large     { font-size: 2rem; } //    margin: 1rem 0.25rem;    }
     }
     &--icon {
         pointer-events: none;

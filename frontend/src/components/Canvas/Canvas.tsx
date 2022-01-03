@@ -7,9 +7,10 @@ import { initialFillColor, whiteFillColor } from '../../helpers/initial';
 import { CanvasToolMode, PixelChanges, RGBColor } from '../../interfaces/Canvas';
 import { getComparedPixels, getHexFromRGB, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
-import { CanvasEventType } from '../../interfaces/Canvas/CanvasEvent';
 
 interface CanvasProps {
+    backgroundColor: RGBColor;
+
     /**
      * Optional color of the brush
      */
@@ -51,6 +52,7 @@ interface CanvasProps {
 }
 
 const Canvas = ({
+    backgroundColor,
     brushColor,
     brushMode,
     brushWidth,
@@ -68,8 +70,8 @@ const Canvas = ({
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const drawingColor = brushColor || initialFillColor;
 
-    const canvasWidth = 500;
-    const canvasHeight = 500;
+    const canvasWidth = 1200;
+    const canvasHeight = 750;
 
     const mousePressed = () => { setIsDrawing(true); };
     const mouseReleased = () => { setIsDrawing(false); };
@@ -83,10 +85,11 @@ const Canvas = ({
     };
 
     const fillCanvas = (p5: p5Types) => {
-        console.log(drawingColor, getHexFromRGB(drawingColor));
-        p5.background(getHexFromRGB(drawingColor).substring(1));
-
-        sendFillEventCallback();
+        // when 2-d is used and when webGL? prone to bugs
+        // eslint-disable-next-line max-len
+        if (p5.mouseX >= 0 && p5.mouseY >= 0 && p5.mouseX < canvasWidth && p5.mouseY < canvasHeight) {
+            sendFillEventCallback();
+        }
     };
 
     const draw = (p5: p5Types) => {
@@ -109,6 +112,10 @@ const Canvas = ({
         if (pixelsComparison.points && pixelsComparison.points.length) {
             sendChangesCallback(pixelsComparison);
         }
+    };
+
+    const refreshFrame = (p5: p5Types) => {
+        // p5.background(backgroundColor.r, backgroundColor.g, backgroundColor.b);
     };
 
     /* draw on mouse drag if not updating */
@@ -165,8 +172,13 @@ const Canvas = ({
         }
     }, [initialChanges, p5Instance]);
 
+    useEffect(() => {
+        if (typeof p5Instance !== 'undefined') {
+            p5Instance.background(backgroundColor.r, backgroundColor.g, backgroundColor.b);
+        }
+    }, [backgroundColor]);
     return (
-            <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
+            <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} draw={refreshFrame} />
     );
 };
 

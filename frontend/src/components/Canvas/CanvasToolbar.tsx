@@ -52,7 +52,7 @@ const CanvasToolbar = ({
     const currentColorHex = useMemo(() => getHexFromRGB(currentColor), [currentColor]);
 
     return (
-        <div className="ee-canvas-toolbar ee-flex--row">
+        <div className="ee-canvas-toolbar ee-flex--row ee-align-main--center ee-align-cross--center">
 
             <div className="ee-canvas-toolbar--current" style={{ backgroundColor: currentColorHex }} />
 

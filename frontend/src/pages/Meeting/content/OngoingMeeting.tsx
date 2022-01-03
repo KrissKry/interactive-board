@@ -1,15 +1,14 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
-    colorFillOutline,
-    ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOffOutline, radioButtonOnOutline, radioOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
+    colorFillOutline, ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasCleanupInitial, meetingCanvasPopChange,
+    meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../../services';
@@ -34,9 +33,10 @@ import {
 } from '../../../util/Meeting';
 import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
-import { initialFillColor } from '../../../helpers/initial';
+import { initialFillColor, whiteFillColor } from '../../../helpers/initial';
 import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
 import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
+import { CanvasFillEvent, CanvasSaveEvent } from '../../../interfaces/Canvas/CanvasEvent';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -91,6 +91,7 @@ const OngoingMeeting = ({
         boardInitialChanges: state.meeting.pixels,
         boardChanges: state.meeting.updatingPixels,
         boardChangesWaiting: state.meeting.updatingPixels.length,
+        boardEvents: state.meeting.canvasEvents,
 
         users: state.meeting.currentUsers,
         user: state.user.username,
@@ -108,6 +109,7 @@ const OngoingMeeting = ({
 
     /* board section */
     const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
+    const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
     const [brushWidth, setBrushWidth] = useState<number>(1);
     const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
     const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
@@ -120,7 +122,9 @@ const OngoingMeeting = ({
     });
     const closeCanvasPopover = (): void => setCanvasChangePopover({ showPopover: false, event: undefined });
 
-    const boardSendFillEvent = (): void => { meetingService.sendCanvasEvent(createCanvasEventFillMsg(brushColor)); };
+    const boardSendFillEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasEventFillMsg(brushColor));
+    };
     const boardSendSaveEvent = (): void => {
         meetingService.sendCanvasEvent(createCanvasEventSave(meetingState.user));
         closeCanvasPopover();
@@ -137,6 +141,28 @@ const OngoingMeeting = ({
         }
     };
     const boardBrushSetWidth = (width: number): void => { setBrushWidth(width); };
+    const handleBoardEvent = (): void => {
+        if (!meetingState.boardEvents.length) return;
+
+        const msg = meetingState.boardEvents[0];
+
+        if (msg.type === 'FILL') {
+            const { color } = (msg.data as CanvasFillEvent);
+
+            const rgb: RGBColor = {
+                r: color.red,
+                g: color.green,
+                b: color.blue,
+            };
+
+            setBGColor(rgb);
+        } else if (msg.type === 'RESET') {
+            setBGColor(whiteFillColor);
+        }
+
+        dispatch(meetingCanvasPopEvent());
+    };
+
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
         console.log('[P2P] Sending', type, 'to', remote);
@@ -319,6 +345,7 @@ const OngoingMeeting = ({
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
+    useEffect(() => { handleBoardEvent(); }, [meetingState.boardEvents]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -412,18 +439,30 @@ const OngoingMeeting = ({
 
     return (
         <div className="ee-flex--row" id="meetingDiv">
-            <Canvas
-                brushColor={brushColor}
-                brushMode={brushMode}
-                brushWidth={brushWidth}
-                changesWaiting={!!meetingState.boardChangesWaiting}
-                currentChanges={meetingState.boardChanges}
-                initialChanges={meetingState.boardInitialChanges}
-                cleanupInitialCallback={boardCleanupInitialCallback}
-                popChangeCallback={boardPopChange}
-                sendChangesCallback={boardSendChangesCallback}
-                sendFillEventCallback={boardSendFillEvent}
-            />
+
+            <div>
+                <Canvas
+                    backgroundColor={bgColor}
+                    brushColor={brushColor}
+                    brushMode={brushMode}
+                    brushWidth={brushWidth}
+                    changesWaiting={!!meetingState.boardChangesWaiting}
+                    currentChanges={meetingState.boardChanges}
+                    initialChanges={meetingState.boardInitialChanges}
+                    cleanupInitialCallback={boardCleanupInitialCallback}
+                    popChangeCallback={boardPopChange}
+                    sendChangesCallback={boardSendChangesCallback}
+                    sendFillEventCallback={boardSendFillEvent}
+                />
+                <CanvasToolbar
+                    activeToolId={brushMode}
+                    currentColor={brushColor}
+                    pickColor={boardBrushUpdate}
+                    tools={canvasTools}
+                    brushTools={brushTools}
+                    activeBrushId={brushWidth.toString()}
+                />
+            </div>
             <ChatContainer
                 messages={meetingState.messages}
                 sendMessageCallback={chatSendMessageCallback}
@@ -453,14 +492,6 @@ const OngoingMeeting = ({
                 contentText={canvasPopoverType === 'SAVE' ? saveText : resetText}
             />
 
-            <CanvasToolbar
-                activeToolId={brushMode}
-                currentColor={brushColor}
-                pickColor={boardBrushUpdate}
-                tools={canvasTools}
-                brushTools={brushTools}
-                activeBrushId={brushWidth.toString()}
-            />
         </div>
     );
 };

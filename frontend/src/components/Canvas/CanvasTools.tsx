@@ -9,7 +9,7 @@ interface ToolsProps {
 }
 
 const CanvasTools = ({ activeToolId, tools }: ToolsProps) : JSX.Element => (
-    <div className="">
+    <div className="ee-flex--row ee-align-cross--center ee-margin--left1">
         {tools.map((item, index) => (
             <button
                 // eslint-disable-next-line react/no-array-index-key

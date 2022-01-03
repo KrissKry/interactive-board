@@ -6,7 +6,7 @@ import { IFrame } from '@stomp/stompjs';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove, meetingUserUpdate,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
 import { MeetingService } from '../../services';
@@ -22,8 +22,9 @@ import type { PixelChanges } from '../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
 import { UserInterface } from '../../interfaces/User/UserInterface';
+import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
 
-type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P';
+type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
 
 interface MeetingSubObject {
@@ -126,6 +127,11 @@ const MeetingTab = () => {
         }
     };
 
+    const boardEventUpdateCallback = (message: IFrame) => {
+        const msg: CanvasEventMessage = JSON.parse(message.body);
+        dispatch(meetingCanvasPushEvent(msg));
+    };
+
     // eslint-disable-next-line max-len
     const newMeetingSub = (id: string, type: MeetingEndpointSub) : MeetingSubObject => ({ id, type });
 
@@ -149,6 +155,10 @@ const MeetingTab = () => {
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'P2P')]);
+            return meetingService.addSubscription(`/topic/board.event.listen${id}`, boardEventUpdateCallback);
+        })
+        .then((subId) => {
+            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);
 
             // smieszny timeout aka optymalizacyjny punkt XD
             setTimeout(() => {
