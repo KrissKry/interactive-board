@@ -1,14 +1,16 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
-    ellipsisHorizontalOutline, micOffOutline, micOutline, volumeHighOutline, volumeMuteOutline,
+    arrowDownOutline,
+    colorFillOutline, ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
+import p5Types from 'p5';
 
 /* redux */
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasCleanupInitial, meetingCanvasPopChange,
+    meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../../services';
@@ -21,7 +23,9 @@ import ChatContainer from '../../../components/Chat/ChatContainer';
 
 /* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
-import type { PixelChanges } from '../../../interfaces/Canvas';
+import {
+    CanvasTool, CanvasToolMode, PixelChanges, RGBColor,
+} from '../../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
@@ -29,7 +33,12 @@ import { p2p } from '../../../interfaces/Meeting';
 import {
     addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
-import { SettingsPopover } from '../../../components/Popover';
+import { BoolPopover, SettingsPopover } from '../../../components/Popover';
+import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
+import { initialFillColor, whiteFillColor } from '../../../helpers/initial';
+import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
+import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
+import { CanvasFillEvent, CanvasSaveEvent } from '../../../interfaces/Canvas/CanvasEvent';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -43,6 +52,8 @@ interface MeetingProps {
 
     moveToEndP2PMessageQ: () => void;
 }
+
+type CanvasPopoverType = 'SAVE' | 'RESET';
 
 const OngoingMeeting = ({
     ownMediaStream,
@@ -82,6 +93,7 @@ const OngoingMeeting = ({
         boardInitialChanges: state.meeting.pixels,
         boardChanges: state.meeting.updatingPixels,
         boardChangesWaiting: state.meeting.updatingPixels.length,
+        boardEvents: state.meeting.canvasEvents,
 
         users: state.meeting.currentUsers,
         user: state.user.username,
@@ -98,9 +110,61 @@ const OngoingMeeting = ({
     };
 
     /* board section */
-    const boardSendChangesCallback = (changes: PixelChanges) => { meetingService.sendCanvasChanges(changes); };
-    const boardPopChange = () : void => { dispatch(meetingCanvasPopChange()); };
-    const boardCleanupInitialCallback = () : void => { dispatch(meetingCanvasCleanupInitial()); };
+    const [p5Instance, setP5Instance] = useState<p5Types>();
+    const [brushColor, setBrushColor] = useState<RGBColor>(initialFillColor);
+    const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
+    const [brushWidth, setBrushWidth] = useState<number>(1);
+    const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
+    const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
+    const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
+    const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
+    const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
+    const [canvasChangePopover, setCanvasChangePopover] = useState({
+        showPopover: false,
+        event: undefined,
+    });
+    const closeCanvasPopover = (): void => setCanvasChangePopover({ showPopover: false, event: undefined });
+
+    const boardSendFillEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasEventFillMsg(brushColor));
+    };
+    const boardSendSaveEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasEventSave(meetingState.user));
+        closeCanvasPopover();
+    };
+    const boardSendResetEvent = (): void => {
+        meetingService.sendCanvasEvent(createCanvasReset());
+        closeCanvasPopover();
+    };
+    const boardBrushUpdate = (color: string) => {
+        try {
+            setBrushColor(getRGBFromHex(color));
+        } catch (error) {
+            setBrushColor(initialFillColor);
+        }
+    };
+    const boardBrushSetWidth = (width: number): void => { setBrushWidth(width); };
+    const handleBoardEvent = (): void => {
+        if (!meetingState.boardEvents.length) return;
+
+        const msg = meetingState.boardEvents[0];
+
+        if (msg.type === 'FILL') {
+            const { color } = (msg.data as CanvasFillEvent);
+
+            const rgb: RGBColor = {
+                r: color.red,
+                g: color.green,
+                b: color.blue,
+            };
+
+            setBGColor(rgb);
+        } else if (msg.type === 'RESET') {
+            setBGColor(whiteFillColor);
+        }
+
+        dispatch(meetingCanvasPopEvent());
+    };
 
     /* p2p section */
     const sendP2PCommunication = (data: any, type: p2p.p2pEvent, remote?: string) : void => {
@@ -284,6 +348,7 @@ const OngoingMeeting = ({
     useEffect(() => { handleP2PCommunication(); }, [p2pMessages]);
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
+    useEffect(() => { handleBoardEvent(); }, [meetingState.boardEvents]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -310,17 +375,104 @@ const OngoingMeeting = ({
         },
     ];
 
+    const canvasTools: CanvasTool[] = [
+        {
+            id: 'PENCIL',
+            icon: pencilSharp,
+            callback: () => setBrushMode('PENCIL'),
+        },
+        {
+            id: 'ERASER',
+            icon: prismOutline,
+            callback: () => setBrushMode('ERASER'),
+        },
+        {
+            id: 'BUCKET',
+            icon: colorFillOutline,
+            callback: () => setBrushMode('BUCKET'),
+        },
+        {
+            id: 'RESET',
+            icon: trashOutline,
+            callback: (e: any) => {
+                e.persist();
+                setCanvasPopoverType('RESET');
+                setCanvasChangePopover({ showPopover: true, event: e });
+            },
+        },
+        {
+            id: 'SAVE',
+            icon: saveOutline,
+            callback: (e: any) => {
+                e.persist();
+                setCanvasPopoverType('SAVE');
+                setCanvasChangePopover({ showPopover: true, event: e });
+            },
+        },
+        {
+            id: 'DOWNLOAD',
+            icon: arrowDownOutline,
+            callback: () => p5Instance?.save(`${meetingState.id}-${(new Date()).toISOString()}.jpg`),
+        },
+    ];
+
+    const brushTools: CanvasTool[] = [
+        {
+            customId: '1',
+            customClass: 'ee-canvas-toolbar--tool-tiny',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(1),
+        },
+        {
+            customId: '2',
+            customClass: 'ee-canvas-toolbar--tool-small',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(2),
+        },
+        {
+            customId: '3',
+            customClass: 'ee-canvas-toolbar--tool-regular',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(3),
+        },
+        {
+            customId: '5',
+            customClass: 'ee-canvas-toolbar--tool-large',
+            icon: radioButtonOnOutline,
+            callback: () => boardBrushSetWidth(5),
+        },
+    ];
+    const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
+    const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
+
     return (
         <div className="ee-flex--row" id="meetingDiv">
-            <Canvas
-                brushWidth={1}
-                changesWaiting={!!meetingState.boardChangesWaiting}
-                currentChanges={meetingState.boardChanges}
-                initialChanges={meetingState.boardInitialChanges}
-                cleanupInitialCallback={boardCleanupInitialCallback}
-                popChangeCallback={boardPopChange}
-                sendChangesCallback={boardSendChangesCallback}
-            />
+
+            <div>
+                <Canvas
+                    backgroundColor={bgColor}
+                    brushColor={brushColor}
+                    brushMode={brushMode}
+                    brushWidth={brushWidth}
+                    changesWaiting={!!meetingState.boardChangesWaiting}
+                    currentChanges={meetingState.boardChanges}
+                    initialChanges={meetingState.boardInitialChanges}
+                    p5Instance={p5Instance}
+                    cleanupInitialCallback={boardCleanupInitialCallback}
+                    popChangeCallback={boardPopChange}
+                    sendChangesCallback={boardSendChangesCallback}
+                    sendFillEventCallback={boardSendFillEvent}
+                    setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
+                />
+                <CanvasToolbar
+                    activeToolId={brushMode}
+                    currentColor={brushColor}
+                    pickColor={boardBrushUpdate}
+                    tools={canvasTools}
+                    brushTools={brushTools}
+                    activeBrushId={brushWidth.toString()}
+                />
+            </div>
             <ChatContainer
                 messages={meetingState.messages}
                 sendMessageCallback={chatSendMessageCallback}
@@ -340,6 +492,16 @@ const OngoingMeeting = ({
                 title="Ustawienia"
                 closePopup={() => setSettingsPopover({ showPopover: false, event: undefined })}
             />
+
+            <BoolPopover
+                isOpen={canvasChangePopover.showPopover}
+                popoverEvent={canvasChangePopover.event}
+                confirmCallback={canvasPopoverType === 'SAVE' ? boardSendSaveEvent : boardSendResetEvent}
+                cancelCallback={closeCanvasPopover}
+                title="Czy na pewno?"
+                contentText={canvasPopoverType === 'SAVE' ? saveText : resetText}
+            />
+
         </div>
     );
 };

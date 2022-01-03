@@ -1,9 +1,11 @@
+export interface PixelColor {
+    red: number;
+    green: number;
+    blue: number;
+}
+
 export interface PixelChanges {
-    color: {
-        red: number;
-        green: number;
-        blue: number;
-    },
+    color: PixelColor,
     points: {
         x: number;
         y: number;

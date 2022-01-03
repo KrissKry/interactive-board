@@ -1,3 +1,3 @@
-import { initialFillColor } from './fillColor';
+import { initialFillColor, whiteFillColor } from './fillColor';
 
-export { initialFillColor };
+export { initialFillColor, whiteFillColor };
