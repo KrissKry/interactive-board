@@ -39,6 +39,7 @@ import { initialFillColor, whiteFillColor } from '../../../helpers/initial';
 import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
 import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
 import { CanvasFillEvent, CanvasSaveEvent } from '../../../interfaces/Canvas/CanvasEvent';
+import { MeetingMenu } from '../../../components/Menu';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -448,6 +449,8 @@ const OngoingMeeting = ({
     return (
         <div className="ee-flex--row" id="meetingDiv">
 
+            <MeetingMenu users={meetingState.users} buttons={controlButtons} />
+
             <div>
                 <Canvas
                     backgroundColor={bgColor}
@@ -473,15 +476,12 @@ const OngoingMeeting = ({
                     activeBrushId={brushWidth.toString()}
                 />
             </div>
+
             <ChatContainer
                 messages={meetingState.messages}
                 sendMessageCallback={chatSendMessageCallback}
                 title=""
             />
-
-            <UserList users={meetingState.users} />
-
-            <ButtonsPanel buttons={controlButtons} />
 
             <SettingsPopover
                 isOpen={settingsPopover.showPopover}

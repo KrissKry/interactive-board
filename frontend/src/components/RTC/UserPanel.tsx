@@ -1,5 +1,4 @@
 /* eslint-disable react/require-default-props */
-import { IonAvatar, IonItem, IonLabel } from '@ionic/react';
 import React from 'react';
 import Avatar from '../../assets/avatar.svg';
 
@@ -36,16 +35,20 @@ const UserPanel = ({
     avatar = '',
     name = 'User',
 } : UserPanelProps) : JSX.Element => (
-    <IonItem className="ee-user-panel ion-no-padding ion-no-margin">
-        <IonAvatar className={[active ? 'ee-user-panel--active' : '', 'ee-margin--auto'].join(' ')}>
-            <img src={avatar !== '' ? avatar : Avatar} alt={name} />
-        </IonAvatar>
+    <div className="ee-user--panel ee-flex--row ee-align-cross--center">
+
+        <img
+            title={name}
+            src={avatar || Avatar}
+            alt={name}
+            className={['ee-user--panel-avatar', expand ? 'ee-margin--right1' : '', active ? 'ee-user--panel-active' : ''].join(' ')}
+        />
+
         {expand && (
-            <IonLabel className="ee-margin--vertical">
-                {name}
-            </IonLabel>
+            <p className="ee-margin--vertical0 ee-user--panel-name">{name}</p>
         )}
-    </IonItem>
+
+    </div>
 );
 
 export default UserPanel;
