@@ -1,3 +1,4 @@
+import ChatMenu from './ChatMenu';
 import MeetingMenu from './MeetingMenu';
 
-export { MeetingMenu };
+export { ChatMenu, MeetingMenu };

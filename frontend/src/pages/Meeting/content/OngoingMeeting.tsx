@@ -39,7 +39,7 @@ import { initialFillColor, whiteFillColor } from '../../../helpers/initial';
 import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
 import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
 import { CanvasFillEvent, CanvasSaveEvent } from '../../../interfaces/Canvas/CanvasEvent';
-import { MeetingMenu } from '../../../components/Menu';
+import { ChatMenu, MeetingMenu } from '../../../components/Menu';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -447,7 +447,7 @@ const OngoingMeeting = ({
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
 
     return (
-        <div className="ee-flex--row" id="meetingDiv">
+        <div className="ee-flex--row ee-meeting" id="meetingDiv">
 
             <MeetingMenu users={meetingState.users} buttons={controlButtons} />
 
@@ -477,11 +477,12 @@ const OngoingMeeting = ({
                 />
             </div>
 
-            <ChatContainer
+            {/* <ChatContainer
                 messages={meetingState.messages}
                 sendMessageCallback={chatSendMessageCallback}
                 title=""
-            />
+            /> */}
+            <ChatMenu />
 
             <SettingsPopover
                 isOpen={settingsPopover.showPopover}
