@@ -1,0 +1,73 @@
+.ee-menu {
+    position: absolute;
+    width: 0rem;
+    height: fit-content;
+    
+    box-shadow: 1px 1px 1rem #ccc;
+    z-index: 100;
+    flex-wrap: nowrap;
+
+
+
+    &--xbtn {
+        background-color: rgba(0,0,0,0);
+        color: black;
+        font-size: 1.5rem;
+        width: fit-content;
+        height: fit-content;
+    }
+
+    &--icon {
+        transform: rotate(0deg);
+        transition: transform 0.25s ease-in-out;
+
+        &-active {
+            transform: rotate(180deg);
+            transition: transform 0.5s ease-in-out;
+        }
+    }
+
+    &-util {
+        position: fixed;
+        background-color: white;
+        left: -10rem;
+        transition: 0.5s;
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
+        &-active {
+            left: 0;
+            width: 15rem;
+
+            // @media screen and (max-height: 40rem) {
+            //     top: 3.5rem;
+            // }
+        }
+        &-list {
+            padding: 0.5rem;
+        }
+        &-btnpanel {
+            height: 3rem;
+            padding: 0.5rem;
+        }
+    }
+
+    &-chat {
+        position: fixed;
+        background-color: white;
+        // right: -10rem;
+        right: 0;
+        transition: 0.5s;
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
+
+        &-active {
+            // position: fixed;
+            // right: 0;
+            width: 20rem;
+
+
+        }
+    }
+}

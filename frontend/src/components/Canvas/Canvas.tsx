@@ -5,7 +5,7 @@ import Sketch from 'react-p5';
 
 import { initialFillColor, whiteFillColor } from '../../helpers/initial';
 import { CanvasToolMode, PixelChanges, RGBColor } from '../../interfaces/Canvas';
-import { getComparedPixels, getHexFromRGB, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
+import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
 
 interface CanvasProps {
@@ -30,6 +30,8 @@ interface CanvasProps {
      */
     changesWaiting: boolean;
 
+    inDrawingMode: boolean;
+
     /**
      * Canvas initial state (removed after update)
      */
@@ -52,6 +54,7 @@ interface CanvasProps {
     // sendEventCallback: (type) => void;
     sendFillEventCallback: () => void;
 
+    // eslint-disable-next-line no-unused-vars
     setP5InstanceCallback: (p5: p5Types) => void;
 }
 
@@ -62,6 +65,7 @@ const Canvas = ({
     brushWidth,
     currentChanges,
     changesWaiting,
+    inDrawingMode,
     initialChanges,
     p5Instance,
     cleanupInitialCallback,
@@ -71,7 +75,6 @@ const Canvas = ({
     setP5InstanceCallback,
 
 } : CanvasProps) : JSX.Element => {
-    // const [p5Instance, setP5Instance] = useState<p5Types>();
     const [isUpdating, setIsUpdating] = useState<boolean>(false);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const drawingColor = brushColor || initialFillColor;
@@ -120,13 +123,9 @@ const Canvas = ({
         }
     };
 
-    const refreshFrame = (p5: p5Types) => {
-        // p5.background(backgroundColor.r, backgroundColor.g, backgroundColor.b);
-    };
-
     /* draw on mouse drag if not updating */
     const mouseDragged = (p5: p5Types) => {
-        if (!isUpdating && isDrawing) {
+        if (!isUpdating && isDrawing && inDrawingMode) {
             if (brushMode === 'BUCKET') fillCanvas(p5);
             else draw(p5);
         }
@@ -184,7 +183,8 @@ const Canvas = ({
         }
     }, [backgroundColor]);
     return (
-            <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} draw={refreshFrame} />
+        // eslint-disable-next-line max-len
+        <Sketch setup={setup} mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
     );
 };
 

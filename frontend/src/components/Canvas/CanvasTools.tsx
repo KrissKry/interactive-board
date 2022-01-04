@@ -6,10 +6,12 @@ interface ToolsProps {
     activeToolId: string;
 
     tools: CanvasTool[];
+
+    classname?: string;
 }
 
-const CanvasTools = ({ activeToolId, tools }: ToolsProps) : JSX.Element => (
-    <div className="ee-flex--row ee-align-cross--center ee-margin--left1">
+const CanvasTools = ({ activeToolId, tools, classname }: ToolsProps) : JSX.Element => (
+    <div className={['ee-flex--row ee-align-cross--center ee-margin--left1', classname].join(' ')}>
         {tools.map((item, index) => (
             <button
                 // eslint-disable-next-line react/no-array-index-key

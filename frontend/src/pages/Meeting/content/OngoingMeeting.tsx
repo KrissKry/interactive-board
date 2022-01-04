@@ -2,11 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import {
     arrowDownOutline,
-    colorFillOutline, ellipsisHorizontalOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
+    closeOutline,
+    colorFillOutline, ellipsisHorizontalOutline, menuOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 import p5Types from 'p5';
 
 /* redux */
+import { IonIcon } from '@ionic/react';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
     // eslint-disable-next-line max-len
@@ -16,10 +18,7 @@ import {
 import { MeetingService, TalkService } from '../../../services';
 
 /* components */
-import { UserList } from '../../../components/RTC';
-import { ButtonsPanel } from '../../../components/ButtonGroup';
 import Canvas from '../../../components/Canvas';
-import ChatContainer from '../../../components/Chat/ChatContainer';
 
 /* interfaces */
 import { ControlButtonPanel } from '../../../interfaces/Buttons';
@@ -36,9 +35,11 @@ import {
 import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
 import { initialFillColor, whiteFillColor } from '../../../helpers/initial';
-import { getHexFromRGB, getRGBFromHex } from '../../../util/Canvas';
+import { getRGBFromHex } from '../../../util/Canvas';
 import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } from '../../../util/Canvas/createCanvasEventMsg';
-import { CanvasFillEvent, CanvasSaveEvent } from '../../../interfaces/Canvas/CanvasEvent';
+import { CanvasFillEvent } from '../../../interfaces/Canvas/CanvasEvent';
+import { ChatMenu, MeetingMenu } from '../../../components/Menu';
+import { toggleToolbarMenu } from '../../../redux/ducks/menus';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -47,6 +48,8 @@ interface MeetingProps {
     setOwnMediaStreamCallback: (str: MediaStream) => void;
 
     p2pMessages: p2p.p2pMessage[];
+
+    inDrawingMode: boolean;
 
     popP2PMessageQ: () => void;
 
@@ -59,6 +62,7 @@ const OngoingMeeting = ({
     ownMediaStream,
     setOwnMediaStreamCallback,
     p2pMessages,
+    inDrawingMode,
     popP2PMessageQ,
     moveToEndP2PMessageQ,
 } : MeetingProps) : JSX.Element => {
@@ -97,17 +101,9 @@ const OngoingMeeting = ({
 
         users: state.meeting.currentUsers,
         user: state.user.username,
+
+        toolbarToggled: state.menus.toolbarExpanded,
     }));
-
-    /* chat */
-    const chatSendMessageCallback = (text: string) => {
-        const newMessage: ChatMessageInterface = {
-            text,
-            username: `${meetingState.user}`,
-        };
-
-        meetingService.sendChatMessage(newMessage);
-    };
 
     /* board section */
     const [p5Instance, setP5Instance] = useState<p5Types>();
@@ -446,9 +442,11 @@ const OngoingMeeting = ({
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
 
     return (
-        <div className="ee-flex--row" id="meetingDiv">
+        <div className="ee-flex--column ee-meeting" id="meetingDiv">
 
-            <div>
+            <MeetingMenu users={meetingState.users} buttons={controlButtons} />
+
+            <div className={['ee-canvas--wrapper ee-flex--row ee-align-main--center', inDrawingMode ? 'ee-canvas--wrapper-blocked' : ''].join(' ')}>
                 <Canvas
                     backgroundColor={bgColor}
                     brushColor={brushColor}
@@ -456,6 +454,7 @@ const OngoingMeeting = ({
                     brushWidth={brushWidth}
                     changesWaiting={!!meetingState.boardChangesWaiting}
                     currentChanges={meetingState.boardChanges}
+                    inDrawingMode={inDrawingMode}
                     initialChanges={meetingState.boardInitialChanges}
                     p5Instance={p5Instance}
                     cleanupInitialCallback={boardCleanupInitialCallback}
@@ -464,24 +463,22 @@ const OngoingMeeting = ({
                     sendFillEventCallback={boardSendFillEvent}
                     setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
                 />
-                <CanvasToolbar
-                    activeToolId={brushMode}
-                    currentColor={brushColor}
-                    pickColor={boardBrushUpdate}
-                    tools={canvasTools}
-                    brushTools={brushTools}
-                    activeBrushId={brushWidth.toString()}
-                />
+
             </div>
-            <ChatContainer
-                messages={meetingState.messages}
-                sendMessageCallback={chatSendMessageCallback}
-                title=""
+
+            <CanvasToolbar
+                activeToolId={brushMode}
+                currentColor={brushColor}
+                pickColor={boardBrushUpdate}
+                tools={canvasTools}
+                brushTools={brushTools}
+                activeBrushId={brushWidth.toString()}
             />
 
-            <UserList users={meetingState.users} />
-
-            <ButtonsPanel buttons={controlButtons} />
+            <button type="button" className="ee-canvas-toolbar--toggle" onClick={() => dispatch(toggleToolbarMenu())}>
+                <IonIcon icon={meetingState.toolbarToggled ? closeOutline : menuOutline} />
+            </button>
+            <ChatMenu />
 
             <SettingsPopover
                 isOpen={settingsPopover.showPopover}

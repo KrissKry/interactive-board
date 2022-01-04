@@ -1,16 +1,7 @@
 import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
-import {
-    IonApp,
-    IonIcon,
-    IonLabel,
-    IonRouterOutlet,
-    IonTabBar,
-    IonTabButton,
-    IonTabs,
-} from '@ionic/react';
+import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { triangle } from 'ionicons/icons';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -20,9 +11,6 @@ import '@ionic/react/css/normalize.css';
 import '@ionic/react/css/structure.css';
 import '@ionic/react/css/typography.css';
 
-/* Theme variables */
-// import './theme/variables.css';
-
 /* main css */
 import './styles/main.scss';
 import { MeetingTab } from './pages';
@@ -30,22 +18,15 @@ import { MeetingTab } from './pages';
 const App: React.FC = () => (
     <IonApp>
         <IonReactRouter>
-            <IonTabs>
                 <IonRouterOutlet>
-                    <Route exact path="/tab1">
+                    <Route exact path="/spotkanie">
                         <MeetingTab />
                     </Route>
                     <Route exact path="/">
-                        <Redirect to="/tab1" />
+                        <Redirect to="/spotkanie" />
                     </Route>
                 </IonRouterOutlet>
-                <IonTabBar slot="bottom">
-                    <IonTabButton tab="tab1" href="/tab1">
-                        <IonIcon icon={triangle} />
-                        <IonLabel>Tab 1</IonLabel>
-                    </IonTabButton>
-                </IonTabBar>
-            </IonTabs>
+
         </IonReactRouter>
     </IonApp>
 );

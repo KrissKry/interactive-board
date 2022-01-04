@@ -1,4 +1,4 @@
-import { IonButton, IonIcon, IonItemGroup } from '@ionic/react';
+import { IonIcon } from '@ionic/react';
 import React from 'react';
 import { ControlButtonPanel } from '../../interfaces/Buttons';
 
@@ -10,6 +10,8 @@ interface PanelProps {
     groupClassName?: string;
 
     iconClassName?: string;
+
+    iconStateClassName?: string;
 }
 
 export const ButtonsPanel = ({
@@ -17,13 +19,14 @@ export const ButtonsPanel = ({
     groupClassName = '',
     buttonClassName = '',
     iconClassName = '',
+    iconStateClassName = '',
 } : PanelProps) : JSX.Element => (
-    <IonItemGroup className={groupClassName}>
+    <div className={groupClassName}>
         {buttons.map((item) => (
-            <IonButton key={item.id} className={buttonClassName} onClick={item.callback} fill="clear" size="small">
+            <button key={item.id} type="button" className={buttonClassName} onClick={item.callback}>
                 {/* eslint-disable-next-line max-len */}
-                <IonIcon className={iconClassName} icon={typeof item.state !== 'undefined' && item.state === false ? item.iconFalse : item.icon} />
-            </IonButton>
+                <IonIcon className={item.state ? iconStateClassName : iconClassName} icon={typeof item.state !== 'undefined' && item.state === false ? item.iconFalse : item.icon} />
+            </button>
         ))}
-    </IonItemGroup>
+    </div>
 );

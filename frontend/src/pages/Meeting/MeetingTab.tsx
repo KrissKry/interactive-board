@@ -1,18 +1,22 @@
 /* eslint-disable max-len */
 import React, { useState } from 'react';
-import { IonSpinner } from '@ionic/react';
+import {
+    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonButtons, useIonToast,
+} from '@ionic/react';
 import { IFrame } from '@stomp/stompjs';
 
+import {
+    chatboxOutline, exitOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
+} from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService } from '../../services';
+import { MeetingService, TalkService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
-import GenericTab from '../GenericTab';
 import { NoMeeting, OngoingMeeting } from './content';
 import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
@@ -23,6 +27,9 @@ import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
+import { menuReset, toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
+import { toggleDrawingMode } from '../../redux/ducks/canvas';
+import { BoolPopover } from '../../components/Popover';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -40,14 +47,23 @@ const MeetingTab = () => {
     const [connectionStatus, setConnectionStatus] = useState<MeetingConnectionStatus>('INIT');
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
+    const [present, dismiss] = useIonToast();
+    const [exitPopover, setExitPopover] = useState({
+        showPopover: false,
+        event: undefined,
+    });
+
+    const closeExitPopover = (): void => setExitPopover({ showPopover: false, event: undefined });
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
         id: state.meeting.roomId,
+        pass: state.meeting.pass,
         loading: state.meeting.loading,
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
         user: state.user.username,
+        inDrawingMode: state.canvas.drawingMode && !state.menus.chatExpanded && !state.menus.utilityExpanded,
     }));
 
     const meetingService = MeetingService.getInstance();
@@ -175,11 +191,15 @@ const MeetingTab = () => {
         setConnectionStatus('CONNECTING');
 
         meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
-        .then(() => meetingService.activateClient())
+        .then(() => {
+            meetingService.activateClient();
+            dispatch(meetingSetDetails([id, pass ?? '']));
+        })
         .catch((err) => {
             meetingService.deactivateClient();
             console.error(err);
             setConnectionStatus('ERROR');
+            dispatch(meetingSetDetails(['', '']));
         });
     };
 
@@ -226,6 +246,7 @@ const MeetingTab = () => {
                 ownMediaStream={ownMediaStream}
                 setOwnMediaStreamCallback={updateMediaStream}
                 p2pMessages={p2pMessagesQ}
+                inDrawingMode={meetingState.inDrawingMode}
                 popP2PMessageQ={popP2PMessageQ}
                 moveToEndP2PMessageQ={moveToEndP2PMessageQ}
             />
@@ -235,10 +256,86 @@ const MeetingTab = () => {
         else return defaultReturn();
     };
 
+    const copyMeetingToClipboard = async () => {
+        try {
+            // im sorry
+            // i really am XD
+            if (!meetingState.id) throw new Error('');
+            await navigator.clipboard.writeText(`Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}`);
+            present({
+                buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
+                message: 'Skopiowano dane spotkania',
+                duration: 1000,
+                position: 'bottom',
+                cssClass: '',
+            });
+        } catch (error) {
+            present({
+                message: 'Nie jesteś w spotkaniu!',
+                duration: 1000,
+                position: 'bottom',
+                cssClass: '',
+            });
+        }
+    };
+
+    const leaveMeeting = (): void => {
+        closeExitPopover();
+        setConnectionStatus('INIT');
+        meetingService.deactivateClient();
+        dispatch(meetingReset());
+        dispatch(menuReset());
+    };
     return (
-        <GenericTab title={meetingState.id}>
+    <IonPage>
+
+        <IonHeader>
+            <IonToolbar>
+                {!!meetingState.id && (
+                <>
+                    <IonTitle>{meetingState.id}</IonTitle>
+
+                    <IonButtons slot="start" color="danger">
+                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
+                            <IonIcon icon={gridOutline} className="" />
+                        </IonButton>
+                        <IonButton fill="clear" onClick={() => copyMeetingToClipboard()}>
+                            <IonIcon icon={shareSocial} />
+                        </IonButton>
+                    </IonButtons>
+
+                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
+                        <IonIcon color="danger" icon={powerOutline} />
+                    </IonButton>
+
+                    <IonButtons slot="end">
+                        <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
+                            <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
+                            <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
+                        </IonButton>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                            <IonIcon icon={chatboxOutline} className="" />
+                        </IonButton>
+                    </IonButtons>
+
+                    <BoolPopover
+                        isOpen={exitPopover.showPopover}
+                        popoverEvent={exitPopover.event}
+                        cancelCallback={closeExitPopover}
+                        confirmCallback={leaveMeeting}
+                        title="Opuszczanie spotkania"
+                        contentText="Będziesz mógł ponownie dołączyć jeśli nie jesteś ostatnią osobą w tym spotkaniu."
+                    />
+                </>
+                )}
+            </IonToolbar>
+        </IonHeader>
+
+        <IonContent fullscreen>
             {getMeetingContent()}
-        </GenericTab>
+        </IonContent>
+
+    </IonPage>
     );
 };
 

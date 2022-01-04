@@ -1,0 +1,15 @@
+.ee-buttons {
+    &--settings {
+        background-color: rgba(0,0,0,0);
+        font-size: 1.5rem;
+
+        &-icon {
+            color: crimson;
+            transition: color 0.5s ease-in-out;
+        }
+        &-icon-true {
+            color: #222;
+            transition: color 0.5s ease-in-out;
+        }
+    }
+}
