@@ -56,6 +56,13 @@ export interface meetingStateInterface {
     canvasEvents: CanvasEventMessage[];
 
     /**
+     * Im sorry.
+     * I really am.
+     * XD
+     */
+    pass: string;
+
+    /**
      * Meeting data fetch in progress
      */
     loading: boolean;
@@ -99,6 +106,8 @@ const initialState : meetingStateInterface = {
     loadingError: false,
 
     errorMessage: '',
+
+    pass: '',
 };
 
 const meetingSlice = createSlice({
@@ -108,6 +117,11 @@ const meetingSlice = createSlice({
         meetingSetID: (state, action: PayloadAction<string>) => ({
             ...state,
             roomId: action.payload,
+        }),
+        meetingSetDetails: (state, action: PayloadAction<string[]>) => ({
+            ...state,
+            roomId: action.payload[0],
+            pass: action.payload[1],
         }),
         meetingFetchRequest: (state) => ({
             ...state,
@@ -197,6 +211,7 @@ export default meetingSlice.reducer;
 
 const {
     meetingSetID,
+    meetingSetDetails,
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,
@@ -213,6 +228,7 @@ const {
 
 export {
     meetingSetID,
+    meetingSetDetails,
     meetingFetchRequest,
     meetingFetchSuccess,
     meetingFetchError,

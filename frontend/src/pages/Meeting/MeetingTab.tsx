@@ -1,17 +1,17 @@
 /* eslint-disable max-len */
 import React, { useState } from 'react';
 import {
-    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonButtons,
+    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonButtons, useIonToast,
 } from '@ionic/react';
 import { IFrame } from '@stomp/stompjs';
 
 import {
-    chatboxOutline, gridOutline, moveOutline, pencilSharp,
+    chatboxOutline, gridOutline, moveOutline, pencilSharp, shareSocial,
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
 import { MeetingService } from '../../services';
@@ -47,10 +47,12 @@ const MeetingTab = () => {
     const [connectionStatus, setConnectionStatus] = useState<MeetingConnectionStatus>('INIT');
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
+    const [present, dismiss] = useIonToast();
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
         id: state.meeting.roomId,
+        pass: state.meeting.pass,
         loading: state.meeting.loading,
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
@@ -183,11 +185,15 @@ const MeetingTab = () => {
         setConnectionStatus('CONNECTING');
 
         meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
-        .then(() => meetingService.activateClient())
+        .then(() => {
+            meetingService.activateClient();
+            dispatch(meetingSetDetails([id, pass ?? '']));
+        })
         .catch((err) => {
             meetingService.deactivateClient();
             console.error(err);
             setConnectionStatus('ERROR');
+            dispatch(meetingSetDetails(['', '']));
         });
     };
 
@@ -244,29 +250,57 @@ const MeetingTab = () => {
         else return defaultReturn();
     };
 
+    const copyMeetingToClipboard = async () => {
+        try {
+            // im sorry
+            // i really am XD
+            if (!meetingState.id) throw new Error('');
+            await navigator.clipboard.writeText(`Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}`);
+            present({
+                buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
+                message: 'Skopiowano dane spotkania',
+                duration: 1000,
+                position: 'bottom',
+                cssClass: '',
+            });
+        } catch (error) {
+            present({
+                message: 'Nie jesteś w spotkaniu!',
+                duration: 1000,
+                position: 'bottom',
+                cssClass: '',
+            });
+        }
+    };
+
     return (
     <IonPage>
 
         <IonHeader>
             <IonToolbar>
-                <IonTitle>{meetingState.id}</IonTitle>
-                <IonButton slot="start" fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
-                    <IonIcon icon={gridOutline} className="" />
-                </IonButton>
+                {!!meetingState.id && (
+                <>
+                    <IonTitle>{meetingState.id}</IonTitle>
 
-                <IonButtons slot="end">
-                    <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
-                        <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
-                        <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
-                    </IonButton>
-                    <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
-                        <IonIcon icon={chatboxOutline} className="" />
-                    </IonButton>
-                </IonButtons>
-
-                {/* <IonMenuButton menu="CHATMENUXD" color="danger" autoHide={false} onClick={() => dispatch(toggleChatMenu())}>
-                    <IonIcon icon={chatboxOutline} className="" />
-                </IonMenuButton> */}
+                    <IonButtons slot="start" color="danger">
+                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
+                            <IonIcon icon={gridOutline} className="" />
+                        </IonButton>
+                        <IonButton fill="clear" onClick={() => copyMeetingToClipboard()}>
+                            <IonIcon icon={shareSocial} />
+                        </IonButton>
+                    </IonButtons>
+                    <IonButtons slot="end">
+                        <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
+                            <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
+                            <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
+                        </IonButton>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                            <IonIcon icon={chatboxOutline} className="" />
+                        </IonButton>
+                    </IonButtons>
+                </>
+                )}
             </IonToolbar>
         </IonHeader>
 
