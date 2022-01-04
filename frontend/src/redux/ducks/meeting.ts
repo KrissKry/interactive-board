@@ -204,6 +204,9 @@ const meetingSlice = createSlice({
                 canvasEvents: newEvents,
             };
         },
+        meetingReset: () => ({
+            ...initialState,
+        }),
     },
 });
 
@@ -224,6 +227,7 @@ const {
     meetingUserRemove,
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
+    meetingReset,
 } = meetingSlice.actions;
 
 export {
@@ -241,6 +245,7 @@ export {
     meetingUserRemove,
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
+    meetingReset,
 };
 
 /**

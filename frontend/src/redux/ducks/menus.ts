@@ -35,6 +35,9 @@ const menuSlice = createSlice({
             ...state,
             toolbarExpanded: !state.toolbarExpanded,
         }),
+        menuReset: () => ({
+            ...initialState,
+        }),
     },
 });
 
@@ -44,10 +47,12 @@ const {
     toggleChatMenu,
     toggleUtilityMenu,
     toggleToolbarMenu,
+    menuReset,
 } = menuSlice.actions;
 
 export {
     toggleChatMenu,
     toggleUtilityMenu,
     toggleToolbarMenu,
+    menuReset,
 };

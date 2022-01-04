@@ -6,18 +6,17 @@ import {
 import { IFrame } from '@stomp/stompjs';
 
 import {
-    chatboxOutline, gridOutline, moveOutline, pencilSharp, shareSocial,
+    chatboxOutline, exitOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService } from '../../services';
+import { MeetingService, TalkService } from '../../services';
 import { ButtonProps } from '../../components/Button/Button';
 
-import GenericTab from '../GenericTab';
 import { NoMeeting, OngoingMeeting } from './content';
 import { MeetingModal } from '../../components/Modal';
 import { meetingModalModes } from '../../interfaces/Modal';
@@ -28,8 +27,9 @@ import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
-import { toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
+import { menuReset, toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
 import { toggleDrawingMode } from '../../redux/ducks/canvas';
+import { BoolPopover } from '../../components/Popover';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -48,6 +48,12 @@ const MeetingTab = () => {
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
     const [present, dismiss] = useIonToast();
+    const [exitPopover, setExitPopover] = useState({
+        showPopover: false,
+        event: undefined,
+    });
+
+    const closeExitPopover = (): void => setExitPopover({ showPopover: false, event: undefined });
 
     const dispatch = useAppDispatch();
     const meetingState = useAppSelector((state) => ({
@@ -273,6 +279,13 @@ const MeetingTab = () => {
         }
     };
 
+    const leaveMeeting = (): void => {
+        closeExitPopover();
+        setConnectionStatus('INIT');
+        meetingService.deactivateClient();
+        dispatch(meetingReset());
+        dispatch(menuReset());
+    };
     return (
     <IonPage>
 
@@ -290,6 +303,11 @@ const MeetingTab = () => {
                             <IonIcon icon={shareSocial} />
                         </IonButton>
                     </IonButtons>
+
+                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
+                        <IonIcon color="danger" icon={powerOutline} />
+                    </IonButton>
+
                     <IonButtons slot="end">
                         <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
                             <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
@@ -299,6 +317,15 @@ const MeetingTab = () => {
                             <IonIcon icon={chatboxOutline} className="" />
                         </IonButton>
                     </IonButtons>
+
+                    <BoolPopover
+                        isOpen={exitPopover.showPopover}
+                        popoverEvent={exitPopover.event}
+                        cancelCallback={closeExitPopover}
+                        confirmCallback={leaveMeeting}
+                        title="Opuszczanie spotkania"
+                        contentText="Będziesz mógł ponownie dołączyć jeśli nie jesteś ostatnią osobą w tym spotkaniu."
+                    />
                 </>
                 )}
             </IonToolbar>
