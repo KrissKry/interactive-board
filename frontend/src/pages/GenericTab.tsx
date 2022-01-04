@@ -24,12 +24,6 @@ const GenericTab = ({
             </IonToolbar>
         </IonHeader>
         <IonContent fullscreen>
-            <IonHeader collapse="condense">
-                <IonToolbar>
-                    <IonTitle size="large">{toolbarTitle || title}</IonTitle>
-                </IonToolbar>
-            </IonHeader>
-
             {children}
         </IonContent>
     </IonPage>

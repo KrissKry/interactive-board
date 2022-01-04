@@ -26,7 +26,7 @@ const ChatMessages = ({ messages } : ChatMessagesProps) : JSX.Element => {
     }, [messages]);
 
     return (
-        <div className="ee-chat-container-messages" ref={listRef}>
+        <div className="ee-chat-container--messages" ref={listRef}>
             {messages.map((item, index) => (
                 <ChatMessage
                     // eslint-disable-next-line react/no-array-index-key

@@ -1,8 +1,11 @@
 /* eslint-disable max-len */
 import React, { useState } from 'react';
-import { IonSpinner } from '@ionic/react';
+import {
+    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonMenuButton,
+} from '@ionic/react';
 import { IFrame } from '@stomp/stompjs';
 
+import { chatboxOutline, gridOutline, menuOutline } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
@@ -23,6 +26,7 @@ import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
+import { toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -236,9 +240,28 @@ const MeetingTab = () => {
     };
 
     return (
-        <GenericTab title={meetingState.id}>
+    <IonPage>
+
+        <IonHeader>
+            <IonToolbar>
+                <IonTitle>{meetingState.id}</IonTitle>
+                <IonButton slot="start" fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
+                    <IonIcon icon={gridOutline} className="" />
+                </IonButton>
+                <IonButton slot="end" fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                    <IonIcon icon={chatboxOutline} className="" />
+                </IonButton>
+                {/* <IonMenuButton menu="CHATMENUXD" color="danger" autoHide={false} onClick={() => dispatch(toggleChatMenu())}>
+                    <IonIcon icon={chatboxOutline} className="" />
+                </IonMenuButton> */}
+            </IonToolbar>
+        </IonHeader>
+
+        <IonContent fullscreen>
             {getMeetingContent()}
-        </GenericTab>
+        </IonContent>
+
+    </IonPage>
     );
 };
 

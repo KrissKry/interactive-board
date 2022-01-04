@@ -1,16 +1,32 @@
 .ee-chat-container {
-    height: 30rem;
-
-    &-messages {
-        height: 80%;
-        overflow-y: auto;
-        border-bottom: 1px solid #ccc;
-    }
-}
-
-.ee-chat-container-2 {
     width: 100%;
-    height: 30rem;
+    height: fit-content;
+
+    &--header {
+        height: 3rem;
+        width: 100%;
+        padding: 0.5rem;
+        border-bottom: 1px solid #ccc;
+        flex-wrap: nowrap;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    &--messages {
+        height: 30rem;
+        overflow-y: scroll;
+        border-bottom: 1px solid #ccc;
+
+        @media screen and (max-height: 40rem) { height: 20rem; }
+        @media screen and (max-height: 30rem) { height: 15rem; }
+        @media screen and (max-height: 25rem) { height: 13rem; }
+    }
+
+    &--input {
+        height: 3rem;
+    }
 }
 
 .ee-message {

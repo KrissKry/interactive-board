@@ -1,17 +1,13 @@
-import { IonIcon } from '@ionic/react';
+/* eslint-disable max-len */
 import React from 'react';
-import { arrowBack } from 'ionicons/icons';
 
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { toggleChatMenu } from '../../redux/ducks/menus';
-
+import { useAppSelector } from '../../hooks';
 import { MeetingService } from '../../services';
-
 import { ChatContainer } from '../Chat';
+
 import type { ChatMessageInterface } from '../../interfaces/Chat';
 
 const ChatMenu = () : JSX.Element => {
-    const dispatch = useAppDispatch();
     const meetingService = MeetingService.getInstance();
     const appState = useAppSelector((state) => ({
         messages: state.meeting.messages,
@@ -30,13 +26,8 @@ const ChatMenu = () : JSX.Element => {
     };
 
     return (
-        <div className={['ee-flex--column', 'ee-menu', appState.menuExpanded ? '' : 'ee-menu--closed ee-align-cross--center'].join(' ')}>
-            <button className="ee-menu--xbtn" onClick={() => dispatch(toggleChatMenu())} type="button">
-                <IonIcon icon={arrowBack} className={appState.menuExpanded ? 'ee-menu--icon-active' : 'ee-menu--icon'} />
-            </button>
-
+        <div className={['ee-menu ee-menu-chat', appState.menuExpanded ? 'ee-menu-chat-active' : ''].join(' ')}>
             <ChatContainer
-                expanded={appState.menuExpanded}
                 messages={appState.messages}
                 sendMessageCallback={chatSendMessageCallback}
                 title="Czat spotkania"

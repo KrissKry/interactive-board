@@ -18,12 +18,14 @@ const menuSlice = createSlice({
     initialState,
     reducers: {
         toggleChatMenu: (state) => ({
-            ...state,
+            // ...state,
             chatExpanded: !state.chatExpanded,
+            utilityExpanded: false,
         }),
         toggleUtilityMenu: (state) => ({
-            ...state,
+            // ...state,
             utilityExpanded: !state.utilityExpanded,
+            chatExpanded: false,
         }),
     },
 });

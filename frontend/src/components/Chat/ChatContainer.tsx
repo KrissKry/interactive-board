@@ -5,7 +5,6 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 
 interface ChatProps {
-    expanded: boolean;
 
     /**
      * Display name of the chat in the header
@@ -25,12 +24,11 @@ interface ChatProps {
 }
 
 const ChatContainer = ({
-    expanded,
     title,
     messages,
     sendMessageCallback,
 } : ChatProps) : JSX.Element => (
-    <div className="ee-chat-container-2" style={{ display: expanded ? 'block' : 'none' }}>
+    <div className="ee-chat-container">
         <ChatHeader title={title} />
 
         <ChatMessages messages={messages} />
