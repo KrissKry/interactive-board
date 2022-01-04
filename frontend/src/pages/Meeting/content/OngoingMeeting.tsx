@@ -477,11 +477,6 @@ const OngoingMeeting = ({
                 />
             </div>
 
-            {/* <ChatContainer
-                messages={meetingState.messages}
-                sendMessageCallback={chatSendMessageCallback}
-                title=""
-            /> */}
             <ChatMenu />
 
             <SettingsPopover

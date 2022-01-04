@@ -1,6 +1,10 @@
 .ee-c-popover .popover-content {
     width: fit-content;
 
+    @media screen and (max-width: 40rem) {
+        width: 18rem;
+    }
+
     p {
         font-style: italic;
     }

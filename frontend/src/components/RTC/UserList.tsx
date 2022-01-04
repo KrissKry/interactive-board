@@ -8,9 +8,10 @@ interface UserListProps {
 
     users: UserInterface[];
 
+    optionalClassname?: string;
 }
-const UserList = ({ expanded, users }: UserListProps) : JSX.Element => (
-    <div className="ee-user--list">
+const UserList = ({ expanded, users, optionalClassname }: UserListProps) : JSX.Element => (
+    <div className={`ee-user--list ${optionalClassname}`}>
         {users.map((item) => (
             <UserPanel
                 active={item.status === 'CONNECTED'}
