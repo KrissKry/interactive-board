@@ -1,4 +1,6 @@
+// eslint-disable-next-line object-curly-newline
 import React, { useMemo } from 'react';
+import { useAppSelector } from '../../hooks';
 import { CanvasTool, RGBColor } from '../../interfaces/Canvas';
 import { getHexFromRGB } from '../../util/Canvas';
 import CanvasColorGrid from './CanvasColorGrid';
@@ -50,23 +52,19 @@ const CanvasToolbar = ({
     pickColor,
 }: ToolbarProps) : JSX.Element => {
     const currentColorHex = useMemo(() => getHexFromRGB(currentColor), [currentColor]);
+    const toolbarExpanded = useAppSelector((state) => state.menus.toolbarExpanded);
 
     return (
-        <div className="ee-canvas-toolbar ee-flex--row ee-align-main--center ee-align-cross--center">
-
+        <div className={['ee-canvas-toolbar ee-flex--row ee-align-main--center ee-align-cross--center', toolbarExpanded ? 'ee-canvas-toolbar--expanded' : ''].join(' ')}>
             <div className="ee-canvas-toolbar--current" style={{ backgroundColor: currentColorHex }} />
 
             <CanvasColorGrid colors={colors} pickColor={pickColor} />
 
             <CanvasTools tools={tools} activeToolId={activeToolId} />
 
-            <CanvasTools tools={brushTools} activeToolId={activeBrushId} />
+            <CanvasTools tools={brushTools} activeToolId={activeBrushId} classname="ee-margin--right1" />
         </div>
     );
 };
-// kolory flat-UI
-// grubość póki co po chuju
-// cofnij / powtórz??
-// zrzut aktualnego stanu
-// clear canvas -> func background()
+
 export default CanvasToolbar;

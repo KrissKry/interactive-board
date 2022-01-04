@@ -7,12 +7,6 @@
     z-index: 100;
     flex-wrap: nowrap;
 
-    &--closed {
-        min-width: 3rem;
-        width: 3rem;
-        padding: 0.25rem;
-        overflow: hidden;
-    }
 
 
     &--xbtn {
@@ -34,18 +28,20 @@
     }
 
     &-util {
+        position: fixed;
         background-color: white;
         left: -10rem;
         transition: 0.5s;
-
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
         &-active {
-            position: fixed;
             left: 0;
             width: 15rem;
 
-            @media screen and (max-height: 40rem) {
-                top: 3.5rem;
-            }
+            // @media screen and (max-height: 40rem) {
+            //     top: 3.5rem;
+            // }
         }
         &-list {
             padding: 0.5rem;
@@ -57,17 +53,21 @@
     }
 
     &-chat {
+        position: fixed;
         background-color: white;
+        // right: -10rem;
         right: 0;
         transition: 0.5s;
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
 
         &-active {
-            position: fixed;
+            // position: fixed;
+            // right: 0;
             width: 20rem;
 
-            @media screen and (max-height: 40rem) {
-                top: 3.5rem;
-            }
+
         }
     }
 }

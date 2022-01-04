@@ -1,11 +1,13 @@
 /* eslint-disable max-len */
 import React, { useState } from 'react';
 import {
-    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonMenuButton,
+    IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonButton, IonIcon, IonButtons,
 } from '@ionic/react';
 import { IFrame } from '@stomp/stompjs';
 
-import { chatboxOutline, gridOutline, menuOutline } from 'ionicons/icons';
+import {
+    chatboxOutline, gridOutline, moveOutline, pencilSharp,
+} from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
@@ -27,6 +29,7 @@ import { p2p } from '../../interfaces/Meeting';
 import { UserInterface } from '../../interfaces/User/UserInterface';
 import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
 import { toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
+import { toggleDrawingMode } from '../../redux/ducks/canvas';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -52,6 +55,7 @@ const MeetingTab = () => {
         loadingError: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
         user: state.user.username,
+        inDrawingMode: state.canvas.drawingMode && !state.menus.chatExpanded && !state.menus.utilityExpanded,
     }));
 
     const meetingService = MeetingService.getInstance();
@@ -230,6 +234,7 @@ const MeetingTab = () => {
                 ownMediaStream={ownMediaStream}
                 setOwnMediaStreamCallback={updateMediaStream}
                 p2pMessages={p2pMessagesQ}
+                inDrawingMode={meetingState.inDrawingMode}
                 popP2PMessageQ={popP2PMessageQ}
                 moveToEndP2PMessageQ={moveToEndP2PMessageQ}
             />
@@ -248,9 +253,17 @@ const MeetingTab = () => {
                 <IonButton slot="start" fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
                     <IonIcon icon={gridOutline} className="" />
                 </IonButton>
-                <IonButton slot="end" fill="clear" onClick={() => dispatch(toggleChatMenu())}>
-                    <IonIcon icon={chatboxOutline} className="" />
-                </IonButton>
+
+                <IonButtons slot="end">
+                    <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
+                        <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
+                        <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
+                    </IonButton>
+                    <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                        <IonIcon icon={chatboxOutline} className="" />
+                    </IonButton>
+                </IonButtons>
+
                 {/* <IonMenuButton menu="CHATMENUXD" color="danger" autoHide={false} onClick={() => dispatch(toggleChatMenu())}>
                     <IonIcon icon={chatboxOutline} className="" />
                 </IonMenuButton> */}
