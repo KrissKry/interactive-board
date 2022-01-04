@@ -11,6 +11,9 @@
         filter: drop-shadow(0 0 0.5rem #ddd);
         padding: 1rem;
 
+        &-blocked {
+            overflow: hidden;
+        }
     }
 }
 

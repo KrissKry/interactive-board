@@ -446,7 +446,7 @@ const OngoingMeeting = ({
 
             <MeetingMenu users={meetingState.users} buttons={controlButtons} />
 
-            <div className="ee-canvas--wrapper ee-flex--row ee-align-main--center">
+            <div className={['ee-canvas--wrapper ee-flex--row ee-align-main--center', inDrawingMode ? 'ee-canvas--wrapper-blocked' : ''].join(' ')}>
                 <Canvas
                     backgroundColor={bgColor}
                     brushColor={brushColor}
