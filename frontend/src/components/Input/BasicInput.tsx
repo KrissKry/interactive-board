@@ -8,6 +8,7 @@ interface InputProps {
     disabled?: boolean;
     maxLength?: number;
 
+    // eslint-disable-next-line no-unused-vars
     onKeydown?: (e?: any) => void;
     keyType?: string
 }

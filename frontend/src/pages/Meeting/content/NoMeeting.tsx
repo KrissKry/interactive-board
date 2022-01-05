@@ -1,7 +1,7 @@
-import { IonIcon, IonInput, IonSpinner } from '@ionic/react';
+import { IonSpinner } from '@ionic/react';
 // eslint-disable-next-line object-curly-newline
-import { lockClosedOutline, lockOpenOutline, personOutline, textOutline } from 'ionicons/icons';
-import React, { useEffect, useRef, useState } from 'react';
+import { lockClosedOutline, personOutline, textOutline } from 'ionicons/icons';
+import React, { useRef, useState } from 'react';
 import { validate } from 'uuid';
 import { BasicInput } from '../../../components/Input';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -10,8 +10,10 @@ import { setUsername } from '../../../redux/ducks/user';
 type MeetingSegment = 'JOIN' | 'CREATE';
 
 interface MeetingProps {
+    // eslint-disable-next-line no-unused-vars
     createCallback: (pass?: string) => void;
 
+    // eslint-disable-next-line no-unused-vars
     joinCallback: (id: string, pass?: string) => void;
 }
 
@@ -23,9 +25,7 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
         error: state.meeting.loadingError,
         errorMessage: state.meeting.errorMessage,
     }));
-    useEffect(() => {
-        console.log(appState);
-    }, [appState]);
+
     // eslint-disable-next-line no-undef
     const userRef = useRef() as React.MutableRefObject<HTMLIonInputElement>;
     // eslint-disable-next-line no-undef

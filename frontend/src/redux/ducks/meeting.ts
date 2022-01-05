@@ -266,8 +266,6 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
  * @dispatch fetchSuccess on object validation. fetchError otherwise.
  */
 export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => {
-    console.log('meetingUpdateMiddleware', data.body);
-
     if (assertMeetingStateUpdate(data.body)) {
         const parsedData: meetingStateUpdateInterface = data.body;
 

@@ -6,7 +6,7 @@ import {
 import { IFrame } from '@stomp/stompjs';
 
 import {
-    chatboxOutline, exitOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
+    chatboxOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
@@ -14,14 +14,9 @@ import {
     meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService, TalkService } from '../../services';
-import { ButtonProps } from '../../components/Button/Button';
+import { MeetingService } from '../../services';
 
 import { NoMeeting, OngoingMeeting } from './content';
-import { MeetingModal } from '../../components/Modal';
-import { meetingModalModes } from '../../interfaces/Modal';
-import { SimpleIonicInput } from '../../components/Input';
-import { setUsername } from '../../redux/ducks/user';
 import type { PixelChanges } from '../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
@@ -41,8 +36,6 @@ interface MeetingSubObject {
 }
 
 const MeetingTab = () => {
-    const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
-    const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
     const [meetingSubs, setMeetingSubs] = useState<MeetingSubObject[]>([]);
     const [connectionStatus, setConnectionStatus] = useState<MeetingConnectionStatus>('INIT');
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
@@ -68,34 +61,7 @@ const MeetingTab = () => {
 
     const meetingService = MeetingService.getInstance();
 
-    const showModalCallback = (mode: meetingModalModes) : void => {
-        setShowMeetingModal(true);
-        setMeetingModalMode(mode);
-    };
-
-    const hideModalCallback = () : void => {
-        setShowMeetingModal(false);
-        setMeetingModalMode('JOIN');
-    };
-
     const updateMediaStream = (newMediaStream: MediaStream) : void => { setOwnMediaStream(newMediaStream); };
-
-    const buttons: ButtonProps[] = [
-        {
-            color: 'primary',
-            customOnClick: () => showModalCallback('JOIN'),
-            fill: 'solid',
-            text: 'Dołącz teraz',
-            expand: true,
-        },
-        {
-            color: 'secondary',
-            customOnClick: () => showModalCallback('CREATE'),
-            fill: 'solid',
-            text: 'Stwórz nowe',
-            expand: true,
-        },
-    ];
 
     const boardUpdateCallback = (message: IFrame) : void => {
         const resp: PixelChanges = JSON.parse(message.body);
