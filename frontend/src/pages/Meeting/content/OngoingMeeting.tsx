@@ -219,20 +219,10 @@ const OngoingMeeting = ({
             /* new ice candidate sent by one peer to the other */
             case 'ICE':
                 talkService.receiveICE(message.from, message.data)
-                .then(
-                    () => console.log('[M] Added ICE'),
-                    (err) => {
-                        console.error('[M]', err);
-                        moveToEndP2PMessageQ();
-                        // eslint-disable-next-line no-useless-return
-                        return;
-                    },
-                )
+                .then(() => console.log('[M] Added ICE'))
                 .catch((err) => {
-                    console.error('[ICE]', err);
-                    moveToEndP2PMessageQ();
-                    // eslint-disable-next-line no-useless-return
-                    return;
+                    console.error('[ICE]', err, 'adding to On-Hold');
+                    talkService.addICEOnHold(message.from, message.data);
                 });
                 break;
 
