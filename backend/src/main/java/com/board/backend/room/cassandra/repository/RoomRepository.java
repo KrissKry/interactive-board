@@ -43,7 +43,7 @@ public class RoomRepository {
 
     public void saveMessage(UUID id, String message) {
         try {
-            log.info(message);
+            // log.info(message);
             cassandraTemplate.execute("UPDATE room SET messages = messages + ['" + message + "'], " +
                     "lastUpdated = " + new Date(System.currentTimeMillis()).getTime() + " WHERE id = " + id).get();
         } catch (Exception e) {

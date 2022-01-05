@@ -135,3 +135,15 @@ public class ChatMessageDTO {
 return value object same as body of `/api/chat/send{id}`
 
 As of now, all endpoints start with the ws://localhost:8080 prefix
+
+```shell
+INFO RoomController: Room successfully created, id: 77da9041-5669-4d59-b319-e9d55f4ff832
+INFO RoomController: User User1 connected to room with ID: 77da9041-5669-4d59-b319-e9d55f4ff832
+INFO RoomController: User User2 connected to room with ID: 77da9041-5669-4d59-b319-e9d55f4ff832
+INFO RoomController: Received message: Hey! from user User2
+INFO RoomController: Received message: Hi! from user User1
+INFO RoomController: Received board update from user User1
+INFO RoomController: Received board update from user User2
+INFO RoomController: Received message: Bye! from user User2
+INFO SessionEventsHandler: User: User2disconnected from meeting: 77da9041-5669-4d59-b319-e9d55f4ff832
+```

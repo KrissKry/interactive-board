@@ -1,0 +1,17 @@
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+  data:
+    cassandra:
+      port: ${CASSANDRA_PORT}
+      contact-points: ${CASSANDRA_CONTACT_POINTS}
+      keyspace-name: dev
+      username: ${CASSANDRA_USERNAME}
+      password: ${CASSANDRA_PASSWORD}
+      local-datacenter: ${CASSANDRA_DC}
+      schema-action: CREATE_IF_NOT_EXISTS
+      request.consistency: quorum
+logging.level.root: info

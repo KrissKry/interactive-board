@@ -46,6 +46,7 @@ public class RoomFacade {
         if (result == null) {
             return ResponseEntity.badRequest().body("Error creating room");
         } else {
+            log.info("Room successfully created, id: " + result.getId());
             return ResponseEntity.ok(result.getId().toString());
         }
     }
@@ -64,6 +65,7 @@ public class RoomFacade {
                                 UserStatus.CONNECTED
                         )
                 );
+                log.info("User " + PrincipalUtils.extractUserNameFromPrincipal(principal) + " connected to room with ID: " + room.getId());
                 return ResponseEntity.ok(roomMapper.toDTO(room));
             }
         }

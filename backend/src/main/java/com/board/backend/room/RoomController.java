@@ -36,7 +36,6 @@ public class RoomController {
     @SneakyThrows
     @PostMapping("/api/room/create")
     public ResponseEntity<?> createRoom(@RequestBody String roomDTO) {
-        log.info(roomDTO);
         return roomFacade.createRoom(roomDTO);
     }
 
@@ -53,6 +52,7 @@ public class RoomController {
     @MessageMapping("/board/send/{roomId}")
     public void savePixels(@DestinationVariable UUID roomId, @Payload ChangedPixelsDTO pixels, Principal principal) {
         if (UserRoomValidator.validate(principal, roomId)) {
+            log.info("Received board update from user " + PrincipalUtils.extractUserNameFromPrincipal(principal));
             roomFacade.savePixels(pixels, roomId);
         }
     }
@@ -60,7 +60,7 @@ public class RoomController {
     @MessageMapping("/chat/send/{roomId}")
     public void sendMessage(@DestinationVariable UUID roomId, @Payload ChatMessageDTO message, Principal principal) {
         if (UserRoomValidator.validate(principal, roomId)) {
-            log.info("Received: " + message);
+            log.info("Received message: " + message.getText() + " from user " + PrincipalUtils.extractUserNameFromPrincipal(principal));
             template.convertAndSend("/topic/chat.listen." + roomId, message);
             roomFacade.saveMessage(message, roomId);
         }

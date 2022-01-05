@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.board'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+sourceCompatibility = '16'
 
 configurations {
     compileOnly {
@@ -51,4 +51,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+bootRun {
+    systemProperties = System.properties
 }

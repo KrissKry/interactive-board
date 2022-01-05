@@ -31,9 +31,7 @@ public class SessionEventsHandler {
         );
 
         var username = PrincipalUtils.extractUserNameFromPrincipal(event.getUser());
-
-        log.info(uuid.toString());
-
+        
         roomFacade.disconnectUser(
                 UUID.fromString(
                         PrincipalUtils.extractRoomIdFromPrincipal(
@@ -41,7 +39,7 @@ public class SessionEventsHandler {
                         )
                 ),
                 PrincipalUtils.extractUserNameFromPrincipal(event.getUser()));
-        log.info("User removed");
+        log.info("User: " + PrincipalUtils.extractUserNameFromPrincipal(event.getUser()) + "disconnected from meeting: " + PrincipalUtils.extractRoomIdFromPrincipal(event.getUser()));
         template.convertAndSend("/topic/room.connected." + uuid,
                 new UserDTO(username, UserStatus.DISCONNECTED));
     }
