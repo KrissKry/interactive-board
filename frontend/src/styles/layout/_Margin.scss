@@ -4,7 +4,7 @@
     &--vertical1    { margin-top: 1rem; margin-bottom: 1rem;    }
     &--vertical2    { margin-top: 2rem; margin-bottom: 2rem;    }
     &--horizontal1  { margin-left: 1rem; margin-right: 1rem;    }
-    &--left1        { margin-left: 1rem;    }
-    &--right1       { margin-right: 1rem;   }    
-    &--right05       { margin-right: 0.5rem;   }    
+    &--left1        { margin-left: 1rem !important;     }
+    &--right1       { margin-right: 1rem !important;    }    
+    &--right05      { margin-right: 0.5rem !important;  }    
 }
