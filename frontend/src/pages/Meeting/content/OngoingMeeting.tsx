@@ -256,14 +256,13 @@ const OngoingMeeting = ({
             audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
             video: false,
         })
-        .then((stream) => setOwnMediaStreamCallback(stream));
+        .then((stream) => setOwnMediaStreamCallback(stream))
+        .catch(() => {});
 
     const handleAvailableDeviceChanges = () : void => {
         if (availableInputs.length) {
-            console.log('availableInputs.length');
             // stream not started previously
             if (!streamStarted) {
-                console.log('!streamStarted');
                 if (typeof currentInputDevice === 'undefined') {
                     setCurrentInputDevice(availableInputs[0]);
                 }
@@ -271,32 +270,25 @@ const OngoingMeeting = ({
                 createStream().catch((err: any) => console.error(err));
             // stream started previously
             } else {
-                console.log('streamStarted');
                 // used a device that is on the new list
                 // eslint-disable-next-line no-lonely-if
                 if (typeof currentInputDevice !== 'undefined') {
-                    console.log('typeof currentInputDevice !== undefined');
                     // assumption that the device has not been disconnected
                     if (availableInputs.includes(currentInputDevice)) {
                         // do nth
-                        console.log('availableInputs.includes(currentInputDevice)');
                     // current device is not on the received device list
                     } else {
-                        console.log('!!!availableInputs.includes(currentInputDevice)');
                         setCurrentInputDevice(undefined);
                     }
                 // stream started previously but current device is undefined
                 // and devices are found
                 // change current input device, replace audio tracks for all connections
                 } else {
-                    console.log('typeof currentInputDevice ===== undefined');
                     setCurrentInputDevice(availableInputs[0]);
                     talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
                 }
             }
         } else {
-            console.log('!!!availableInputs.length');
-            // do nth
             setCurrentInputDevice(undefined);
         }
     };

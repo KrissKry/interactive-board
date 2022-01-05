@@ -69,7 +69,8 @@ export class TalkService {
         pc.addEventListener('connectionstatechange', (ev: Event) => {
             // @ts-ignore
             console.log('[P2P] Connection state with', remote, 'changed to', ev.target.connectionState);
-
+            // @ts-ignore
+            console.log(ev.target.connectionState, ev.target.connectionState === 'failed');
             // @ts-expect-error
             if (ev.target.connectionState === 'failed') {
                 // if owner of the connection is self
@@ -358,7 +359,7 @@ export class TalkService {
             console.log('[P2P] Added track', track.id, 'to remote', remote, '\nsender is', sender);
             return true;
         } catch (err) {
-            console.error('[P2P] Failed adding track', track?.id, 'to remote', remote, err);
+            // console.error('[P2P] Failed adding track', track?.id, 'to remote', remote, err);
             return false;
         }
     }
@@ -384,7 +385,7 @@ export class TalkService {
         // eslint-disable-next-line no-restricted-syntax
         for (const peer of this.connections) {
             const sender = peer.connection.getSenders().find((s) => s.track?.kind === 'audio');
-            console.log('REPLACING TRACK', peer, sender);
+            // console.log('REPLACING TRACK', peer, sender);
             sender?.replaceTrack(track);
         }
     }
@@ -400,7 +401,7 @@ export class TalkService {
             try {
                 peer.connection.addTrack(track, stream);
             } catch (err) {
-                console.error('[P2P] Couldnt add audio track to', peer.remote, err);
+                // console.error('[P2P] Couldnt add audio track to', peer.remote, err);
             }
         }
     }
