@@ -203,8 +203,8 @@ const MeetingTab = () => {
         });
     };
 
-    const createMeetingCallback = (name: string, pass?: string) : void => {
-        MeetingService.requestNewMeeting(name, pass)
+    const createMeetingCallback = (pass?: string) : void => {
+        MeetingService.requestNewMeeting(pass)
         .then((response) => {
             const { data } = response;
             joinMeetingCallback(data as string, pass);
@@ -215,29 +215,6 @@ const MeetingTab = () => {
             setConnectionStatus('ERROR');
         });
     };
-
-    const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
-
-    const defaultReturn = () : JSX.Element => (
-        <>
-            <NoMeeting buttons={buttons} />
-            <div className="ee-flex--column ee-align-cross--center">
-
-                <div className="ee-width--50p">
-                    <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
-                    <p>{meetingState.user}</p>
-                </div>
-
-                <MeetingModal
-                    isOpen={showMeetingModal}
-                    closeCallback={hideModalCallback}
-                    // eslint-disable-next-line no-nested-ternary
-                    callback={meetingModalMode === 'JOIN' ? joinMeetingCallback : createMeetingCallback}
-                    mode={meetingModalMode}
-                />
-            </div>
-        </>
-    );
 
     const getMeetingContent = () : JSX.Element => {
         if (connectionStatus === 'CONNECTED') {
@@ -253,7 +230,7 @@ const MeetingTab = () => {
             );
         // eslint-disable-next-line no-else-return
         } else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
-        else return defaultReturn();
+        else return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
     };
 
     const copyMeetingToClipboard = async () => {
@@ -289,12 +266,12 @@ const MeetingTab = () => {
     return (
     <IonPage>
 
-        <IonHeader>
-            <IonToolbar>
-                {!!meetingState.id && (
-                <>
+        {!!meetingState.id && (
+            <IonHeader>
+                <IonToolbar>
                     <IonTitle>{meetingState.id}</IonTitle>
 
+                    {/* open utility menu // copy meeting invitation */}
                     <IonButtons slot="start" color="danger">
                         <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
                             <IonIcon icon={gridOutline} className="" />
@@ -304,10 +281,12 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
+                    {/* leave meeting */}
                     <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
                         <IonIcon color="danger" icon={powerOutline} />
                     </IonButton>
 
+                    {/* drawing/move mode, open chat menu */}
                     <IonButtons slot="end">
                         <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
                             <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
@@ -318,6 +297,7 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
+                    {/* confirmation of meeting leave */}
                     <BoolPopover
                         isOpen={exitPopover.showPopover}
                         popoverEvent={exitPopover.event}
@@ -326,10 +306,9 @@ const MeetingTab = () => {
                         title="Opuszczanie spotkania"
                         contentText="Będziesz mógł ponownie dołączyć jeśli nie jesteś ostatnią osobą w tym spotkaniu."
                     />
-                </>
-                )}
-            </IonToolbar>
-        </IonHeader>
+                </IonToolbar>
+            </IonHeader>
+        )}
 
         <IonContent fullscreen>
             {getMeetingContent()}
