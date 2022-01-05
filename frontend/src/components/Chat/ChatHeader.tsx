@@ -18,9 +18,9 @@ const ChatHeader = ({
     invitedUsers = [],
     contact = '',
 } : HeaderProps) : JSX.Element => (
-    <IonItem className="" lines="full">
-        <IonLabel className="">{title}</IonLabel>
-    </IonItem>
+    <div className="ee-flex--row ee-align-cross--center ee-chat-container--header">
+        <p className="">{title}</p>
+    </div>
 );
 
 export default ChatHeader;

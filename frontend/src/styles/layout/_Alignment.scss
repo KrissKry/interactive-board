@@ -15,4 +15,6 @@
     &--center       { justify-content: center;  }
     &--left         { justify-content: left;    }
     &--right        { justify-content: right;   }
+    &--between      { justify-content: space-between; }
+    &--evenly       { justify-content: space-evenly;}
 }

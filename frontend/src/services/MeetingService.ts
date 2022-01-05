@@ -1,6 +1,7 @@
 import { Client, IFrame, IMessage } from '@stomp/stompjs';
 import axios, { AxiosResponse } from 'axios';
 import { PixelChanges } from '../interfaces/Canvas';
+import { CanvasEventMessage } from '../interfaces/Canvas/CanvasEvent';
 import { ChatMessageInterface } from '../interfaces/Chat';
 import { p2pMessage } from '../interfaces/Meeting/p2p';
 
@@ -92,6 +93,15 @@ export class MeetingService {
         }
     }
 
+    sendCanvasEvent(message: CanvasEventMessage): void {
+        if (this.connected && this.client !== null) {
+            this.client.publish({
+                destination: `/api/board/event/${this.id}`,
+                body: JSON.stringify(message),
+            });
+        }
+    }
+
     addSubscription(destination: string, callback: (message: IMessage) => void) : Promise<string> {
         if (this.connected && this.client !== null) {
             // eslint-disable-next-line max-len
@@ -108,7 +118,7 @@ export class MeetingService {
     // }
 
     // eslint-disable-next-line class-methods-use-this
-    static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
+    static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
         const url = `${process.env.REACT_APP_API_HTTP}/api/room/create`;
 
         const data = {

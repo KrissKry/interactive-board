@@ -1,3 +1,33 @@
 .ee-text-align {
     &--center  { text-align: center; }
 }
+
+.ee-text-size {
+    &--tiny {
+        font-size: 0.6rem;
+    }
+    &--small {
+        font-size: 0.75rem;
+    }
+    &--regular {
+        font-size: 0.85rem;
+    }
+    &--default {
+        font-size: 1rem;
+    }
+    &--large {
+        font-size: 1.5rem;
+    }
+}
+
+.ee-text-color {
+    &--white {
+        color: white;
+    }
+    &--black {
+        color: black;
+    }
+    &--grey {
+        color: grey;
+    }
+}

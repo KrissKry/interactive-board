@@ -3,16 +3,20 @@ import React, { useEffect, useState } from 'react';
 import p5Types from 'p5';
 import Sketch from 'react-p5';
 
-import { initialFillColor } from '../../helpers/initial';
-import { PixelChanges, RGBColor } from '../../interfaces/Canvas';
+import { initialFillColor, whiteFillColor } from '../../helpers/initial';
+import { CanvasToolMode, PixelChanges, RGBColor } from '../../interfaces/Canvas';
 import { getComparedPixels, getPixelArea, getPixelCoordinates } from '../../util/Canvas';
 import { PixelUpdate } from '../../interfaces/Canvas/PixelChanges';
 
 interface CanvasProps {
+    backgroundColor: RGBColor;
+
     /**
      * Optional color of the brush
      */
     brushColor?: RGBColor;
+
+    brushMode: CanvasToolMode;
 
     brushWidth: number;
 
@@ -26,10 +30,14 @@ interface CanvasProps {
      */
     changesWaiting: boolean;
 
+    inDrawingMode: boolean;
+
     /**
      * Canvas initial state (removed after update)
      */
     initialChanges: PixelUpdate[];
+
+    p5Instance?: p5Types;
 
     /**
      * Called on finished canvas update on initial connection
@@ -43,26 +51,36 @@ interface CanvasProps {
     // eslint-disable-next-line no-unused-vars
     sendChangesCallback: (changes: PixelChanges) => void;
 
+    // sendEventCallback: (type) => void;
+    sendFillEventCallback: () => void;
+
+    // eslint-disable-next-line no-unused-vars
+    setP5InstanceCallback: (p5: p5Types) => void;
 }
 
 const Canvas = ({
+    backgroundColor,
     brushColor,
+    brushMode,
     brushWidth,
     currentChanges,
     changesWaiting,
+    inDrawingMode,
     initialChanges,
+    p5Instance,
     cleanupInitialCallback,
     popChangeCallback,
     sendChangesCallback,
+    sendFillEventCallback,
+    setP5InstanceCallback,
 
 } : CanvasProps) : JSX.Element => {
-    const [p5Instance, setP5Instance] = useState<p5Types>();
     const [isUpdating, setIsUpdating] = useState<boolean>(false);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const drawingColor = brushColor || initialFillColor;
 
-    const canvasWidth = 500;
-    const canvasHeight = 500;
+    const canvasWidth = 1200;
+    const canvasHeight = 750;
 
     const mousePressed = () => { setIsDrawing(true); };
     const mouseReleased = () => { setIsDrawing(false); };
@@ -72,29 +90,44 @@ const Canvas = ({
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
         p5.background('white');
         p5.strokeWeight(brushWidth);
-        setP5Instance(p5);
+        setP5InstanceCallback(p5);
+    };
+
+    const fillCanvas = (p5: p5Types) => {
+        // when 2-d is used and when webGL? prone to bugs
+        // eslint-disable-next-line max-len
+        if (p5.mouseX >= 0 && p5.mouseY >= 0 && p5.mouseX < canvasWidth && p5.mouseY < canvasHeight) {
+            sendFillEventCallback();
+        }
+    };
+
+    const draw = (p5: p5Types) => {
+        // eslint-disable-next-line max-len
+        const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
+
+        const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+        if (brushMode === 'PENCIL') p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
+        else p5.stroke(255, 255, 255);
+
+        p5.strokeWeight(brushWidth);
+        p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
+
+        const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
+
+        // eslint-disable-next-line max-len
+        const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, brushMode === 'PENCIL' ? drawingColor : whiteFillColor);
+
+        if (pixelsComparison.points && pixelsComparison.points.length) {
+            sendChangesCallback(pixelsComparison);
+        }
     };
 
     /* draw on mouse drag if not updating */
     const mouseDragged = (p5: p5Types) => {
-        if (!isUpdating && isDrawing) {
-            // eslint-disable-next-line max-len
-            const { startX, startY, deltaX, deltaY } = getPixelCoordinates(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY, brushWidth);
-
-            const prevPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
-
-            p5.stroke(drawingColor.r, drawingColor.g, drawingColor.b);
-            p5.strokeWeight(brushWidth);
-            p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-
-            const newPixels = getPixelArea(startX, startY, deltaX, deltaY, p5);
-
-            // eslint-disable-next-line max-len
-            const pixelsComparison = getComparedPixels(startX, startY, prevPixels, newPixels, deltaX, drawingColor);
-
-            if (pixelsComparison.points && pixelsComparison.points.length) {
-                sendChangesCallback(pixelsComparison);
-            }
+        if (!isUpdating && isDrawing && inDrawingMode) {
+            if (brushMode === 'BUCKET') fillCanvas(p5);
+            else draw(p5);
         }
     };
 
@@ -144,8 +177,14 @@ const Canvas = ({
         }
     }, [initialChanges, p5Instance]);
 
+    useEffect(() => {
+        if (typeof p5Instance !== 'undefined') {
+            p5Instance.background(backgroundColor.r, backgroundColor.g, backgroundColor.b);
+        }
+    }, [backgroundColor]);
     return (
-            <Sketch setup={setup} className="ee-canvas" mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
+        // eslint-disable-next-line max-len
+        <Sketch setup={setup} mouseDragged={mouseDragged} mousePressed={mousePressed} mouseReleased={mouseReleased} />
     );
 };
 

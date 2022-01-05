@@ -1,25 +1,27 @@
-import { IonList } from '@ionic/react';
 import React from 'react';
 import { UserPanel } from '.';
 import { UserInterface } from '../../interfaces/User';
 
 interface UserListProps {
 
+    expanded: boolean;
+
     users: UserInterface[];
 
+    optionalClassname?: string;
 }
-const UserList = ({ users }: UserListProps) : JSX.Element => (
-    <IonList className="ee-user-list">
+const UserList = ({ expanded, users, optionalClassname }: UserListProps) : JSX.Element => (
+    <div className={`ee-user--list ${optionalClassname}`}>
         {users.map((item) => (
             <UserPanel
                 active={item.status === 'CONNECTED'}
                 // avatar={item.}
-                expand
+                expand={expanded}
                 key={item.name}
                 name={item.name}
             />
         ))}
-    </IonList>
+    </div>
 );
 
 export default UserList;

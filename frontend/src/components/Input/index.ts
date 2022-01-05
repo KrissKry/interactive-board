@@ -1,3 +1,4 @@
+import BasicInput from './BasicInput';
 import SimpleIonicInput from './SimpleIonicInput';
 
-export { SimpleIonicInput };
+export { BasicInput, SimpleIonicInput };

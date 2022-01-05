@@ -5,6 +5,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 
 interface ChatProps {
+
     /**
      * Display name of the chat in the header
      */
@@ -22,13 +23,17 @@ interface ChatProps {
     sendMessageCallback: (text: string) => void;
 }
 
-const ChatContainer = ({ title, messages, sendMessageCallback } : ChatProps) : JSX.Element => (
+const ChatContainer = ({
+    title,
+    messages,
+    sendMessageCallback,
+} : ChatProps) : JSX.Element => (
     <div className="ee-chat-container">
         <ChatHeader title={title} />
 
         <ChatMessages messages={messages} />
 
-        <SimpleIonicInput sendCallback={sendMessageCallback} />
+        <SimpleIonicInput sendCallback={sendMessageCallback} allowEmpty={false} />
     </div>
 );
 

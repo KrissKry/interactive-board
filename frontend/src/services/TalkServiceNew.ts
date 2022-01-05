@@ -14,9 +14,13 @@ interface PeerConnection {
     remote: string;
 
     /**
+     * Username of the peer that can begin negotiation event
+     */
+    owner: string;
+    /**
      * Stream source (tracks) from remote
      */
-    remoteStreamSrc?: MediaStream;
+    // remoteStreamSrc?: MediaStream;
 }
 
 export class TalkService {
@@ -69,8 +73,16 @@ export class TalkService {
         pc.addEventListener('negotiationneeded', (ev: Event) => {
             // if not null, then was set at least once
             if (pc.currentRemoteDescription !== null && pc.currentLocalDescription !== null) {
-                console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN', pc);
-                sendDataCallback({}, 'NEG_BEGIN', remote);
+                try {
+                    if (this.findRemoteP2P(remote).owner !== remote) {
+                        console.warn('[P2P] Connection with', remote, 'needs negotiation, sending NEG_BEGIN', pc);
+                        sendDataCallback({}, 'NEG_BEGIN', remote);
+                    } else {
+                        console.log('[P2P] Reneg needed but not owner of the connection', this.findRemoteP2P(remote).owner, remote);
+                    }
+                } catch (error) {
+                    console.error('[P2P] Couldnt find remote, no negotiation sent');
+                }
             } else {
                 console.warn('[P2P] Connection with', remote, 'needs negotiation, but remoteSdp is null');
             }
@@ -100,7 +112,7 @@ export class TalkService {
         try {
             const p2p = this.findRemoteP2P(remote);
             // eslint-disable-next-line prefer-destructuring
-            p2p.remoteStreamSrc = e.streams[0];
+            // p2p.remoteStreamSrc = e.streams[0];
 
             handleReceivedStreamCallback(e.streams[0], remote);
         } catch (err) {
@@ -114,7 +126,7 @@ export class TalkService {
      * @param pc fresh PeerConnection created for remote
      * @param remote username of remote peer
      */
-    private addNewPeer(pc: RTCPeerConnection, remote: string): void {
+    private addNewPeer(pc: RTCPeerConnection, remote: string, owner: string): void {
         const prevIndex = this.connections.findIndex((connection) => connection.remote === remote);
 
         if (prevIndex > -1) {
@@ -132,6 +144,7 @@ export class TalkService {
         const newP2P: PeerConnection = {
             remote,
             connection: pc,
+            owner,
         };
 
         this.connections.push(newP2P);
@@ -149,10 +162,11 @@ export class TalkService {
         remote: string,
         sendDataCallback: (data: any, type: p2pEvent, receiver?: string) => void,
         handleReceivedStreamCallback: (data: any, sender?: string) => void,
+        owner: string,
     ): void {
         const pc = this.createConnectionObj();
         this.setupConnectionObj(pc, remote, sendDataCallback, handleReceivedStreamCallback);
-        this.addNewPeer(pc, remote);
+        this.addNewPeer(pc, remote, owner);
     }
 
     /**
@@ -301,17 +315,18 @@ export class TalkService {
      */
     public addTrackToRemote(
         remote: string,
-        track: MediaStreamTrack,
-        stream: MediaStream,
+        track?: MediaStreamTrack,
+        stream?: MediaStream,
     ): boolean {
         try {
+            if (typeof track === 'undefined' || typeof stream === 'undefined') throw new Error('Undefined track or stream');
             const p2p = this.findRemoteP2P(remote);
 
             const sender = p2p.connection.addTrack(track, stream);
             console.log('[P2P] Added track', track.id, 'to remote', remote, '\nsender is', sender);
             return true;
         } catch (err) {
-            console.error('[P2P] Failed adding track', track.id, 'to remote', remote, err);
+            console.error('[P2P] Failed adding track', track?.id, 'to remote', remote, err);
             return false;
         }
     }
@@ -327,4 +342,34 @@ export class TalkService {
      * @returns Either RTCPeerConnection or throws error
      */
     public getRemote(remote: string): RTCPeerConnection { return this.findRemoteP2P(remote).connection; }
+
+    public replaceAudioTrack(track?: MediaStreamTrack): void {
+        if (typeof track === 'undefined') {
+            console.error('Track undefined');
+            return;
+        }
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const peer of this.connections) {
+            const sender = peer.connection.getSenders().find((s) => s.track?.kind === 'audio');
+            console.log('REPLACING TRACK', peer, sender);
+            sender?.replaceTrack(track);
+        }
+    }
+
+    public addAudioTrackToAll(track?: MediaStreamTrack, stream?: MediaStream): void {
+        if (typeof track === 'undefined' || typeof stream === 'undefined') {
+            console.error('Track or Stream undefined');
+            return;
+        }
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const peer of this.connections) {
+            try {
+                peer.connection.addTrack(track, stream);
+            } catch (err) {
+                console.error('[P2P] Couldnt add audio track to', peer.remote, err);
+            }
+        }
+    }
 }

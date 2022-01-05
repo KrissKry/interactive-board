@@ -15,4 +15,9 @@
         flex-direction: column;
     }
 
+    &--wrap { flex-wrap: wrap; }
+
+}
+.ee-displaynone {
+    display: none;
 }
