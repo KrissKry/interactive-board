@@ -127,6 +127,7 @@ const meetingSlice = createSlice({
             ...state,
             loading: true,
             loadingError: false,
+            errorMessage: '',
         }),
         // eslint-disable-next-line max-len
         meetingFetchSuccess: (state, action: PayloadAction<meetingStateUpdateInterface>) => ({
@@ -265,10 +266,6 @@ const assertMeetingStateUpdate = (data: unknown): data is meetingStateUpdateInte
  * @dispatch fetchSuccess on object validation. fetchError otherwise.
  */
 export const meetingUpdateMiddleware = (data: any) => (dispatch: any) : void => {
-    dispatch(meetingFetchRequest());
-
-    console.log('meetingUpdateMiddleware', data.body);
-
     if (assertMeetingStateUpdate(data.body)) {
         const parsedData: meetingStateUpdateInterface = data.body;
 

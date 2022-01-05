@@ -118,7 +118,7 @@ export class MeetingService {
     // }
 
     // eslint-disable-next-line class-methods-use-this
-    static async requestNewMeeting(name: string, password?: string) : Promise<AxiosResponse> {
+    static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
         const url = `${process.env.REACT_APP_API_HTTP}/api/room/create`;
 
         const data = {

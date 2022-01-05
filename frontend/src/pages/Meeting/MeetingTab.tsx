@@ -6,22 +6,17 @@ import {
 import { IFrame } from '@stomp/stompjs';
 
 import {
-    chatboxOutline, exitOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
+    chatboxOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService, TalkService } from '../../services';
-import { ButtonProps } from '../../components/Button/Button';
+import { MeetingService } from '../../services';
 
 import { NoMeeting, OngoingMeeting } from './content';
-import { MeetingModal } from '../../components/Modal';
-import { meetingModalModes } from '../../interfaces/Modal';
-import { SimpleIonicInput } from '../../components/Input';
-import { setUsername } from '../../redux/ducks/user';
 import type { PixelChanges } from '../../interfaces/Canvas';
 import type { ChatMessageInterface } from '../../interfaces/Chat';
 import { p2p } from '../../interfaces/Meeting';
@@ -41,8 +36,6 @@ interface MeetingSubObject {
 }
 
 const MeetingTab = () => {
-    const [showMeetingModal, setShowMeetingModal] = useState<boolean>(false);
-    const [meetingModalMode, setMeetingModalMode] = useState<meetingModalModes>('JOIN');
     const [meetingSubs, setMeetingSubs] = useState<MeetingSubObject[]>([]);
     const [connectionStatus, setConnectionStatus] = useState<MeetingConnectionStatus>('INIT');
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
@@ -68,34 +61,7 @@ const MeetingTab = () => {
 
     const meetingService = MeetingService.getInstance();
 
-    const showModalCallback = (mode: meetingModalModes) : void => {
-        setShowMeetingModal(true);
-        setMeetingModalMode(mode);
-    };
-
-    const hideModalCallback = () : void => {
-        setShowMeetingModal(false);
-        setMeetingModalMode('JOIN');
-    };
-
     const updateMediaStream = (newMediaStream: MediaStream) : void => { setOwnMediaStream(newMediaStream); };
-
-    const buttons: ButtonProps[] = [
-        {
-            color: 'primary',
-            customOnClick: () => showModalCallback('JOIN'),
-            fill: 'solid',
-            text: 'Dołącz teraz',
-            expand: true,
-        },
-        {
-            color: 'secondary',
-            customOnClick: () => showModalCallback('CREATE'),
-            fill: 'solid',
-            text: 'Stwórz nowe',
-            expand: true,
-        },
-    ];
 
     const boardUpdateCallback = (message: IFrame) : void => {
         const resp: PixelChanges = JSON.parse(message.body);
@@ -188,6 +154,7 @@ const MeetingTab = () => {
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
+        dispatch(meetingFetchRequest());
         setConnectionStatus('CONNECTING');
 
         meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
@@ -200,11 +167,13 @@ const MeetingTab = () => {
             console.error(err);
             setConnectionStatus('ERROR');
             dispatch(meetingSetDetails(['', '']));
+            dispatch(meetingFetchError(err.message));
         });
     };
 
-    const createMeetingCallback = (name: string, pass?: string) : void => {
-        MeetingService.requestNewMeeting(name, pass)
+    const createMeetingCallback = (pass?: string) : void => {
+        dispatch(meetingFetchRequest());
+        MeetingService.requestNewMeeting(pass)
         .then((response) => {
             const { data } = response;
             joinMeetingCallback(data as string, pass);
@@ -213,31 +182,9 @@ const MeetingTab = () => {
             meetingService.deactivateClient();
             console.error(err);
             setConnectionStatus('ERROR');
+            dispatch(meetingFetchError(err.message));
         });
     };
-
-    const updateUser = (newUser: string) => { dispatch(setUsername(newUser)); };
-
-    const defaultReturn = () : JSX.Element => (
-        <>
-            <NoMeeting buttons={buttons} />
-            <div className="ee-flex--column ee-align-cross--center">
-
-                <div className="ee-width--50p">
-                    <SimpleIonicInput sendCallback={updateUser} placeholder="Uzytkownik :D" />
-                    <p>{meetingState.user}</p>
-                </div>
-
-                <MeetingModal
-                    isOpen={showMeetingModal}
-                    closeCallback={hideModalCallback}
-                    // eslint-disable-next-line no-nested-ternary
-                    callback={meetingModalMode === 'JOIN' ? joinMeetingCallback : createMeetingCallback}
-                    mode={meetingModalMode}
-                />
-            </div>
-        </>
-    );
 
     const getMeetingContent = () : JSX.Element => {
         if (connectionStatus === 'CONNECTED') {
@@ -253,7 +200,7 @@ const MeetingTab = () => {
             );
         // eslint-disable-next-line no-else-return
         } else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
-        else return defaultReturn();
+        else return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
     };
 
     const copyMeetingToClipboard = async () => {
@@ -289,12 +236,12 @@ const MeetingTab = () => {
     return (
     <IonPage>
 
-        <IonHeader>
-            <IonToolbar>
-                {!!meetingState.id && (
-                <>
+        {!!meetingState.id && (
+            <IonHeader>
+                <IonToolbar>
                     <IonTitle>{meetingState.id}</IonTitle>
 
+                    {/* open utility menu // copy meeting invitation */}
                     <IonButtons slot="start" color="danger">
                         <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
                             <IonIcon icon={gridOutline} className="" />
@@ -304,10 +251,12 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
+                    {/* leave meeting */}
                     <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
                         <IonIcon color="danger" icon={powerOutline} />
                     </IonButton>
 
+                    {/* drawing/move mode, open chat menu */}
                     <IonButtons slot="end">
                         <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
                             <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
@@ -318,6 +267,7 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
+                    {/* confirmation of meeting leave */}
                     <BoolPopover
                         isOpen={exitPopover.showPopover}
                         popoverEvent={exitPopover.event}
@@ -326,10 +276,9 @@ const MeetingTab = () => {
                         title="Opuszczanie spotkania"
                         contentText="Będziesz mógł ponownie dołączyć jeśli nie jesteś ostatnią osobą w tym spotkaniu."
                     />
-                </>
-                )}
-            </IonToolbar>
-        </IonHeader>
+                </IonToolbar>
+            </IonHeader>
+        )}
 
         <IonContent fullscreen>
             {getMeetingContent()}
