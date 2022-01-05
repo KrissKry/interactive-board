@@ -73,7 +73,9 @@ export class TalkService {
             // @ts-expect-error
             if (ev.target.connectionState === 'failed') {
                 // if owner of the connection is self
-                if (this.findRemoteP2P(remote).owner !== remote) {
+                const p2p = this.findRemoteP2P(remote);
+                if (p2p.owner !== remote) {
+                    p2p.waitingICE = [];
                     // create another offer
                     this.createOffer(remote, sendDataCallback);
                 }
