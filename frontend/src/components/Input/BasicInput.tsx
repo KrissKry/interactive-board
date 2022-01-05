@@ -6,6 +6,10 @@ interface InputProps {
     icon: string;
     ref: any;
     disabled?: boolean;
+    maxLength?: number;
+
+    onKeydown?: (e?: any) => void;
+    keyType?: string
 }
 
 // eslint-disable-next-line no-undef
@@ -16,6 +20,9 @@ const BasicInput = React.forwardRef<HTMLIonInputElement, InputProps>((props, ref
         type="text"
         ref={ref}
         disabled={props.disabled}
+        maxlength={props.maxLength}
+        // eslint-disable-next-line no-nested-ternary
+        onKeyDown={(e) => (e.key === props.keyType ? typeof props.onKeydown !== 'undefined' ? props.onKeydown() : null : null)}
     >
         <IonIcon icon={props.icon} className="ee-nomeeting--input-icon" />
     </IonInput>

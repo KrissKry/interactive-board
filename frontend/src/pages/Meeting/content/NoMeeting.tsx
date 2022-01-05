@@ -1,7 +1,7 @@
-import { IonIcon, IonInput } from '@ionic/react';
+import { IonIcon, IonInput, IonSpinner } from '@ionic/react';
 // eslint-disable-next-line object-curly-newline
 import { lockClosedOutline, lockOpenOutline, personOutline, textOutline } from 'ionicons/icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { validate } from 'uuid';
 import { BasicInput } from '../../../components/Input';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
@@ -17,9 +17,17 @@ interface MeetingProps {
 
 const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element => {
     const dispatch = useAppDispatch();
-    const user = useAppSelector((state) => state.user.username);
+    const appState = useAppSelector((state) => ({
+        user: state.user.username,
+        loading: state.meeting.loading,
+        error: state.meeting.loadingError,
+        errorMessage: state.meeting.errorMessage,
+    }));
+    useEffect(() => {
+        console.log(appState);
+    }, [appState]);
     // eslint-disable-next-line no-undef
-    const inputRef = useRef() as React.MutableRefObject<HTMLIonInputElement>;
+    const userRef = useRef() as React.MutableRefObject<HTMLIonInputElement>;
     // eslint-disable-next-line no-undef
     const idRef = useRef() as React.MutableRefObject<HTMLIonInputElement>;
     // eslint-disable-next-line no-undef
@@ -27,13 +35,18 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
     const [segment, setSegment] = useState<MeetingSegment>('CREATE');
 
     const welcome = 'Witaj, ';
-    const userText = ` ${user || 'nieznajomy'}`;
+    const userText = ` ${appState.user || 'nieznajomy'}`;
     const setUserText = ['Ustaw nazwę', 'użytkownika', 'zanim zaczniesz.'];
     const helpText = 'Dołącz do spotkania lub załóż nowe poniżej';
 
-    const verifyUsername = (name: string): void => {
+    const verifyUsername = (): void => {
         try {
+            const name = userRef.current?.value as string;
+
+            if (!name) return;
             if (!name.length) return;
+            if (name.split(' ').length > 1) return;
+            if (name.length > 20) return;
 
             dispatch(setUsername(name));
         } catch (error) {
@@ -54,17 +67,9 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
             {/* eslint-disable-next-line react/jsx-one-expression-per-line */}
             <p>{setUserText[0]} <b>{setUserText[1]}</b> {setUserText[2]}</p>
 
-            <IonInput
-                className="ee-nomeeting--input"
-                placeholder="Nazwa użytkownika"
-                type="text"
-                onKeyDown={(e) => (e.key === 'Enter' ? verifyUsername(e.currentTarget.value as string) : null)}
-                ref={inputRef}
-            >
-                <IonIcon icon={personOutline} className="ee-nomeeting--input-icon" />
-            </IonInput>
+            <BasicInput placeholder="Nazwa użytkownika" icon={personOutline} ref={userRef} maxLength={20} keyType="Enter" onKeydown={verifyUsername} />
 
-            <button type="button" className="ee-nomeeting--btn-continue" onClick={() => verifyUsername(inputRef.current?.value as string)}>KONTYNUUJ</button>
+            <button type="button" className="ee-nomeeting--btn-continue" onClick={() => verifyUsername()}>KONTYNUUJ</button>
 
         </div>
     );
@@ -78,25 +83,27 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
                 <button type="button" className={['ee-nomeeting--btn-segment', segment === 'JOIN' ? 'ee-nomeeting--btn-segment-active' : 'ee-nomeeting--btn-segment-inactive'].join(' ')} onClick={() => setSegment('JOIN')}>DOŁĄCZ</button>
             </div>
 
-            <BasicInput placeholder="ID Spotkania" icon={textOutline} ref={idRef} disabled={segment === 'CREATE'} />
-            <BasicInput placeholder="Hasło (opcjonalne)" icon={lockClosedOutline} ref={passRef} />
+            <BasicInput placeholder="ID Spotkania" icon={textOutline} ref={idRef} disabled={segment === 'CREATE' || appState.loading} maxLength={36} />
+            <BasicInput placeholder="Hasło (opcjonalne)" icon={lockClosedOutline} ref={passRef} disabled={appState.loading} />
 
-            <button type="button" className="ee-nomeeting--btn-continue ee-margin--vertical1" onClick={() => handleSubmit()}>KONTYNUUJ</button>
+            {appState.loading ? (<IonSpinner />) : null}
+            {appState.error ? (<p style={{ color: 'crimson' }}>{appState.errorMessage}</p>) : null}
+            <button type="button" className="ee-nomeeting--btn-continue ee-margin--vertical1" onClick={() => handleSubmit()} disabled={appState.loading}>KONTYNUUJ</button>
 
-            <button type="button" className="ee-nomeeting--btn-reset" onClick={() => dispatch(setUsername(''))}>Nie ty?</button>
+            <button type="button" className="ee-nomeeting--btn-reset" onClick={() => dispatch(setUsername(''))} disabled={appState.loading}>Nie ty?</button>
         </div>
     );
 
     return (
         <div className="ee-flex--column ee-align-main--center ee-align-cross--center">
 
-            <div className="ee-flex--row">
+            <div className="ee-flex--row ee-flex--wrap ee-nomeeting--title-wrapper">
                 <p className="ee-nomeeting--title ee-margin--right05">{welcome}</p>
                 <p className="ee-nomeeting--title ee-nomeeting--title-bold">{userText}</p>
                 <p className="ee-nomeeting--title">!</p>
             </div>
 
-            {user ? (<InputMeeting />) : (<InputUsername />)}
+            {appState.user ? (<InputMeeting />) : (<InputUsername />)}
 
         </div>
     );

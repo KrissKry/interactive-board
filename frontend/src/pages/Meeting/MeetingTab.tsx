@@ -11,7 +11,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../services';
@@ -188,6 +188,7 @@ const MeetingTab = () => {
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
+        dispatch(meetingFetchRequest());
         setConnectionStatus('CONNECTING');
 
         meetingService.createClient(subscribeToEndpoints, meetingState.user, id, pass)
@@ -200,10 +201,12 @@ const MeetingTab = () => {
             console.error(err);
             setConnectionStatus('ERROR');
             dispatch(meetingSetDetails(['', '']));
+            dispatch(meetingFetchError(err.message));
         });
     };
 
     const createMeetingCallback = (pass?: string) : void => {
+        dispatch(meetingFetchRequest());
         MeetingService.requestNewMeeting(pass)
         .then((response) => {
             const { data } = response;
@@ -213,6 +216,7 @@ const MeetingTab = () => {
             meetingService.deactivateClient();
             console.error(err);
             setConnectionStatus('ERROR');
+            dispatch(meetingFetchError(err.message));
         });
     };
 

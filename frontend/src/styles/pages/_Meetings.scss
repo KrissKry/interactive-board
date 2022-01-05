@@ -17,20 +17,21 @@
 
     &--title {
         font-size: 4rem;
+
         transition: opacity 0.5s;
         &-bold {
             font-weight: bold;
         }
-        &-none {
-            display: none;
-        }
+        
+        &-wrapper {
+            margin: 4rem 0;
 
-        &-inv {
-            opacity: 0;
-        }
-
-        &-act {
-            opacity: 1;
+            p {
+                margin: 0;
+                @media screen and (max-width: 30rem) {
+                    font-size: 2rem;
+                }
+            }
         }
     }
 
