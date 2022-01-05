@@ -145,7 +145,7 @@ const Canvas = ({
             const change = currentChanges[0];
 
             p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
-            p5Instance.strokeWeight(brushWidth);
+            p5Instance.strokeWeight(1);
 
             // eslint-disable-next-line no-restricted-syntax
             for (const changedPixel of change.points) {

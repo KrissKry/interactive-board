@@ -32,6 +32,7 @@
         background-color: white;
         left: -10rem;
         transition: 0.5s;
+        z-index: 101;
         @media screen and (max-height: 40rem) {
             top: 3.5rem;
         }

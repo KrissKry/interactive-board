@@ -53,6 +53,16 @@ export interface meetingStateInterface {
      */
     updatingPixels: PixelChanges[];
 
+    /**
+     * Queued changes when pixels are updated on DRAW Event
+     */
+    queuedCanvasChanges: PixelChanges[];
+
+    /**
+     * Changes currently updating
+     */
+    canvasChanges: PixelChanges[];
+
     canvasEvents: CanvasEventMessage[];
 
     /**
@@ -100,6 +110,9 @@ const initialState : meetingStateInterface = {
     pixels: [],
 
     updatingPixels: [],
+
+    queuedCanvasChanges: [],
+    canvasChanges: [],
 
     loading: false,
 
@@ -208,6 +221,19 @@ const meetingSlice = createSlice({
         meetingReset: () => ({
             ...initialState,
         }),
+        meetingCanvasChangesAdd: (state, action: PayloadAction<PixelChanges>) => ({
+            ...state,
+            queuedCanvasChanges: [...state.queuedCanvasChanges, action.payload],
+        }),
+        meetingCanvasChangesMove: (state) => ({
+            ...state,
+            canvasChanges: state.queuedCanvasChanges,
+            queuedCanvasChanges: [],
+        }),
+        meetingCanvasChangesFinish: (state) => ({
+            ...state,
+            canvasChanges: [],
+        }),
     },
 });
 
@@ -229,6 +255,9 @@ const {
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
     meetingReset,
+    meetingCanvasChangesAdd,
+    meetingCanvasChangesMove,
+    meetingCanvasChangesFinish,
 } = meetingSlice.actions;
 
 export {
@@ -247,6 +276,9 @@ export {
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
     meetingReset,
+    meetingCanvasChangesAdd,
+    meetingCanvasChangesMove,
+    meetingCanvasChangesFinish,
 };
 
 /**
