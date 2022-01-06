@@ -1,6 +1,12 @@
 {
   "name": "frontend",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "Projekt inzynierski na EITI - PW",
+  "author": {
+    "name": "Krzysztof Kryczka",
+    "email": "kryczka.krzysztof7@gmail.com",
+    "url": "https://github.com/KrissKry"
+  },
   "private": true,
   "dependencies": {
     "@capacitor/android": "^3.2.4",
@@ -59,7 +65,8 @@
   },
   "scripts": {
     "start": "env-cmd -f .env.webapp react-scripts start",
-    "build": "env-cmd -f .env.webapp react-scripts build && npx cap sync",
+    "build": "react-scripts build",
+    "build:cap": "react-scripts build && npx cap sync",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -92,6 +99,5 @@
     "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-react-hooks": "^4.2.0",
     "sass": "^1.42.1"
-  },
-  "description": "An Ionic project"
+  }
 }
