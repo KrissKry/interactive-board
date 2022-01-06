@@ -12,11 +12,11 @@ export const getPixelCoordinates = (
     previousY: number,
     brushWidth: number,
 ) : CoordinatesReturn => {
-    const deltaX = Math.abs(currentX - previousX) + 4 * brushWidth;
-    const deltaY = Math.abs(currentY - previousY) + 4 * brushWidth;
+    const deltaX = Math.abs(currentX - previousX) + 5 * brushWidth;
+    const deltaY = Math.abs(currentY - previousY) + 5 * brushWidth;
 
-    const startX = Math.min(currentX, previousX) - 4 * brushWidth;
-    const startY = Math.min(currentY, previousY) - 4 * brushWidth;
+    const startX = Math.min(currentX, previousX) - 5 * brushWidth;
+    const startY = Math.min(currentY, previousY) - 5 * brushWidth;
 
     // eslint-disable-next-line object-curly-newline
     return { startX, startY, deltaX, deltaY };

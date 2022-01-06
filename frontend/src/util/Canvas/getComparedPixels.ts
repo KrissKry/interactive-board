@@ -29,7 +29,7 @@ export const getComparedPixels = (
         for (let channel = 0; channel < 3; channel += 1) {
             if (compareChannel(previousPixels[index + channel], nextPixels[index + channel])) {
                 const y = (Math.floor((index / 4) / areaWidth)) + startY;
-                const x = ((index / 4) % areaWidth) + startX;
+                const x = ((index / 4) % areaWidth) + startX + 1;
                 changes.points.push({
                     x,
                     y,

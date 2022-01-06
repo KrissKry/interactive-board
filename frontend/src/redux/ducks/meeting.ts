@@ -227,7 +227,7 @@ const meetingSlice = createSlice({
         }),
         meetingCanvasChangesMove: (state) => ({
             ...state,
-            canvasChanges: state.queuedCanvasChanges,
+            canvasChanges: [...state.queuedCanvasChanges],
             queuedCanvasChanges: [],
         }),
         meetingCanvasChangesFinish: (state) => ({

@@ -10,6 +10,7 @@ import {
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
+    meetingCanvasChangesAdd,
     // eslint-disable-next-line max-len
     meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
@@ -65,7 +66,8 @@ const MeetingTab = () => {
 
     const boardUpdateCallback = (message: IFrame) : void => {
         const resp: PixelChanges = JSON.parse(message.body);
-        dispatch(meetingCanvasPushChange(resp));
+        // dispatch(meetingCanvasPushChange(resp));
+        dispatch(meetingCanvasChangesAdd(resp));
     };
 
     const meetingUpdateCallback = (message: IFrame) : void => {

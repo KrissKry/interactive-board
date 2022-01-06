@@ -11,6 +11,8 @@ import p5Types from 'p5';
 import { IonIcon } from '@ionic/react';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
+    meetingCanvasChangesFinish,
+    meetingCanvasChangesMove,
     // eslint-disable-next-line max-len
     meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
@@ -95,8 +97,10 @@ const OngoingMeeting = ({
         messages: state.meeting.messages,
 
         boardInitialChanges: state.meeting.pixels,
-        boardChanges: state.meeting.updatingPixels,
-        boardChangesWaiting: state.meeting.updatingPixels.length,
+        boardChanges: state.meeting.canvasChanges,
+        boardChangesWaitingLen: state.meeting.queuedCanvasChanges.length,
+        boardChangesLength: state.meeting.canvasChanges.length,
+
         boardEvents: state.meeting.canvasEvents,
 
         users: state.meeting.currentUsers,
@@ -309,6 +313,10 @@ const OngoingMeeting = ({
             .catch((err) => console.error(err));
     };
 
+    const resetChangesCallback = (): void => {
+        dispatch(meetingCanvasChangesFinish());
+    };
+
     useEffect(() => {
         createStream()
         .then(() => sendP2PCommunication({}, 'QUERY'))
@@ -327,6 +335,9 @@ const OngoingMeeting = ({
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
     useEffect(() => { handleBoardEvent(); }, [meetingState.boardEvents]);
+    useEffect(() => {
+        if (meetingState.boardChangesLength === 0 && meetingState.boardChangesWaitingLen > 0) dispatch(meetingCanvasChangesMove());
+    }, [meetingState.boardChangesLength, meetingState.boardChangesWaitingLen]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -413,12 +424,12 @@ const OngoingMeeting = ({
             icon: radioButtonOnOutline,
             callback: () => boardBrushSetWidth(3),
         },
-        {
-            customId: '5',
-            customClass: 'ee-canvas-toolbar--tool-large',
-            icon: radioButtonOnOutline,
-            callback: () => boardBrushSetWidth(5),
-        },
+        // {
+        //     customId: '5',
+        //     customClass: 'ee-canvas-toolbar--tool-large',
+        //     icon: radioButtonOnOutline,
+        //     callback: () => boardBrushSetWidth(5),
+        // },
     ];
     const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
@@ -434,7 +445,7 @@ const OngoingMeeting = ({
                     brushColor={brushColor}
                     brushMode={brushMode}
                     brushWidth={brushWidth}
-                    changesWaiting={!!meetingState.boardChangesWaiting}
+                    changesWaiting={!!meetingState.boardChangesLength}
                     currentChanges={meetingState.boardChanges}
                     inDrawingMode={inDrawingMode}
                     initialChanges={meetingState.boardInitialChanges}
@@ -442,6 +453,7 @@ const OngoingMeeting = ({
                     cleanupInitialCallback={boardCleanupInitialCallback}
                     popChangeCallback={boardPopChange}
                     sendChangesCallback={boardSendChangesCallback}
+                    resetChangesCallback={resetChangesCallback}
                     sendFillEventCallback={boardSendFillEvent}
                     setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
                 />
