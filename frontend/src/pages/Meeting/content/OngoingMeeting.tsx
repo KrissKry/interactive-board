@@ -32,7 +32,7 @@ import { p2p } from '../../../interfaces/Meeting';
 
 /* util */
 import {
-    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
+    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, splitBoardChanges, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
 import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
@@ -115,7 +115,9 @@ const OngoingMeeting = ({
     const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
     const [brushWidth, setBrushWidth] = useState<number>(1);
     const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
-    const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
+    const boardSendChangesCallback = (changes: PixelChanges): void => {
+        meetingService.sendCanvasChanges(splitBoardChanges(changes));
+    };
     const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
     const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
