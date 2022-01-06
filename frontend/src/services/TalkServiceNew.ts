@@ -411,4 +411,12 @@ export class TalkService {
         const p2p = this.findRemoteP2P(remote);
         p2p.waitingICE.push(descriptor);
     }
+
+    public endCalls(): void {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const p2p of this.peers) {
+            p2p.connection.close();
+        }
+        this.connections = [];
+    }
 }

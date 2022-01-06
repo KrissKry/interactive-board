@@ -15,7 +15,7 @@ import {
     meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService } from '../../services';
+import { MeetingService, TalkService } from '../../services';
 
 import { NoMeeting, OngoingMeeting } from './content';
 import type { PixelChanges } from '../../interfaces/Canvas';
@@ -266,6 +266,8 @@ const MeetingTab = () => {
         closeExitPopover();
         setConnectionStatus('INIT');
         meetingService.deactivateClient();
+        const talkService = TalkService.getInstance();
+        talkService.endCalls();
         dispatch(meetingReset());
         dispatch(menuReset());
     };
