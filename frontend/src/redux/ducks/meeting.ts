@@ -86,6 +86,8 @@ export interface meetingStateInterface {
      * Meeting fetch failed message
      */
     errorMessage: string;
+
+    chatToasts: boolean;
 }
 
 /**
@@ -121,6 +123,8 @@ const initialState : meetingStateInterface = {
     errorMessage: '',
 
     pass: '',
+
+    chatToasts: true,
 };
 
 const meetingSlice = createSlice({
@@ -234,6 +238,14 @@ const meetingSlice = createSlice({
             ...state,
             canvasChanges: [],
         }),
+        meetingToggleChatToasts: (state) => ({
+            ...state,
+            chatToasts: !state.chatToasts,
+        }),
+        meetingSetChatToasts: (state, action: PayloadAction<boolean>) => ({
+            ...state,
+            chatToasts: action.payload,
+        }),
     },
 });
 
@@ -258,6 +270,8 @@ const {
     meetingCanvasChangesAdd,
     meetingCanvasChangesMove,
     meetingCanvasChangesFinish,
+    meetingToggleChatToasts,
+    meetingSetChatToasts,
 } = meetingSlice.actions;
 
 export {
@@ -279,6 +293,8 @@ export {
     meetingCanvasChangesAdd,
     meetingCanvasChangesMove,
     meetingCanvasChangesFinish,
+    meetingToggleChatToasts,
+    meetingSetChatToasts,
 };
 
 /**
