@@ -11,6 +11,8 @@ import p5Types from 'p5';
 import { IonIcon } from '@ionic/react';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
+    meetingCanvasChangesFinish,
+    meetingCanvasChangesMove,
     // eslint-disable-next-line max-len
     meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
@@ -30,7 +32,7 @@ import { p2p } from '../../../interfaces/Meeting';
 
 /* util */
 import {
-    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
+    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, splitBoardChanges, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
 import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
@@ -95,8 +97,10 @@ const OngoingMeeting = ({
         messages: state.meeting.messages,
 
         boardInitialChanges: state.meeting.pixels,
-        boardChanges: state.meeting.updatingPixels,
-        boardChangesWaiting: state.meeting.updatingPixels.length,
+        boardChanges: state.meeting.canvasChanges,
+        boardChangesWaitingLen: state.meeting.queuedCanvasChanges.length,
+        boardChangesLength: state.meeting.canvasChanges.length,
+
         boardEvents: state.meeting.canvasEvents,
 
         users: state.meeting.currentUsers,
@@ -111,7 +115,9 @@ const OngoingMeeting = ({
     const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
     const [brushWidth, setBrushWidth] = useState<number>(1);
     const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
-    const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
+    const boardSendChangesCallback = (changes: PixelChanges): void => {
+        meetingService.sendCanvasChanges(splitBoardChanges(changes));
+    };
     const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
     const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
@@ -219,20 +225,10 @@ const OngoingMeeting = ({
             /* new ice candidate sent by one peer to the other */
             case 'ICE':
                 talkService.receiveICE(message.from, message.data)
-                .then(
-                    () => console.log('[M] Added ICE'),
-                    (err) => {
-                        console.error('[M]', err);
-                        moveToEndP2PMessageQ();
-                        // eslint-disable-next-line no-useless-return
-                        return;
-                    },
-                )
+                .then(() => console.log('[M] Added ICE'))
                 .catch((err) => {
-                    console.error('[ICE]', err);
-                    moveToEndP2PMessageQ();
-                    // eslint-disable-next-line no-useless-return
-                    return;
+                    console.error('[ICE]', err, 'adding to On-Hold');
+                    talkService.addICEOnHold(message.from, message.data);
                 });
                 break;
 
@@ -266,14 +262,13 @@ const OngoingMeeting = ({
             audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
             video: false,
         })
-        .then((stream) => setOwnMediaStreamCallback(stream));
+        .then((stream) => setOwnMediaStreamCallback(stream))
+        .catch(() => {});
 
     const handleAvailableDeviceChanges = () : void => {
         if (availableInputs.length) {
-            console.log('availableInputs.length');
             // stream not started previously
             if (!streamStarted) {
-                console.log('!streamStarted');
                 if (typeof currentInputDevice === 'undefined') {
                     setCurrentInputDevice(availableInputs[0]);
                 }
@@ -281,32 +276,25 @@ const OngoingMeeting = ({
                 createStream().catch((err: any) => console.error(err));
             // stream started previously
             } else {
-                console.log('streamStarted');
                 // used a device that is on the new list
                 // eslint-disable-next-line no-lonely-if
                 if (typeof currentInputDevice !== 'undefined') {
-                    console.log('typeof currentInputDevice !== undefined');
                     // assumption that the device has not been disconnected
                     if (availableInputs.includes(currentInputDevice)) {
                         // do nth
-                        console.log('availableInputs.includes(currentInputDevice)');
                     // current device is not on the received device list
                     } else {
-                        console.log('!!!availableInputs.includes(currentInputDevice)');
                         setCurrentInputDevice(undefined);
                     }
                 // stream started previously but current device is undefined
                 // and devices are found
                 // change current input device, replace audio tracks for all connections
                 } else {
-                    console.log('typeof currentInputDevice ===== undefined');
                     setCurrentInputDevice(availableInputs[0]);
                     talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
                 }
             }
         } else {
-            console.log('!!!availableInputs.length');
-            // do nth
             setCurrentInputDevice(undefined);
         }
     };
@@ -327,6 +315,10 @@ const OngoingMeeting = ({
             .catch((err) => console.error(err));
     };
 
+    const resetChangesCallback = (): void => {
+        dispatch(meetingCanvasChangesFinish());
+    };
+
     useEffect(() => {
         createStream()
         .then(() => sendP2PCommunication({}, 'QUERY'))
@@ -345,6 +337,9 @@ const OngoingMeeting = ({
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
     useEffect(() => { handleBoardEvent(); }, [meetingState.boardEvents]);
+    useEffect(() => {
+        if (meetingState.boardChangesLength === 0 && meetingState.boardChangesWaitingLen > 0) dispatch(meetingCanvasChangesMove());
+    }, [meetingState.boardChangesLength, meetingState.boardChangesWaitingLen]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -431,12 +426,12 @@ const OngoingMeeting = ({
             icon: radioButtonOnOutline,
             callback: () => boardBrushSetWidth(3),
         },
-        {
-            customId: '5',
-            customClass: 'ee-canvas-toolbar--tool-large',
-            icon: radioButtonOnOutline,
-            callback: () => boardBrushSetWidth(5),
-        },
+        // {
+        //     customId: '5',
+        //     customClass: 'ee-canvas-toolbar--tool-large',
+        //     icon: radioButtonOnOutline,
+        //     callback: () => boardBrushSetWidth(5),
+        // },
     ];
     const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
@@ -452,7 +447,7 @@ const OngoingMeeting = ({
                     brushColor={brushColor}
                     brushMode={brushMode}
                     brushWidth={brushWidth}
-                    changesWaiting={!!meetingState.boardChangesWaiting}
+                    changesWaiting={!!meetingState.boardChangesLength}
                     currentChanges={meetingState.boardChanges}
                     inDrawingMode={inDrawingMode}
                     initialChanges={meetingState.boardInitialChanges}
@@ -460,6 +455,7 @@ const OngoingMeeting = ({
                     cleanupInitialCallback={boardCleanupInitialCallback}
                     popChangeCallback={boardPopChange}
                     sendChangesCallback={boardSendChangesCallback}
+                    resetChangesCallback={resetChangesCallback}
                     sendFillEventCallback={boardSendFillEvent}
                     setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
                 />

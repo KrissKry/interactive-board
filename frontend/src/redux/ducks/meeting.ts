@@ -53,6 +53,16 @@ export interface meetingStateInterface {
      */
     updatingPixels: PixelChanges[];
 
+    /**
+     * Queued changes when pixels are updated on DRAW Event
+     */
+    queuedCanvasChanges: PixelChanges[];
+
+    /**
+     * Changes currently updating
+     */
+    canvasChanges: PixelChanges[];
+
     canvasEvents: CanvasEventMessage[];
 
     /**
@@ -76,6 +86,8 @@ export interface meetingStateInterface {
      * Meeting fetch failed message
      */
     errorMessage: string;
+
+    chatToasts: boolean;
 }
 
 /**
@@ -101,6 +113,9 @@ const initialState : meetingStateInterface = {
 
     updatingPixels: [],
 
+    queuedCanvasChanges: [],
+    canvasChanges: [],
+
     loading: false,
 
     loadingError: false,
@@ -108,6 +123,8 @@ const initialState : meetingStateInterface = {
     errorMessage: '',
 
     pass: '',
+
+    chatToasts: true,
 };
 
 const meetingSlice = createSlice({
@@ -208,6 +225,27 @@ const meetingSlice = createSlice({
         meetingReset: () => ({
             ...initialState,
         }),
+        meetingCanvasChangesAdd: (state, action: PayloadAction<PixelChanges>) => ({
+            ...state,
+            queuedCanvasChanges: [...state.queuedCanvasChanges, action.payload],
+        }),
+        meetingCanvasChangesMove: (state) => ({
+            ...state,
+            canvasChanges: [...state.queuedCanvasChanges],
+            queuedCanvasChanges: [],
+        }),
+        meetingCanvasChangesFinish: (state) => ({
+            ...state,
+            canvasChanges: [],
+        }),
+        meetingToggleChatToasts: (state) => ({
+            ...state,
+            chatToasts: !state.chatToasts,
+        }),
+        meetingSetChatToasts: (state, action: PayloadAction<boolean>) => ({
+            ...state,
+            chatToasts: action.payload,
+        }),
     },
 });
 
@@ -229,6 +267,11 @@ const {
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
     meetingReset,
+    meetingCanvasChangesAdd,
+    meetingCanvasChangesMove,
+    meetingCanvasChangesFinish,
+    meetingToggleChatToasts,
+    meetingSetChatToasts,
 } = meetingSlice.actions;
 
 export {
@@ -247,6 +290,11 @@ export {
     meetingCanvasPushEvent,
     meetingCanvasPopEvent,
     meetingReset,
+    meetingCanvasChangesAdd,
+    meetingCanvasChangesMove,
+    meetingCanvasChangesFinish,
+    meetingToggleChatToasts,
+    meetingSetChatToasts,
 };
 
 /**

@@ -44,6 +44,8 @@ interface CanvasProps {
      */
     cleanupInitialCallback: () => void;
 
+    resetChangesCallback: () => void;
+
     popChangeCallback:() => void;
     /**
      * Called every time pixel change is calculated
@@ -70,6 +72,7 @@ const Canvas = ({
     p5Instance,
     cleanupInitialCallback,
     popChangeCallback,
+    resetChangesCallback,
     sendChangesCallback,
     sendFillEventCallback,
     setP5InstanceCallback,
@@ -131,6 +134,24 @@ const Canvas = ({
         }
     };
 
+    const updateCanvas = (): void => {
+        if (typeof p5Instance !== 'undefined') {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const change of currentChanges) {
+                p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
+                p5Instance.strokeWeight(1);
+
+                // eslint-disable-next-line no-restricted-syntax
+                for (const changedPixel of change.points) {
+                    p5Instance.point(changedPixel.x, changedPixel.y);
+                }
+            }
+
+            resetChangesCallback();
+            setIsUpdating(false);
+        }
+    };
+
     useEffect(() => {
         /* won't update until drawing complete or if no changes are present */
         if (isDrawing || !changesWaiting || isUpdating) return;
@@ -140,28 +161,7 @@ const Canvas = ({
         // beginChangesCallback();
     }, [changesWaiting, isDrawing, isUpdating]);
 
-    const renderPixelChange = () : void => {
-        if (typeof p5Instance !== 'undefined') {
-            const change = currentChanges[0];
-
-            p5Instance.stroke(change.color.red, change.color.green, change.color.blue);
-            p5Instance.strokeWeight(brushWidth);
-
-            // eslint-disable-next-line no-restricted-syntax
-            for (const changedPixel of change.points) {
-                p5Instance.point(changedPixel.x, changedPixel.y);
-            }
-
-            popChangeCallback();
-            setIsUpdating(false);
-        }
-    };
-
-    useEffect(() => {
-        if (isUpdating) {
-            renderPixelChange();
-        }
-    }, [isUpdating]);
+    useEffect(() => { if (isUpdating) updateCanvas(); }, [isUpdating]);
 
     useEffect(() => {
         if (initialChanges.length && typeof p5Instance !== 'undefined') {

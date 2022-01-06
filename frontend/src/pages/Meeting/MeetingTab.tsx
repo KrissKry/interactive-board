@@ -10,11 +10,12 @@ import {
 } from 'ionicons/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
+    meetingCanvasChangesAdd,
     // eslint-disable-next-line max-len
     meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
-import { MeetingService } from '../../services';
+import { MeetingService, TalkService } from '../../services';
 
 import { NoMeeting, OngoingMeeting } from './content';
 import type { PixelChanges } from '../../interfaces/Canvas';
@@ -25,6 +26,8 @@ import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
 import { menuReset, toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
 import { toggleDrawingMode } from '../../redux/ducks/canvas';
 import { BoolPopover } from '../../components/Popover';
+import { popChat, popUser } from '../../assets/audio';
+import MeetingToast from '../../components/Toasts/MeetingToast';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -41,6 +44,26 @@ const MeetingTab = () => {
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
     const [present, dismiss] = useIonToast();
+    const [chatPopSignal] = useState(new Audio(popChat));
+    const [userPopSignal] = useState(new Audio(popUser));
+    const [toastState, setToastState] = useState({
+        message: '',
+        timeout: 0,
+        visible: false,
+    });
+
+    const hideToast = (time?: number): number => window.setTimeout(() => setToastState({ message: '', timeout: 0, visible: false }), time || 1000);
+
+    const showToastMessage = (text: string, time?: number): void => {
+        if (toastState.timeout) clearTimeout(toastState.timeout);
+
+        setToastState({
+            visible: true,
+            timeout: hideToast(time),
+            message: text,
+        });
+    };
+
     const [exitPopover, setExitPopover] = useState({
         showPopover: false,
         event: undefined,
@@ -57,15 +80,16 @@ const MeetingTab = () => {
         errorMessage: state.meeting.errorMessage,
         user: state.user.username,
         inDrawingMode: state.canvas.drawingMode && !state.menus.chatExpanded && !state.menus.utilityExpanded,
+        toastsEnabled: state.meeting.chatToasts,
     }));
-
     const meetingService = MeetingService.getInstance();
 
     const updateMediaStream = (newMediaStream: MediaStream) : void => { setOwnMediaStream(newMediaStream); };
 
     const boardUpdateCallback = (message: IFrame) : void => {
         const resp: PixelChanges = JSON.parse(message.body);
-        dispatch(meetingCanvasPushChange(resp));
+        // dispatch(meetingCanvasPushChange(resp));
+        dispatch(meetingCanvasChangesAdd(resp));
     };
 
     const meetingUpdateCallback = (message: IFrame) : void => {
@@ -76,13 +100,25 @@ const MeetingTab = () => {
     const newUserUpdateCallback = (message: IFrame) : void => {
         const payload: UserInterface = JSON.parse(message.body);
         if (payload.name === meetingState.user) return;
-        if (payload.status === 'CONNECTED') dispatch(meetingUserAdd(payload));
-        else dispatch(meetingUserRemove(payload));
+
+        userPopSignal.play();
+
+        if (payload.status === 'CONNECTED') {
+            dispatch(meetingUserAdd(payload));
+            showToastMessage(`${payload.name} dołączył do spotkania`, 2000);
+        } else {
+            dispatch(meetingUserRemove(payload));
+            showToastMessage(`${payload.name} opuścił spotkanie`, 2000);
+        }
     };
 
     const chatUpdateCallback = (message: IFrame) => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
         dispatch(meetingChatAddMessage(recvMessage));
+
+        if (recvMessage.username !== meetingState.user) chatPopSignal.play();
+
+        showToastMessage(`${recvMessage.username}: ${recvMessage.text}`);
     };
 
     const p2pUpdateCallback = (message: IFrame) => {
@@ -230,6 +266,8 @@ const MeetingTab = () => {
         closeExitPopover();
         setConnectionStatus('INIT');
         meetingService.deactivateClient();
+        const talkService = TalkService.getInstance();
+        talkService.endCalls();
         dispatch(meetingReset());
         dispatch(menuReset());
     };
@@ -281,6 +319,7 @@ const MeetingTab = () => {
         )}
 
         <IonContent fullscreen>
+            <MeetingToast isOpen={toastState.visible && (meetingState.toastsEnabled)} message={toastState.message} />
             {getMeetingContent()}
         </IonContent>
 

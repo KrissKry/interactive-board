@@ -24,12 +24,12 @@ const menuSlice = createSlice({
         toggleChatMenu: (state) => ({
             ...state,
             chatExpanded: !state.chatExpanded,
-            utilityExpanded: false,
+            // utilityExpanded: false,
         }),
         toggleUtilityMenu: (state) => ({
             ...state,
             utilityExpanded: !state.utilityExpanded,
-            chatExpanded: false,
+            // chatExpanded: false,
         }),
         toggleToolbarMenu: (state) => ({
             ...state,

@@ -1,6 +1,7 @@
 import {
     addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, removeAudio,
 } from './handleAudio';
+import { splitBoardChanges } from './splitBoardChanges';
 import { toggleIncomingAudio, toggleOutgoingAudio } from './toggleAudio';
 
 export {
@@ -11,4 +12,5 @@ export {
     removeAudio,
     toggleIncomingAudio,
     toggleOutgoingAudio,
+    splitBoardChanges,
 };
