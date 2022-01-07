@@ -24,7 +24,6 @@ COPY --from=nodebuilder /app/build .
 COPY docker_entrypoint.sh /
 COPY gen_config.sh /
 
-RUN ls
 RUN chmod +x /docker_entrypoint.sh /gen_config.sh
 
 EXPOSE 80
