@@ -25,7 +25,7 @@ export class MeetingService {
         console.log(login, roomId, password);
         this.client = new Client({
             // @ts-expect-error
-            brokerURL: `http://${window.REACT_APP_API_URL}/room`,
+            brokerURL: `http://${window.REACT_APP_API_URL}:${window.REACT_APP_API_PORT}/room`,
             connectHeaders: {
                 login,
                 roomId,
@@ -134,7 +134,7 @@ export class MeetingService {
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
         // @ts-expect-error
-        const url = `ws://${window.REACT_APP_API_URL}/api/room/create`;
+        const url = `ws://${window.REACT_APP_API_URL}:${window.REACT_APP_API_PORT}/api/room/create`;
 
         const data = {
             // name,

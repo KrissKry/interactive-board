@@ -24,6 +24,8 @@ spec:
           env:
             - name: API_URL
               value: backend
+            - name: API_PORT
+              value: "8765"
 ---
 
 apiVersion: v1
