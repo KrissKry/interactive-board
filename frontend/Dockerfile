@@ -9,22 +9,18 @@ COPY package-lock.json ./
 RUN npm install --silent
 
 COPY . ./
-RUN npm run build
-
+RUN npm run build:prod
 
 #stage 2 use that npm boi to extract built static files and make em ready to be served with nginx
 FROM nginx:1.21.4-alpine
 
 WORKDIR /usr/share/nginx/html
 
-RUN apk add --no-cache jq
 RUN rm -rf ./*
+# RUN rm /etc/nginx/conf.d/default.conf
 
 COPY --from=nodebuilder /app/build .
-COPY docker_entrypoint.sh /
-COPY gen_config.sh /
-
-RUN chmod +x /docker_entrypoint.sh /gen_config.sh
+# COPY nginx/nginx.conf /etc/nginx/conf.d
 
 EXPOSE 80
-ENTRYPOINT ["/docker_entrypoint.sh"]
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
