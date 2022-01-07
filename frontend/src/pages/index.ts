@@ -1,3 +1,4 @@
+import HealthTab from './Helth/HealthTab';
 import MeetingTab from './Meeting/MeetingTab';
 
-export { MeetingTab };
+export { HealthTab, MeetingTab };
