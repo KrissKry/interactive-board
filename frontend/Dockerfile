@@ -6,26 +6,25 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 
-RUN npm install
-
-ARG API_HTTP=https://localhost:1337
-ARG API_WSS=wss://localhost:1337
-
-ENV REACT_APP_API_HTTP=$API_HTTP
-ENV REACT_APP_API_WEBSOCKET=$API_WSS
+RUN npm install --silent
 
 COPY . ./
 RUN npm run build
 
 
-#stage 2 use that npm boi and display stuff with nginx
+#stage 2 use that npm boi to extract built static files and make em ready to be served with nginx
 FROM nginx:1.21.4
 
 WORKDIR /usr/share/nginx/html
 
+RUN apk add --no-cache jq
 RUN rm -rf ./*
 
 COPY --from=nodebuilder /app/build .
+COPY /infrastructure/docker_entrypoint.sh /
+COPY /infrastructure/gen_config.sh /
+
+RUN chmod +x docker_entrypoint.sh gen_config.sh
 
 EXPOSE 80
-ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
+ENTRYPOINT ["/docker_entrypoint.sh"]

@@ -24,7 +24,8 @@ export class MeetingService {
     createClient(successCallback: (id: string) => void, login: string, roomId: string, password?: string) : Promise<void> {
         console.log(login, roomId, password);
         this.client = new Client({
-            brokerURL: `${process.env.REACT_APP_API_WEBSOCKET}/room`,
+            // @ts-expect-error
+            brokerURL: `http://${window.REACT_APP_API_URL}/room`,
             connectHeaders: {
                 login,
                 roomId,
@@ -130,13 +131,10 @@ export class MeetingService {
         throw new TypeError('Client not connected or client is null');
     }
 
-    // removeSubscription(destination: string) : Promise<void> {
-    //     this.client.un
-    // }
-
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
-        const url = `${process.env.REACT_APP_API_HTTP}/api/room/create`;
+        // @ts-expect-error
+        const url = `ws://${window.REACT_APP_API_URL}/api/room/create`;
 
         const data = {
             // name,
