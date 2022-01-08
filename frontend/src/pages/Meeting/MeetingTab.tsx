@@ -26,8 +26,8 @@ import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
 import { menuReset, toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
 import { toggleDrawingMode } from '../../redux/ducks/canvas';
 import { BoolPopover } from '../../components/Popover';
-import { popChat, popUser } from '../../assets/audio';
 import MeetingToast from '../../components/Toasts/MeetingToast';
+import { SoundHandler } from '../../handlers';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -44,13 +44,12 @@ const MeetingTab = () => {
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
     const [present, dismiss] = useIonToast();
-    const [chatPopSignal] = useState(new Audio(popChat));
-    const [userPopSignal] = useState(new Audio(popUser));
     const [toastState, setToastState] = useState({
         message: '',
         timeout: 0,
         visible: false,
     });
+    const soundHandler = SoundHandler.getInstance();
 
     const hideToast = (time?: number): number => window.setTimeout(() => setToastState({ message: '', timeout: 0, visible: false }), time || 1000);
 
@@ -101,7 +100,7 @@ const MeetingTab = () => {
         const payload: UserInterface = JSON.parse(message.body);
         if (payload.name === meetingState.user) return;
 
-        userPopSignal.play();
+        soundHandler.popUser();
 
         if (payload.status === 'CONNECTED') {
             dispatch(meetingUserAdd(payload));
@@ -116,7 +115,7 @@ const MeetingTab = () => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
         dispatch(meetingChatAddMessage(recvMessage));
 
-        if (recvMessage.username !== meetingState.user) chatPopSignal.play();
+        if (recvMessage.username !== meetingState.user) soundHandler.popChat();
 
         showToastMessage(`${recvMessage.username}: ${recvMessage.text}`);
     };
