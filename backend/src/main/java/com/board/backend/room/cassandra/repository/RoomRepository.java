@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.cassandra.core.cql.AsyncCqlTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -70,7 +67,14 @@ public class RoomRepository {
         } catch (InterruptedException | ExecutionException e) {
             log.info(e.toString());
         }
+    }
 
+    public void clearRoomPixels(UUID roomId) {
+        var room = crudRoomRepository.findById(roomId).orElse(null);
+        if (room != null) {
+            room.setPixels(new HashMap<>());
+            crudRoomRepository.save(room);
+        }
     }
 
     @SneakyThrows

@@ -14,4 +14,4 @@ spring:
       local-datacenter: ${CASSANDRA_DC}
       schema-action: CREATE_IF_NOT_EXISTS
       request.consistency: quorum
-logging.level.root: info
+logging.level.root: debug

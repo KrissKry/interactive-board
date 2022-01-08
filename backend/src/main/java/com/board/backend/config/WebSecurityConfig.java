@@ -1,6 +1,7 @@
 package com.board.backend.config;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
@@ -9,9 +10,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(final HttpSecurity http) throws Exception {
         // This is not for websocket authorization, and this should most likely not be altered.
         http
+                .cors().and()
                 .httpBasic().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                .authorizeRequests().antMatchers("/board").permitAll()
+                .authorizeRequests().antMatchers("*").permitAll()
                 .anyRequest().denyAll();
     }
 }

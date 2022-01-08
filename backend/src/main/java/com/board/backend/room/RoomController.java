@@ -2,6 +2,7 @@ package com.board.backend.room;
 
 import com.board.backend.config.PrincipalUtils;
 import com.board.backend.config.authentication.utils.UserRoomValidator;
+import com.board.backend.drawing.dto.ClearPixelsDTO;
 import com.board.backend.room.dto.CreateRoomDTO;
 import com.board.backend.room.dto.RoomDTO;
 import com.board.backend.chat.dto.ChatMessageDTO;
@@ -9,6 +10,7 @@ import com.board.backend.drawing.dto.ChangedPixelsDTO;
 import com.board.backend.user.UserDTO;
 import com.board.backend.user.UserStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +35,17 @@ public class RoomController {
     private final RoomFacade roomFacade;
     private final SimpMessagingTemplate template;
 
+    @CrossOrigin(origins = "*")
     @SneakyThrows
     @PostMapping("/api/room/create")
     public ResponseEntity<?> createRoom(@RequestBody String roomDTO) {
         return roomFacade.createRoom(roomDTO);
+    }
+
+    @CrossOrigin(origins = "*")
+    @GetMapping("/check")
+    public ResponseEntity<?> check() {
+        return ResponseEntity.ok(new CheckResponse());
     }
 
     @SubscribeMapping("/room/connect/{roomId}")
@@ -64,5 +73,20 @@ public class RoomController {
             template.convertAndSend("/topic/chat.listen." + roomId, message);
             roomFacade.saveMessage(message, roomId);
         }
+    }
+
+    @MessageMapping("/board/clear/{roomId}")
+    public void clearBoard(@DestinationVariable UUID roomId, @Payload ClearPixelsDTO clearPixelsDTO, Principal principal) {
+        if (UserRoomValidator.validate(principal, roomId)) {
+            log.info("User: " + PrincipalUtils.extractUserNameFromPrincipal(principal) + "requested clear board for room :" + roomId);
+            template.convertAndSend("/topic/board.cleared." + roomId, clearPixelsDTO);
+            roomFacade.clearRoom(roomId);
+        }
+    }
+
+    @Data
+    static class CheckResponse {
+        String result = "Success";
+        String status = "Success";
     }
 }

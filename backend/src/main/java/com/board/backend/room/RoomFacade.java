@@ -27,7 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class RoomFacade {
-    private final RoomRepository crudRoomRepositoryOld;
+    private final RoomRepository roomRepository;
     private final RoomMapper roomMapper;
     private final ChatMessageMapper chatMessageMapper;
     private final BoardPixelsMapper changedPixelsMapper;
@@ -36,7 +36,7 @@ public class RoomFacade {
     private final SimpMessagingTemplate template;
 
     public ResponseEntity<?> createRoom(String roomDto) {
-        var result = crudRoomRepositoryOld
+        var result = roomRepository
                 .save(new Room(encoder.encode(
                         jsonMapper.toObject(
                                 roomDto,
@@ -53,7 +53,7 @@ public class RoomFacade {
 
     public ResponseEntity<?> connectAndGetRoom(UUID id, Principal principal) {
         if (addNewUser(id, PrincipalUtils.extractUserNameFromPrincipal(principal))) {
-            var room = crudRoomRepositoryOld.findOne(id);
+            var room = roomRepository.findOne(id);
             if (room == null) {
                 log.error("Could not find room with specified ID: " + id + ", user: " + principal.getName());
                 return ResponseEntity.badRequest().body("Could not find room with specified ID: "
@@ -84,28 +84,32 @@ public class RoomFacade {
     }
 
     public void disconnectUser(UUID roomId, String username) {
-        var room = crudRoomRepositoryOld.findOne(roomId);
+        var room = roomRepository.findOne(roomId);
         if (room == null) {
             log.info("EMPTY");
             return;
         }
         room.getCurrentUsers().remove(username);
         if (room.getCurrentUsers().isEmpty()) {
-            crudRoomRepositoryOld.delete(roomId);
+            roomRepository.delete(roomId);
         } else {
-            crudRoomRepositoryOld.removeUser(roomId, username);
+            roomRepository.removeUser(roomId, username);
         }
     }
 
+    public void clearRoom(UUID roomId) {
+        roomRepository.clearRoomPixels(roomId);
+    }
+
     private boolean addNewUser(UUID id, String username) {
-        return crudRoomRepositoryOld.addNewUser(id, username);
+        return roomRepository.addNewUser(id, username);
     }
 
     private void saveMessage(UUID id, String message) {
-        crudRoomRepositoryOld.saveMessage(id, message);
+        roomRepository.saveMessage(id, message);
     }
 
     private void savePixels(UUID id, Map<String, String> pixels) {
-        crudRoomRepositoryOld.savePixels(id, pixels);
+        roomRepository.savePixels(id, pixels);
     }
 }
