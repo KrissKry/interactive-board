@@ -17,10 +17,9 @@ FROM nginx:1.21.4-alpine
 WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*
-# RUN rm /etc/nginx/conf.d/default.conf
 
 COPY --from=nodebuilder /app/build .
-# COPY nginx/nginx.conf /etc/nginx/conf.d
 
 EXPOSE 80
+
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
