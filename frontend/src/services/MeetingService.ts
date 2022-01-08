@@ -24,8 +24,7 @@ export class MeetingService {
     createClient(successCallback: (id: string) => void, login: string, roomId: string, password?: string) : Promise<void> {
         console.log(login, roomId, password);
         this.client = new Client({
-            // @ts-expect-error
-            brokerURL: `http://${window.REACT_APP_API_URL}:${window.REACT_APP_API_PORT}/room`,
+            brokerURL: `wss://${process.env.REACT_APP_API_URL}/room`,
             connectHeaders: {
                 login,
                 roomId,
@@ -120,6 +119,17 @@ export class MeetingService {
         }
     }
 
+    sendCanvasClearEvent(message: any): void {
+        if (this.connected && this.client !== null) {
+            console.log('sending clear event', message);
+
+            this.client.publish({
+                destination: `/api/board/clear/${this.id}`,
+                body: JSON.stringify(message),
+            });
+        }
+    }
+
     addSubscription(destination: string, callback: (message: IMessage) => void) : Promise<string> {
         if (this.connected && this.client !== null) {
             // eslint-disable-next-line max-len
@@ -133,8 +143,7 @@ export class MeetingService {
 
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
-        // @ts-expect-error
-        const url = `ws://${window.REACT_APP_API_URL}:${window.REACT_APP_API_PORT}/api/room/create`;
+        const url = `https://${process.env.REACT_APP_API_URL}/api/room/create`;
 
         const data = {
             // name,
