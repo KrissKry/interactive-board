@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     meetingCanvasChangesAdd,
     // eslint-disable-next-line max-len
-    meetingCanvasPushChange, meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
+    meetingCanvasPushEvent, meetingChatAddMessage, meetingFetchError, meetingFetchRequest, meetingReset, meetingSetDetails, meetingUpdateMiddleware, meetingUserAdd, meetingUserRemove,
 } from '../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../services';
@@ -173,7 +173,7 @@ const MeetingTab = () => {
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'P2P')]);
-            return meetingService.addSubscription(`/topic/board.event.listen${id}`, boardEventUpdateCallback);
+            return meetingService.addSubscription(`/topic/board.cleared.${id}`, boardEventUpdateCallback);
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);

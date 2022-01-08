@@ -32,11 +32,9 @@ export const createCanvasEventSave = (username: string): CanvasEventMessage => {
     return msg;
 };
 
-export const createCanvasReset = (): CanvasEventMessage => {
-    const msg: CanvasEventMessage = {
+export const createCanvasReset = () => {
+    const msg = {
         type: 'RESET',
-
-        data: undefined,
     };
     return msg;
 };

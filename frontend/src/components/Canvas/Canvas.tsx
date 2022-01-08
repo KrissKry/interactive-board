@@ -46,7 +46,6 @@ interface CanvasProps {
 
     resetChangesCallback: () => void;
 
-    popChangeCallback:() => void;
     /**
      * Called every time pixel change is calculated
      */
@@ -71,7 +70,6 @@ const Canvas = ({
     initialChanges,
     p5Instance,
     cleanupInitialCallback,
-    popChangeCallback,
     resetChangesCallback,
     sendChangesCallback,
     sendFillEventCallback,

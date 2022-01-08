@@ -1,9 +1,7 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
-    arrowDownOutline,
-    closeOutline,
-    colorFillOutline, ellipsisHorizontalOutline, menuOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
+    closeOutline, ellipsisHorizontalOutline, menuOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 import p5Types from 'p5';
 
@@ -14,7 +12,7 @@ import {
     meetingCanvasChangesFinish,
     meetingCanvasChangesMove,
     // eslint-disable-next-line max-len
-    meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
+    meetingCanvasCleanupInitial, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../../services';
@@ -27,7 +25,6 @@ import { ControlButtonPanel } from '../../../interfaces/Buttons';
 import {
     CanvasTool, CanvasToolMode, PixelChanges, RGBColor,
 } from '../../../interfaces/Canvas';
-import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
 /* util */
@@ -42,6 +39,7 @@ import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } fr
 import { CanvasFillEvent } from '../../../interfaces/Canvas/CanvasEvent';
 import { ChatMenu, MeetingMenu } from '../../../components/Menu';
 import { toggleToolbarMenu } from '../../../redux/ducks/menus';
+import { canvasChangeBackground } from '../../../redux/ducks/canvas';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -100,6 +98,7 @@ const OngoingMeeting = ({
         boardChanges: state.meeting.canvasChanges,
         boardChangesWaitingLen: state.meeting.queuedCanvasChanges.length,
         boardChangesLength: state.meeting.canvasChanges.length,
+        boardBackground: state.canvas.background,
 
         boardEvents: state.meeting.canvasEvents,
 
@@ -118,7 +117,6 @@ const OngoingMeeting = ({
     const boardSendChangesCallback = (changes: PixelChanges): void => {
         meetingService.sendCanvasChanges(splitBoardChanges(changes));
     };
-    const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
     const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
     const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
     const [canvasChangePopover, setCanvasChangePopover] = useState({
@@ -135,7 +133,7 @@ const OngoingMeeting = ({
         closeCanvasPopover();
     };
     const boardSendResetEvent = (): void => {
-        meetingService.sendCanvasEvent(createCanvasReset());
+        meetingService.sendCanvasClearEvent(createCanvasReset());
         closeCanvasPopover();
     };
     const boardBrushUpdate = (color: string) => {
@@ -160,9 +158,11 @@ const OngoingMeeting = ({
                 b: color.blue,
             };
 
-            setBGColor(rgb);
+            setTimeout(() => { dispatch(canvasChangeBackground(rgb)); }, 1);
         } else if (msg.type === 'RESET') {
-            setBGColor(whiteFillColor);
+            // eslint-disable-next-line object-curly-newline
+            dispatch(canvasChangeBackground({ r: 254, g: 254, b: 254, a: 255 }));
+            setTimeout(() => { dispatch(canvasChangeBackground(whiteFillColor)); }, 1);
         }
 
         dispatch(meetingCanvasPopEvent());
@@ -378,11 +378,6 @@ const OngoingMeeting = ({
             callback: () => setBrushMode('ERASER'),
         },
         {
-            id: 'BUCKET',
-            icon: colorFillOutline,
-            callback: () => setBrushMode('BUCKET'),
-        },
-        {
             id: 'RESET',
             icon: trashOutline,
             callback: (e: any) => {
@@ -392,17 +387,8 @@ const OngoingMeeting = ({
             },
         },
         {
-            id: 'SAVE',
-            icon: saveOutline,
-            callback: (e: any) => {
-                e.persist();
-                setCanvasPopoverType('SAVE');
-                setCanvasChangePopover({ showPopover: true, event: e });
-            },
-        },
-        {
             id: 'DOWNLOAD',
-            icon: arrowDownOutline,
+            icon: saveOutline,
             callback: () => p5Instance?.save(`${meetingState.id}-${(new Date()).toISOString()}.jpg`),
         },
     ];
@@ -443,7 +429,7 @@ const OngoingMeeting = ({
 
             <div className={['ee-canvas--wrapper ee-flex--row ee-align-main--center', inDrawingMode ? 'ee-canvas--wrapper-blocked' : ''].join(' ')}>
                 <Canvas
-                    backgroundColor={bgColor}
+                    backgroundColor={meetingState.boardBackground}
                     brushColor={brushColor}
                     brushMode={brushMode}
                     brushWidth={brushWidth}
@@ -453,7 +439,6 @@ const OngoingMeeting = ({
                     initialChanges={meetingState.boardInitialChanges}
                     p5Instance={p5Instance}
                     cleanupInitialCallback={boardCleanupInitialCallback}
-                    popChangeCallback={boardPopChange}
                     sendChangesCallback={boardSendChangesCallback}
                     resetChangesCallback={resetChangesCallback}
                     sendFillEventCallback={boardSendFillEvent}
