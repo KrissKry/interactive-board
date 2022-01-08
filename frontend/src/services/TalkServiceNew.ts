@@ -31,6 +31,24 @@ export class TalkService {
         this.connections = [];
     }
 
+    // eslint-disable-next-line no-undef
+    private RTC_CONFIG: RTCConfiguration = {
+        iceServers: [
+            {
+                urls: 'stun:stun.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun1.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun2.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun3.l.google.com:19302',
+            },
+        ],
+    }
+
     /**
      * Creates new or returns P2PService to be used by the app
      */
@@ -44,7 +62,7 @@ export class TalkService {
 
     // eslint-disable-next-line class-methods-use-this
     private createConnectionObj(): RTCPeerConnection {
-        return new RTCPeerConnection();
+        return new RTCPeerConnection(this.RTC_CONFIG);
     }
 
     /**
@@ -77,6 +95,12 @@ export class TalkService {
                 const p2p = this.findRemoteP2P(remote);
                 if (p2p.owner !== remote) {
                     p2p.waitingICE = [];
+                    // try {
+                    //     // @ts-expect-error
+                    //     pc.restartIce();
+                    // } catch (e) {
+                    //     //
+                    // }
                     // create another offer
                     this.createOffer(remote, sendDataCallback);
                 }
