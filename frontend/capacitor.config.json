@@ -1,6 +1,6 @@
 {
-	"appId": "io.github.krisskry",
-	"appName": "frontend",
+	"appId": "io.github.krisskry.boardmk",
+	"appName": "BoardMK",
 	"webDir": "build",
 	"bundledWebRuntime": false
 }
