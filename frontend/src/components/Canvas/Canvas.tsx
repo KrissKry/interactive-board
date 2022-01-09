@@ -91,6 +91,7 @@ const Canvas = ({
         p5.createCanvas(canvasWidth, canvasHeight).parent(canvasParentRef);
         p5.background('white');
         p5.strokeWeight(brushWidth);
+        p5.pixelDensity(1);
         setP5InstanceCallback(p5);
     };
 
