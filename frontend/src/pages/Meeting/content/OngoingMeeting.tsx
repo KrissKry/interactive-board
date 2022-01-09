@@ -320,6 +320,8 @@ const OngoingMeeting = ({
     };
 
     useEffect(() => {
+        boardBrushUpdate('#222222');
+
         if (process.env.REACT_APP_MOBILE_MODE !== 'true') {
             createStream()
             .then(() => sendP2PCommunication({}, 'QUERY'))

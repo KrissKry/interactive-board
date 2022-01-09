@@ -191,6 +191,9 @@ const MeetingTab = () => {
             setConnectionStatus('ERROR');
         });
     };
+    const stompErrorHandler = (reason?: string): void => {
+        dispatch(meetingFetchError(reason || 'BŁĄD POŁĄCZENIA. SPRÓBUJ PONOWNIE'));
+    };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
         dispatch(meetingFetchRequest());
@@ -238,8 +241,25 @@ const MeetingTab = () => {
             />
             );
         // eslint-disable-next-line no-else-return
-        } else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
-        else return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
+        }
+        if (connectionStatus === 'CONNECTING') {
+            return (
+                <div className="ee-flex--column ee-align-main--center ee-align-cross--center ee-margin--vertical5">
+                    <IonSpinner />
+                    <p>Ładowanie...</p>
+                </div>
+            );
+        }
+
+        if (connectionStatus === 'ERROR') {
+            return (
+                <div className="ee-flex--row ee-align-main--center ee-align-cross--center">
+                    <p style={{ color: 'crimson' }}>{meetingState.errorMessage}</p>
+                </div>
+            );
+        }
+
+        return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
     };
 
     const meetingCopiedToast = (): void => present({
