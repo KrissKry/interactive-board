@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package io.github.krisskry.boardmk;
 
 import com.getcapacitor.BridgeActivity;
 

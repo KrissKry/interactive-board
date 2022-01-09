@@ -1,21 +1,27 @@
 .ee-canvas {
-    height: fit-content;
-    filter: drop-shadow(0 0 0.5rem #ddd);
+    // height: 46rem;
 
     &--wrapper {
-        overflow-x: scroll;
         margin-left: 1rem;
         margin-right: 1rem;
         margin-bottom: 0.5rem;
-        // height: fit-content;
-        filter: drop-shadow(0 0 0.5rem #ddd);
+        height: fit-content;
         padding: 1rem;
-
+        overflow-y: scroll;
         &-blocked {
-            overflow: hidden;
+            overflow-y: hidden;
         }
     }
 }
+.ee-canvas--wrapper .react-p5 {
+    height: fit-content;
+    overflow-x: scroll;
+    box-shadow: 0 0 0.5rem #ddd;
+}
+.ee-canvas--wrapper-blocked .react-p5{
+    overflow-x: hidden;
+}
+
 
 .ee-canvas-toolbar {
     flex-wrap: wrap;

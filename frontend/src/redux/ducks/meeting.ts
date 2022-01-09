@@ -9,7 +9,7 @@ interface meetingUser {
     status: 'CONNECTED' | 'DISCONNECTED',
 }
 
-type fetchErrorTypes = 'NOT_STATE_UPDATE' | 'UNKNOWN';
+// type fetchErrorTypes = 'NOT_STATE_UPDATE' | 'UNKNOWN';
 
 export interface meetingStateInterface {
 
@@ -154,7 +154,7 @@ const meetingSlice = createSlice({
             loadingError: false,
             errorMessage: '',
         }),
-        meetingFetchError: (state, action: PayloadAction<fetchErrorTypes>) => ({
+        meetingFetchError: (state, action: PayloadAction<string>) => ({
             ...state,
             loading: false,
             loadingError: true,
@@ -246,6 +246,16 @@ const meetingSlice = createSlice({
             ...state,
             chatToasts: action.payload,
         }),
+        meetingInitError: (state, action: PayloadAction<string>) => ({
+            ...state,
+            loadingError: true,
+            errorMessage: action.payload,
+        }),
+        meetingInitSuccess: (state) => ({
+            ...state,
+            loadingError: false,
+            errorMessage: '',
+        }),
     },
 });
 
@@ -272,6 +282,8 @@ const {
     meetingCanvasChangesFinish,
     meetingToggleChatToasts,
     meetingSetChatToasts,
+    meetingInitError,
+    meetingInitSuccess,
 } = meetingSlice.actions;
 
 export {
@@ -295,6 +307,8 @@ export {
     meetingCanvasChangesFinish,
     meetingToggleChatToasts,
     meetingSetChatToasts,
+    meetingInitError,
+    meetingInitSuccess,
 };
 
 /**

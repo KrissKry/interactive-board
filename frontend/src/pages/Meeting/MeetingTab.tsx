@@ -8,6 +8,7 @@ import { IFrame } from '@stomp/stompjs';
 import {
     chatboxOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
 } from 'ionicons/icons';
+import { Clipboard } from '@capacitor/clipboard';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     meetingCanvasChangesAdd,
@@ -26,8 +27,8 @@ import { CanvasEventMessage } from '../../interfaces/Canvas/CanvasEvent';
 import { menuReset, toggleChatMenu, toggleUtilityMenu } from '../../redux/ducks/menus';
 import { toggleDrawingMode } from '../../redux/ducks/canvas';
 import { BoolPopover } from '../../components/Popover';
-import { popChat, popUser } from '../../assets/audio';
 import MeetingToast from '../../components/Toasts/MeetingToast';
+import { SoundHandler } from '../../handlers';
 
 type MeetingEndpointSub = 'INIT' | 'USER' | 'BOARD' | 'CHAT' | 'P2P' | 'EVENT';
 type MeetingConnectionStatus = 'INIT' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'ERROR';
@@ -44,13 +45,12 @@ const MeetingTab = () => {
     const [ownMediaStream, setOwnMediaStream] = useState<MediaStream>();
     const [p2pMessagesQ, setP2PMessageQ] = useState<p2p.p2pMessage[]>([]);
     const [present, dismiss] = useIonToast();
-    const [chatPopSignal] = useState(new Audio(popChat));
-    const [userPopSignal] = useState(new Audio(popUser));
     const [toastState, setToastState] = useState({
         message: '',
         timeout: 0,
         visible: false,
     });
+    const soundHandler = SoundHandler.getInstance();
 
     const hideToast = (time?: number): number => window.setTimeout(() => setToastState({ message: '', timeout: 0, visible: false }), time || 1000);
 
@@ -101,7 +101,7 @@ const MeetingTab = () => {
         const payload: UserInterface = JSON.parse(message.body);
         if (payload.name === meetingState.user) return;
 
-        userPopSignal.play();
+        soundHandler.popUser();
 
         if (payload.status === 'CONNECTED') {
             dispatch(meetingUserAdd(payload));
@@ -116,7 +116,7 @@ const MeetingTab = () => {
         const recvMessage: ChatMessageInterface = JSON.parse(message.body);
         dispatch(meetingChatAddMessage(recvMessage));
 
-        if (recvMessage.username !== meetingState.user) chatPopSignal.play();
+        if (recvMessage.username !== meetingState.user) soundHandler.popChat();
 
         showToastMessage(`${recvMessage.username}: ${recvMessage.text}`);
     };
@@ -169,14 +169,17 @@ const MeetingTab = () => {
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'CHAT')]);
-            return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
-        })
-        .then((subId) => {
-            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'P2P')]);
+            // return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
             return meetingService.addSubscription(`/topic/board.cleared.${id}`, boardEventUpdateCallback);
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);
+            // return meetingService.addSubscription(`/topic/board.cleared.${id}`, boardEventUpdateCallback);
+            if (process.env.REACT_APP_MOBILE_MODE !== 'true') return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
+            return undefined;
+        })
+        .then((subId) => {
+            if (typeof subId !== 'undefined') setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);
 
             // smieszny timeout aka optymalizacyjny punkt XD
             setTimeout(() => {
@@ -184,9 +187,12 @@ const MeetingTab = () => {
             }, 2000);
         })
         .catch((err) => {
-            console.error(err);
+            console.log('[WSS] ERROR', err);
             setConnectionStatus('ERROR');
         });
+    };
+    const stompErrorHandler = (reason?: string): void => {
+        dispatch(meetingFetchError(reason || 'BŁĄD POŁĄCZENIA. SPRÓBUJ PONOWNIE'));
     };
 
     const joinMeetingCallback = (id: string, pass?: string) : void => {
@@ -235,9 +241,41 @@ const MeetingTab = () => {
             />
             );
         // eslint-disable-next-line no-else-return
-        } else if (connectionStatus === 'CONNECTING') return (<IonSpinner />);
-        else return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
+        }
+        if (connectionStatus === 'CONNECTING') {
+            return (
+                <div className="ee-flex--column ee-align-main--center ee-align-cross--center ee-margin--vertical5">
+                    <IonSpinner />
+                    <p>Ładowanie...</p>
+                </div>
+            );
+        }
+
+        if (connectionStatus === 'ERROR') {
+            return (
+                <div className="ee-flex--row ee-align-main--center ee-align-cross--center">
+                    <p style={{ color: 'crimson' }}>{meetingState.errorMessage}</p>
+                </div>
+            );
+        }
+
+        return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
     };
+
+    const meetingCopiedToast = (): void => present({
+        buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
+        message: 'Skopiowano dane spotkania',
+        duration: 1000,
+        position: 'bottom',
+        cssClass: '',
+    });
+
+    const meetingNotCopiedToast = (): void => present({
+        message: 'Nie udało się skopiować spotkania!',
+        duration: 1000,
+        position: 'bottom',
+        cssClass: '',
+    });
 
     const copyMeetingToClipboard = async () => {
         try {
@@ -245,20 +283,15 @@ const MeetingTab = () => {
             // i really am XD
             if (!meetingState.id) throw new Error('');
             await navigator.clipboard.writeText(`Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}`);
-            present({
-                buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
-                message: 'Skopiowano dane spotkania',
-                duration: 1000,
-                position: 'bottom',
-                cssClass: '',
-            });
+            meetingCopiedToast();
         } catch (error) {
-            present({
-                message: 'Nie jesteś w spotkaniu!',
-                duration: 1000,
-                position: 'bottom',
-                cssClass: '',
-            });
+            if (process.env.REACT_APP_MOBILE_MODE === 'true') {
+                Clipboard.write({ string: `Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}` })
+                .then(() => meetingCopiedToast())
+                .catch(() => meetingNotCopiedToast());
+            } else {
+                meetingNotCopiedToast();
+            }
         }
     };
 
@@ -279,9 +312,14 @@ const MeetingTab = () => {
                 <IonToolbar>
                     <IonTitle>{meetingState.id}</IonTitle>
 
+                    {/* leave meeting */}
+                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
+                        <IonIcon color="danger" icon={powerOutline} />
+                    </IonButton>
+
                     {/* open utility menu // copy meeting invitation */}
                     <IonButtons slot="start" color="danger">
-                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())} className="ee-menu-util-toggle">
                             <IonIcon icon={gridOutline} className="" />
                         </IonButton>
                         <IonButton fill="clear" onClick={() => copyMeetingToClipboard()}>
@@ -289,18 +327,13 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
-                    {/* leave meeting */}
-                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
-                        <IonIcon color="danger" icon={powerOutline} />
-                    </IonButton>
-
                     {/* drawing/move mode, open chat menu */}
                     <IonButtons slot="end">
                         <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
                             <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
                             <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
                         </IonButton>
-                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())} className="ee-menu-chat-toggle">
                             <IonIcon icon={chatboxOutline} className="" />
                         </IonButton>
                     </IonButtons>

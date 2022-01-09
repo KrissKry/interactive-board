@@ -5,6 +5,7 @@ import React, { useRef, useState } from 'react';
 import { validate } from 'uuid';
 import { BasicInput } from '../../../components/Input';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
+import { meetingInitError, meetingInitSuccess } from '../../../redux/ducks/meeting';
 import { setUsername } from '../../../redux/ducks/user';
 
 type MeetingSegment = 'JOIN' | 'CREATE';
@@ -42,22 +43,40 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
     const verifyUsername = (): void => {
         try {
             const name = userRef.current?.value as string;
+            const matchedName = name.match(/[a-zA-Z0-9]+/g);
 
-            if (!name) return;
-            if (!name.length) return;
-            if (name.split(' ').length > 1) return;
-            if (name.length > 20) return;
+            if (!name || !name.length) {
+                dispatch(meetingInitError('Za krótka nazwa użytkownika!'));
+                throw new Error('');
+            }
+            if (name.split(' ').length > 1) {
+                dispatch(meetingInitError('Nazwa użytkownika zawiera spacje!'));
+                throw new Error('');
+            }
 
-            dispatch(setUsername(name));
+            if (!matchedName?.toString() || !matchedName.length) {
+                dispatch(meetingInitError('Niedozwolone znaki w nazwie użytkownika!'));
+                throw new Error('');
+            }
+
+            dispatch(setUsername(matchedName[0].toString()));
+            dispatch(meetingInitSuccess());
         } catch (error) {
             //
         }
     };
 
     const handleSubmit = (): void => {
+        if (!(passRef.current.value as string)) {
+            dispatch(meetingInitError('Wpisz hasło!'));
+            return;
+        }
+
         if (segment === 'CREATE') createCallback(passRef.current.value as string);
         else if (validate(idRef.current.value as string)) {
             joinCallback(idRef.current.value as string, passRef.current.value as string);
+        } else {
+            dispatch(meetingInitError('Niepoprawne ID!'));
         }
     };
 
@@ -68,6 +87,7 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
             <p>{setUserText[0]} <b>{setUserText[1]}</b> {setUserText[2]}</p>
 
             <BasicInput placeholder="Nazwa użytkownika" icon={personOutline} ref={userRef} maxLength={20} keyType="Enter" onKeydown={verifyUsername} />
+            {appState.error ? (<p style={{ color: 'crimson' }}>{appState.errorMessage}</p>) : null}
 
             <button type="button" className="ee-nomeeting--btn-continue" onClick={() => verifyUsername()}>KONTYNUUJ</button>
 
@@ -84,7 +104,7 @@ const NoMeeting = ({ createCallback, joinCallback }: MeetingProps) : JSX.Element
             </div>
 
             <BasicInput placeholder="ID Spotkania" icon={textOutline} ref={idRef} disabled={segment === 'CREATE' || appState.loading} maxLength={36} />
-            <BasicInput placeholder="Hasło (opcjonalne)" icon={lockClosedOutline} ref={passRef} disabled={appState.loading} />
+            <BasicInput placeholder="Hasło" icon={lockClosedOutline} ref={passRef} disabled={appState.loading} />
 
             {appState.loading ? (<IonSpinner />) : null}
             {appState.error ? (<p style={{ color: 'crimson' }}>{appState.errorMessage}</p>) : null}
