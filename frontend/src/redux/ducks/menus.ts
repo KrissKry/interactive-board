@@ -38,6 +38,11 @@ const menuSlice = createSlice({
         menuReset: () => ({
             ...initialState,
         }),
+        toggleMenuSides: (state) => ({
+            ...state,
+            chatExpanded: false,
+            utilityExpanded: false,
+        }),
     },
 });
 
@@ -48,6 +53,7 @@ const {
     toggleUtilityMenu,
     toggleToolbarMenu,
     menuReset,
+    toggleMenuSides,
 } = menuSlice.actions;
 
 export {
@@ -55,4 +61,5 @@ export {
     toggleUtilityMenu,
     toggleToolbarMenu,
     menuReset,
+    toggleMenuSides,
 };

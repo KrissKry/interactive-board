@@ -278,9 +278,14 @@ const MeetingTab = () => {
                 <IonToolbar>
                     <IonTitle>{meetingState.id}</IonTitle>
 
+                    {/* leave meeting */}
+                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
+                        <IonIcon color="danger" icon={powerOutline} />
+                    </IonButton>
+
                     {/* open utility menu // copy meeting invitation */}
                     <IonButtons slot="start" color="danger">
-                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())}>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleUtilityMenu())} className="ee-menu-util-toggle">
                             <IonIcon icon={gridOutline} className="" />
                         </IonButton>
                         <IonButton fill="clear" onClick={() => copyMeetingToClipboard()}>
@@ -288,18 +293,13 @@ const MeetingTab = () => {
                         </IonButton>
                     </IonButtons>
 
-                    {/* leave meeting */}
-                    <IonButton slot="start" fill="clear" onClick={(e: any) => { e.persist(); setExitPopover({ showPopover: true, event: e }); }}>
-                        <IonIcon color="danger" icon={powerOutline} />
-                    </IonButton>
-
                     {/* drawing/move mode, open chat menu */}
                     <IonButtons slot="end">
                         <IonButton fill="clear" onClick={() => dispatch(toggleDrawingMode())}>
                             <p>{meetingState.inDrawingMode ? 'RYSOWANIE' : 'RUCH'}</p>
                             <IonIcon icon={meetingState.inDrawingMode ? pencilSharp : moveOutline} />
                         </IonButton>
-                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())}>
+                        <IonButton fill="clear" onClick={() => dispatch(toggleChatMenu())} className="ee-menu-chat-toggle">
                             <IonIcon icon={chatboxOutline} className="" />
                         </IonButton>
                     </IonButtons>
