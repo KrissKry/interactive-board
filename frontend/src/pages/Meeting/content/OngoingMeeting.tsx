@@ -320,13 +320,14 @@ const OngoingMeeting = ({
     };
 
     useEffect(() => {
-        createStream()
-        .then(() => sendP2PCommunication({}, 'QUERY'))
-        .catch(() => sendP2PCommunication({}, 'QUERY'));
+        if (process.env.REACT_APP_MOBILE_MODE !== 'true') {
+            createStream()
+            .then(() => sendP2PCommunication({}, 'QUERY'))
+            .catch(() => sendP2PCommunication({}, 'QUERY'));
 
-        handleAudioDevicesChange();
-        navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
-
+            handleAudioDevicesChange();
+            navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
+        }
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
 
@@ -425,7 +426,7 @@ const OngoingMeeting = ({
     return (
         <div className="ee-flex--column ee-meeting" id="meetingDiv">
 
-            <MeetingMenu users={meetingState.users} buttons={controlButtons} />
+            <MeetingMenu users={meetingState.users} buttons={process.env.REACT_APP_MOBILE_MODE === 'true' ? [] : controlButtons} />
 
             <div className={['ee-canvas--wrapper ee-flex--row ee-align-main--center', inDrawingMode ? 'ee-canvas--wrapper-blocked' : ''].join(' ')}>
                 <Canvas

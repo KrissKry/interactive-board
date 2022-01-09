@@ -25,3 +25,34 @@ export const getPixelArea = (
 
     return currentPixels.pixels;
 };
+
+export const getPixelAreaFromCanvasArea = (
+    startX: number,
+    startY: number,
+    deltaX: number,
+    deltaY: number,
+    canvasWidth: number,
+    canvas: number[],
+) : number[] => {
+    //
+    const beginIndex = (startY * canvasWidth * 4) + startX;
+    const pixels: number[] = [];
+
+    console.log('getPixelAreaFromCanvasArea', canvas.slice(0, 4).toString(), canvasWidth);
+    try {
+        for (let y = 0; y < deltaY; y += 1) {
+            for (let x = 0; x < deltaX; x += 1) {
+                // console.log(startY + y, startX + x);
+                pixels.push(canvas[beginIndex + (y * canvasWidth) + x]);
+                pixels.push(canvas[beginIndex + (y * canvasWidth) + x + 1]);
+                pixels.push(canvas[beginIndex + (y * canvasWidth) + x + 2]);
+                pixels.push(canvas[beginIndex + (y * canvasWidth) + x + 3]);
+            }
+        }
+
+        return pixels;
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+};

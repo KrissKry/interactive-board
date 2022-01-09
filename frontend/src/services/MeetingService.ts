@@ -46,7 +46,8 @@ export class MeetingService {
                 this.connected = false;
             },
             onWebSocketClose: (evt) => {
-                console.warn('onWebSocketClose', evt);
+                if (process.env.REACT_APP_MOBILE_MODE === 'true') console.log('onWebSocketClose', JSON.stringify(evt));
+                else console.warn('onWebSocketClose', evt);
                 // this.connected = false;
                 // console.log('MAX_LEN sent', this.maxLen);
             },

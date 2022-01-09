@@ -8,6 +8,7 @@ import { IFrame } from '@stomp/stompjs';
 import {
     chatboxOutline, gridOutline, moveOutline, pencilSharp, powerOutline, shareSocial,
 } from 'ionicons/icons';
+import { Clipboard } from '@capacitor/clipboard';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
     meetingCanvasChangesAdd,
@@ -168,14 +169,17 @@ const MeetingTab = () => {
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'CHAT')]);
-            return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
-        })
-        .then((subId) => {
-            setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'P2P')]);
+            // return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
             return meetingService.addSubscription(`/topic/board.cleared.${id}`, boardEventUpdateCallback);
         })
         .then((subId) => {
             setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);
+            // return meetingService.addSubscription(`/topic/board.cleared.${id}`, boardEventUpdateCallback);
+            if (process.env.REACT_APP_MOBILE_MODE !== 'true') return meetingService.addSubscription(`/topic/p2p.listen.${id}`, p2pUpdateCallback);
+            return undefined;
+        })
+        .then((subId) => {
+            if (typeof subId !== 'undefined') setMeetingSubs([...meetingSubs, newMeetingSub(subId, 'EVENT')]);
 
             // smieszny timeout aka optymalizacyjny punkt XD
             setTimeout(() => {
@@ -183,7 +187,7 @@ const MeetingTab = () => {
             }, 2000);
         })
         .catch((err) => {
-            console.error(err);
+            console.log('[WSS] ERROR', err);
             setConnectionStatus('ERROR');
         });
     };
@@ -238,26 +242,36 @@ const MeetingTab = () => {
         else return (<NoMeeting createCallback={createMeetingCallback} joinCallback={joinMeetingCallback} />);
     };
 
+    const meetingCopiedToast = (): void => present({
+        buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
+        message: 'Skopiowano dane spotkania',
+        duration: 1000,
+        position: 'bottom',
+        cssClass: '',
+    });
+
+    const meetingNotCopiedToast = (): void => present({
+        message: 'Nie udało się skopiować spotkania!',
+        duration: 1000,
+        position: 'bottom',
+        cssClass: '',
+    });
+
     const copyMeetingToClipboard = async () => {
         try {
             // im sorry
             // i really am XD
             if (!meetingState.id) throw new Error('');
             await navigator.clipboard.writeText(`Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}`);
-            present({
-                buttons: [{ text: 'Ukryj', handler: () => dismiss() }],
-                message: 'Skopiowano dane spotkania',
-                duration: 1000,
-                position: 'bottom',
-                cssClass: '',
-            });
+            meetingCopiedToast();
         } catch (error) {
-            present({
-                message: 'Nie jesteś w spotkaniu!',
-                duration: 1000,
-                position: 'bottom',
-                cssClass: '',
-            });
+            if (process.env.REACT_APP_MOBILE_MODE === 'true') {
+                Clipboard.write({ string: `Spotkanie: ${meetingState.id}\nHasło: ${meetingState.pass}` })
+                .then(() => meetingCopiedToast())
+                .catch(() => meetingNotCopiedToast());
+            } else {
+                meetingNotCopiedToast();
+            }
         }
     };
 
