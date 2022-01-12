@@ -24,12 +24,12 @@ const menuSlice = createSlice({
         toggleChatMenu: (state) => ({
             ...state,
             chatExpanded: !state.chatExpanded,
-            utilityExpanded: false,
+            // utilityExpanded: false,
         }),
         toggleUtilityMenu: (state) => ({
             ...state,
             utilityExpanded: !state.utilityExpanded,
-            chatExpanded: false,
+            // chatExpanded: false,
         }),
         toggleToolbarMenu: (state) => ({
             ...state,
@@ -37,6 +37,11 @@ const menuSlice = createSlice({
         }),
         menuReset: () => ({
             ...initialState,
+        }),
+        toggleMenuSides: (state) => ({
+            ...state,
+            chatExpanded: false,
+            utilityExpanded: false,
         }),
     },
 });
@@ -48,6 +53,7 @@ const {
     toggleUtilityMenu,
     toggleToolbarMenu,
     menuReset,
+    toggleMenuSides,
 } = menuSlice.actions;
 
 export {
@@ -55,4 +61,5 @@ export {
     toggleUtilityMenu,
     toggleToolbarMenu,
     menuReset,
+    toggleMenuSides,
 };

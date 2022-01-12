@@ -17,10 +17,9 @@ interface PeerConnection {
      * Username of the peer that can begin negotiation event
      */
     owner: string;
-    /**
-     * Stream source (tracks) from remote
-     */
-    // remoteStreamSrc?: MediaStream;
+
+    // eslint-disable-next-line no-undef
+    waitingICE: RTCIceCandidateInit[];
 }
 
 export class TalkService {
@@ -30,6 +29,24 @@ export class TalkService {
 
     private constructor() {
         this.connections = [];
+    }
+
+    // eslint-disable-next-line no-undef
+    private RTC_CONFIG: RTCConfiguration = {
+        iceServers: [
+            {
+                urls: 'stun:stun.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun1.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun2.l.google.com:19302',
+            },
+            {
+                urls: 'stun:stun3.l.google.com:19302',
+            },
+        ],
     }
 
     /**
@@ -45,7 +62,7 @@ export class TalkService {
 
     // eslint-disable-next-line class-methods-use-this
     private createConnectionObj(): RTCPeerConnection {
-        return new RTCPeerConnection();
+        return new RTCPeerConnection(this.RTC_CONFIG);
     }
 
     /**
@@ -67,8 +84,28 @@ export class TalkService {
 
         pc.addEventListener('icecandidateerror', (ev: Event) => console.error('[P2P] ICE Candidate Error', remote));
 
-        // @ts-ignore
-        pc.addEventListener('connectionstatechange', (ev: Event) => console.log('[P2P] Connection state with', remote, 'changed to', ev.target.connectionState));
+        pc.addEventListener('connectionstatechange', (ev: Event) => {
+            // @ts-ignore
+            console.log('[P2P] Connection state with', remote, 'changed to', ev.target.connectionState);
+            // @ts-ignore
+            console.log(ev.target.connectionState, ev.target.connectionState === 'failed');
+            // @ts-expect-error
+            if (ev.target.connectionState === 'failed') {
+                // if owner of the connection is self
+                const p2p = this.findRemoteP2P(remote);
+                if (p2p.owner !== remote) {
+                    p2p.waitingICE = [];
+                    // try {
+                    //     // @ts-expect-error
+                    //     pc.restartIce();
+                    // } catch (e) {
+                    //     //
+                    // }
+                    // create another offer
+                    this.createOffer(remote, sendDataCallback);
+                }
+            }
+        });
 
         pc.addEventListener('negotiationneeded', (ev: Event) => {
             // if not null, then was set at least once
@@ -145,9 +182,20 @@ export class TalkService {
             remote,
             connection: pc,
             owner,
+            waitingICE: [],
         };
 
         this.connections.push(newP2P);
+    }
+
+    private flushICEQueue(remote: string): void {
+        const p2p = this.findRemoteP2P(remote);
+        // eslint-disable-next-line no-restricted-syntax
+        for (const iceCandidate of p2p.waitingICE) {
+            p2p.connection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+        }
+
+        p2p.waitingICE = [];
     }
 
     /**
@@ -164,9 +212,15 @@ export class TalkService {
         handleReceivedStreamCallback: (data: any, sender?: string) => void,
         owner: string,
     ): void {
-        const pc = this.createConnectionObj();
-        this.setupConnectionObj(pc, remote, sendDataCallback, handleReceivedStreamCallback);
-        this.addNewPeer(pc, remote, owner);
+        try {
+            // if remote already exist, don't create a new object;
+            this.findRemoteP2P(remote);
+            return;
+        } catch (error) {
+            const pc = this.createConnectionObj();
+            this.setupConnectionObj(pc, remote, sendDataCallback, handleReceivedStreamCallback);
+            this.addNewPeer(pc, remote, owner);
+        }
     }
 
     /**
@@ -220,6 +274,7 @@ export class TalkService {
                 },
                 (err) => console.error('[P2P]', err),
             );
+            this.flushICEQueue(remote);
         } catch (err) {
             console.error(err);
         }
@@ -239,6 +294,8 @@ export class TalkService {
             const p2p = this.findRemoteP2P(remote);
 
             p2p.connection.setRemoteDescription(new RTCSessionDescription(answer));
+
+            this.flushICEQueue(remote);
         } catch (err) {
             console.error(err);
         }
@@ -326,7 +383,7 @@ export class TalkService {
             console.log('[P2P] Added track', track.id, 'to remote', remote, '\nsender is', sender);
             return true;
         } catch (err) {
-            console.error('[P2P] Failed adding track', track?.id, 'to remote', remote, err);
+            // console.error('[P2P] Failed adding track', track?.id, 'to remote', remote, err);
             return false;
         }
     }
@@ -352,7 +409,7 @@ export class TalkService {
         // eslint-disable-next-line no-restricted-syntax
         for (const peer of this.connections) {
             const sender = peer.connection.getSenders().find((s) => s.track?.kind === 'audio');
-            console.log('REPLACING TRACK', peer, sender);
+            // console.log('REPLACING TRACK', peer, sender);
             sender?.replaceTrack(track);
         }
     }
@@ -368,8 +425,22 @@ export class TalkService {
             try {
                 peer.connection.addTrack(track, stream);
             } catch (err) {
-                console.error('[P2P] Couldnt add audio track to', peer.remote, err);
+                // console.error('[P2P] Couldnt add audio track to', peer.remote, err);
             }
         }
+    }
+
+    // eslint-disable-next-line no-undef
+    public addICEOnHold(remote: string, descriptor: RTCIceCandidateInit): void {
+        const p2p = this.findRemoteP2P(remote);
+        p2p.waitingICE.push(descriptor);
+    }
+
+    public endCalls(): void {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const p2p of this.peers) {
+            p2p.connection.close();
+        }
+        this.connections = [];
     }
 }

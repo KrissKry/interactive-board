@@ -13,7 +13,7 @@ import '@ionic/react/css/typography.css';
 
 /* main css */
 import './styles/main.scss';
-import { MeetingTab } from './pages';
+import { HealthTab, MeetingTab } from './pages';
 
 const App: React.FC = () => (
     <IonApp>
@@ -21,6 +21,9 @@ const App: React.FC = () => (
                 <IonRouterOutlet>
                     <Route exact path="/spotkanie">
                         <MeetingTab />
+                    </Route>
+                    <Route exact path="/check">
+                        <HealthTab />
                     </Route>
                     <Route exact path="/">
                         <Redirect to="/spotkanie" />

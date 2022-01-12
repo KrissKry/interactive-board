@@ -1,10 +1,17 @@
 {
-  "name": "frontend",
-  "version": "0.0.1",
+  "name": "boardmk",
+  "version": "1.0.0",
+  "description": "Projekt inzynierski na EITI - PW",
+  "author": {
+    "name": "Krzysztof Kryczka",
+    "email": "kryczka.krzysztof7@gmail.com",
+    "url": "https://github.com/KrissKry"
+  },
   "private": true,
   "dependencies": {
     "@capacitor/android": "^3.2.4",
     "@capacitor/app": "1.0.3",
+    "@capacitor/clipboard": "^1.0.6",
     "@capacitor/core": "3.2.4",
     "@capacitor/haptics": "1.1.0",
     "@capacitor/ios": "^3.2.4",
@@ -25,6 +32,7 @@
     "@types/react-redux": "^7.1.18",
     "@types/react-router": "^5.1.11",
     "@types/react-router-dom": "^5.1.7",
+    "@types/uuid": "^8.3.3",
     "axios": "^0.23.0",
     "classnames": "^2.3.1",
     "env-cmd": "^10.1.0",
@@ -41,6 +49,7 @@
     "redux": "^4.1.1",
     "socket.io": "^4.2.0",
     "typescript": "^4.1.3",
+    "uuid": "^8.3.2",
     "web-vitals": "^0.2.4",
     "workbox-background-sync": "^5.1.4",
     "workbox-broadcast-update": "^5.1.4",
@@ -57,7 +66,8 @@
   },
   "scripts": {
     "start": "env-cmd -f .env.webapp react-scripts start",
-    "build": "env-cmd -f .env.webapp react-scripts build && npx cap sync",
+    "build:prod": "env-cmd -f .env.webapp react-scripts build",
+    "build:mobile": "env-cmd -f .env.mobile react-scripts build && npx cap sync",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -90,6 +100,5 @@
     "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-react-hooks": "^4.2.0",
     "sass": "^1.42.1"
-  },
-  "description": "An Ionic project"
+  }
 }

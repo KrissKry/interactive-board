@@ -18,11 +18,13 @@ export class MeetingService {
         this.connected = false;
     }
 
+    // private maxLen = 0;
+
     // eslint-disable-next-line max-len
     createClient(successCallback: (id: string) => void, login: string, roomId: string, password?: string) : Promise<void> {
         console.log(login, roomId, password);
         this.client = new Client({
-            brokerURL: `${process.env.REACT_APP_API_WEBSOCKET}/room`,
+            brokerURL: `wss://${process.env.REACT_APP_API_URL}/room`,
             connectHeaders: {
                 login,
                 roomId,
@@ -37,12 +39,22 @@ export class MeetingService {
             onStompError: (frame: IFrame) => {
                 console.log('Broker reported error: ', frame.headers.message);
                 console.log('Additional details: ', frame.body);
-            },
-            onDisconnect: () => {
                 this.connected = false;
             },
-            onWebSocketClose: (evt) => { console.log('ay', evt); },
-            onWebSocketError: (evt) => { console.log('aaa', evt); },
+            onDisconnect: () => {
+                console.warn('onDisconnect');
+                this.connected = false;
+            },
+            onWebSocketClose: (evt) => {
+                if (process.env.REACT_APP_MOBILE_MODE === 'true') console.log('onWebSocketClose', JSON.stringify(evt));
+                else console.warn('onWebSocketClose', evt);
+                // this.connected = false;
+                // console.log('MAX_LEN sent', this.maxLen);
+            },
+            onWebSocketError: (evt) => {
+                console.warn('onWebSocketError', evt);
+                this.connected = false;
+            },
         });
 
         if (this.client === null) throw new TypeError('Client is null');
@@ -65,13 +77,19 @@ export class MeetingService {
         return MeetingService.instance;
     }
 
-    sendCanvasChanges(changes: PixelChanges) : void {
+    sendCanvasChanges(changes: PixelChanges[]) : void {
         if (this.connected && this.client !== null) {
-            this.client.publish({
-                destination: `/api/board/send/${this.id}`,
-                body: JSON.stringify(changes),
-                skipContentLengthHeader: true,
-            });
+            // eslint-disable-next-line no-restricted-syntax
+            for (const change of changes) {
+                // const len = JSON.stringify(change).length;
+                // if (this.maxLen < len) this.maxLen = len;
+                // console.log(window.performance.now(), 'sending', len, 'bytes');
+                this.client.publish({
+                    destination: `/api/board/send/${this.id}`,
+                    body: JSON.stringify(change),
+                    skipContentLengthHeader: true,
+                });
+            }
         }
     }
 
@@ -102,6 +120,17 @@ export class MeetingService {
         }
     }
 
+    sendCanvasClearEvent(message: any): void {
+        if (this.connected && this.client !== null) {
+            console.log('sending clear event', message);
+
+            this.client.publish({
+                destination: `/api/board/clear/${this.id}`,
+                body: JSON.stringify(message),
+            });
+        }
+    }
+
     addSubscription(destination: string, callback: (message: IMessage) => void) : Promise<string> {
         if (this.connected && this.client !== null) {
             // eslint-disable-next-line max-len
@@ -113,13 +142,9 @@ export class MeetingService {
         throw new TypeError('Client not connected or client is null');
     }
 
-    // removeSubscription(destination: string) : Promise<void> {
-    //     this.client.un
-    // }
-
     // eslint-disable-next-line class-methods-use-this
     static async requestNewMeeting(password?: string) : Promise<AxiosResponse> {
-        const url = `${process.env.REACT_APP_API_HTTP}/api/room/create`;
+        const url = `https://${process.env.REACT_APP_API_URL}/api/room/create`;
 
         const data = {
             // name,

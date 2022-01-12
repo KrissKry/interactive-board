@@ -1,9 +1,7 @@
 /* eslint-disable max-len */
 import React, { useEffect, useState } from 'react';
 import {
-    arrowDownOutline,
-    closeOutline,
-    colorFillOutline, ellipsisHorizontalOutline, menuOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
+    closeOutline, ellipsisHorizontalOutline, menuOutline, micOffOutline, micOutline, pencilSharp, prismOutline, radioButtonOnOutline, saveOutline, trashOutline, volumeHighOutline, volumeMuteOutline,
 } from 'ionicons/icons';
 import p5Types from 'p5';
 
@@ -11,8 +9,10 @@ import p5Types from 'p5';
 import { IonIcon } from '@ionic/react';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import {
+    meetingCanvasChangesFinish,
+    meetingCanvasChangesMove,
     // eslint-disable-next-line max-len
-    meetingCanvasCleanupInitial, meetingCanvasPopChange, meetingCanvasPopEvent,
+    meetingCanvasCleanupInitial, meetingCanvasPopEvent,
 } from '../../../redux/ducks/meeting';
 
 import { MeetingService, TalkService } from '../../../services';
@@ -25,12 +25,11 @@ import { ControlButtonPanel } from '../../../interfaces/Buttons';
 import {
     CanvasTool, CanvasToolMode, PixelChanges, RGBColor,
 } from '../../../interfaces/Canvas';
-import type { ChatMessageInterface } from '../../../interfaces/Chat';
 import { p2p } from '../../../interfaces/Meeting';
 
 /* util */
 import {
-    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, toggleIncomingAudio, toggleOutgoingAudio,
+    addAudio, createAudio, getAudioVideoDevicesId, getUniqueAudioDevices, splitBoardChanges, toggleIncomingAudio, toggleOutgoingAudio,
 } from '../../../util/Meeting';
 import { BoolPopover, SettingsPopover } from '../../../components/Popover';
 import CanvasToolbar from '../../../components/Canvas/CanvasToolbar';
@@ -40,6 +39,7 @@ import { createCanvasEventFillMsg, createCanvasEventSave, createCanvasReset } fr
 import { CanvasFillEvent } from '../../../interfaces/Canvas/CanvasEvent';
 import { ChatMenu, MeetingMenu } from '../../../components/Menu';
 import { toggleToolbarMenu } from '../../../redux/ducks/menus';
+import { canvasChangeBackground } from '../../../redux/ducks/canvas';
 
 interface MeetingProps {
     ownMediaStream?: MediaStream;
@@ -95,8 +95,11 @@ const OngoingMeeting = ({
         messages: state.meeting.messages,
 
         boardInitialChanges: state.meeting.pixels,
-        boardChanges: state.meeting.updatingPixels,
-        boardChangesWaiting: state.meeting.updatingPixels.length,
+        boardChanges: state.meeting.canvasChanges,
+        boardChangesWaitingLen: state.meeting.queuedCanvasChanges.length,
+        boardChangesLength: state.meeting.canvasChanges.length,
+        boardBackground: state.canvas.background,
+
         boardEvents: state.meeting.canvasEvents,
 
         users: state.meeting.currentUsers,
@@ -111,8 +114,9 @@ const OngoingMeeting = ({
     const [bgColor, setBGColor] = useState<RGBColor>(whiteFillColor);
     const [brushWidth, setBrushWidth] = useState<number>(1);
     const [brushMode, setBrushMode] = useState<CanvasToolMode>('PENCIL');
-    const boardSendChangesCallback = (changes: PixelChanges): void => { meetingService.sendCanvasChanges(changes); };
-    const boardPopChange = (): void => { dispatch(meetingCanvasPopChange()); };
+    const boardSendChangesCallback = (changes: PixelChanges): void => {
+        meetingService.sendCanvasChanges(splitBoardChanges(changes));
+    };
     const boardCleanupInitialCallback = (): void => { dispatch(meetingCanvasCleanupInitial()); };
     const [canvasPopoverType, setCanvasPopoverType] = useState<CanvasPopoverType>('SAVE');
     const [canvasChangePopover, setCanvasChangePopover] = useState({
@@ -129,7 +133,7 @@ const OngoingMeeting = ({
         closeCanvasPopover();
     };
     const boardSendResetEvent = (): void => {
-        meetingService.sendCanvasEvent(createCanvasReset());
+        meetingService.sendCanvasClearEvent(createCanvasReset());
         closeCanvasPopover();
     };
     const boardBrushUpdate = (color: string) => {
@@ -154,9 +158,11 @@ const OngoingMeeting = ({
                 b: color.blue,
             };
 
-            setBGColor(rgb);
+            setTimeout(() => { dispatch(canvasChangeBackground(rgb)); }, 1);
         } else if (msg.type === 'RESET') {
-            setBGColor(whiteFillColor);
+            // eslint-disable-next-line object-curly-newline
+            dispatch(canvasChangeBackground({ r: 254, g: 254, b: 254, a: 255 }));
+            setTimeout(() => { dispatch(canvasChangeBackground(whiteFillColor)); }, 1);
         }
 
         dispatch(meetingCanvasPopEvent());
@@ -219,20 +225,10 @@ const OngoingMeeting = ({
             /* new ice candidate sent by one peer to the other */
             case 'ICE':
                 talkService.receiveICE(message.from, message.data)
-                .then(
-                    () => console.log('[M] Added ICE'),
-                    (err) => {
-                        console.error('[M]', err);
-                        moveToEndP2PMessageQ();
-                        // eslint-disable-next-line no-useless-return
-                        return;
-                    },
-                )
+                .then(() => console.log('[M] Added ICE'))
                 .catch((err) => {
-                    console.error('[ICE]', err);
-                    moveToEndP2PMessageQ();
-                    // eslint-disable-next-line no-useless-return
-                    return;
+                    console.error('[ICE]', err, 'adding to On-Hold');
+                    talkService.addICEOnHold(message.from, message.data);
                 });
                 break;
 
@@ -266,14 +262,13 @@ const OngoingMeeting = ({
             audio: currentInputDevice?.deviceId ? { deviceId: { exact: currentInputDevice.deviceId } } : true,
             video: false,
         })
-        .then((stream) => setOwnMediaStreamCallback(stream));
+        .then((stream) => setOwnMediaStreamCallback(stream))
+        .catch(() => {});
 
     const handleAvailableDeviceChanges = () : void => {
         if (availableInputs.length) {
-            console.log('availableInputs.length');
             // stream not started previously
             if (!streamStarted) {
-                console.log('!streamStarted');
                 if (typeof currentInputDevice === 'undefined') {
                     setCurrentInputDevice(availableInputs[0]);
                 }
@@ -281,32 +276,25 @@ const OngoingMeeting = ({
                 createStream().catch((err: any) => console.error(err));
             // stream started previously
             } else {
-                console.log('streamStarted');
                 // used a device that is on the new list
                 // eslint-disable-next-line no-lonely-if
                 if (typeof currentInputDevice !== 'undefined') {
-                    console.log('typeof currentInputDevice !== undefined');
                     // assumption that the device has not been disconnected
                     if (availableInputs.includes(currentInputDevice)) {
                         // do nth
-                        console.log('availableInputs.includes(currentInputDevice)');
                     // current device is not on the received device list
                     } else {
-                        console.log('!!!availableInputs.includes(currentInputDevice)');
                         setCurrentInputDevice(undefined);
                     }
                 // stream started previously but current device is undefined
                 // and devices are found
                 // change current input device, replace audio tracks for all connections
                 } else {
-                    console.log('typeof currentInputDevice ===== undefined');
                     setCurrentInputDevice(availableInputs[0]);
                     talkService.replaceAudioTrack(ownMediaStream?.getAudioTracks()[0]);
                 }
             }
         } else {
-            console.log('!!!availableInputs.length');
-            // do nth
             setCurrentInputDevice(undefined);
         }
     };
@@ -327,14 +315,21 @@ const OngoingMeeting = ({
             .catch((err) => console.error(err));
     };
 
+    const resetChangesCallback = (): void => {
+        dispatch(meetingCanvasChangesFinish());
+    };
+
     useEffect(() => {
-        createStream()
-        .then(() => sendP2PCommunication({}, 'QUERY'))
-        .catch(() => sendP2PCommunication({}, 'QUERY'));
+        boardBrushUpdate('#222222');
 
-        handleAudioDevicesChange();
-        navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
+        if (process.env.REACT_APP_MOBILE_MODE !== 'true') {
+            createStream()
+            .then(() => sendP2PCommunication({}, 'QUERY'))
+            .catch(() => sendP2PCommunication({}, 'QUERY'));
 
+            handleAudioDevicesChange();
+            navigator.mediaDevices.addEventListener('devicechange', handleAudioDevicesChange);
+        }
         return () => ownMediaStream?.getTracks().forEach((track) => track.stop());
     }, []);
 
@@ -345,6 +340,9 @@ const OngoingMeeting = ({
     useEffect(() => { handleAvailableDeviceChanges(); }, [availableInputs]);
     useEffect(() => { handleStreamChange(); }, [ownMediaStream]);
     useEffect(() => { handleBoardEvent(); }, [meetingState.boardEvents]);
+    useEffect(() => {
+        if (meetingState.boardChangesLength === 0 && meetingState.boardChangesWaitingLen > 0) dispatch(meetingCanvasChangesMove());
+    }, [meetingState.boardChangesLength, meetingState.boardChangesWaitingLen]);
 
     const controlButtons : ControlButtonPanel[] = [
         {
@@ -383,11 +381,6 @@ const OngoingMeeting = ({
             callback: () => setBrushMode('ERASER'),
         },
         {
-            id: 'BUCKET',
-            icon: colorFillOutline,
-            callback: () => setBrushMode('BUCKET'),
-        },
-        {
             id: 'RESET',
             icon: trashOutline,
             callback: (e: any) => {
@@ -397,17 +390,8 @@ const OngoingMeeting = ({
             },
         },
         {
-            id: 'SAVE',
-            icon: saveOutline,
-            callback: (e: any) => {
-                e.persist();
-                setCanvasPopoverType('SAVE');
-                setCanvasChangePopover({ showPopover: true, event: e });
-            },
-        },
-        {
             id: 'DOWNLOAD',
-            icon: arrowDownOutline,
+            icon: saveOutline,
             callback: () => p5Instance?.save(`${meetingState.id}-${(new Date()).toISOString()}.jpg`),
         },
     ];
@@ -431,12 +415,12 @@ const OngoingMeeting = ({
             icon: radioButtonOnOutline,
             callback: () => boardBrushSetWidth(3),
         },
-        {
-            customId: '5',
-            customClass: 'ee-canvas-toolbar--tool-large',
-            icon: radioButtonOnOutline,
-            callback: () => boardBrushSetWidth(5),
-        },
+        // {
+        //     customId: '5',
+        //     customClass: 'ee-canvas-toolbar--tool-large',
+        //     icon: radioButtonOnOutline,
+        //     callback: () => boardBrushSetWidth(5),
+        // },
     ];
     const resetText = 'Potwierdzenie spowoduje zresetowanie tablicy BEZ zrzutu treści.';
     const saveText = 'Potwierdzenie spowoduje zapisanie stanu tablicy.';
@@ -444,22 +428,22 @@ const OngoingMeeting = ({
     return (
         <div className="ee-flex--column ee-meeting" id="meetingDiv">
 
-            <MeetingMenu users={meetingState.users} buttons={controlButtons} />
+            <MeetingMenu users={meetingState.users} buttons={process.env.REACT_APP_MOBILE_MODE === 'true' ? [] : controlButtons} />
 
             <div className={['ee-canvas--wrapper ee-flex--row ee-align-main--center', inDrawingMode ? 'ee-canvas--wrapper-blocked' : ''].join(' ')}>
                 <Canvas
-                    backgroundColor={bgColor}
+                    backgroundColor={meetingState.boardBackground}
                     brushColor={brushColor}
                     brushMode={brushMode}
                     brushWidth={brushWidth}
-                    changesWaiting={!!meetingState.boardChangesWaiting}
+                    changesWaiting={!!meetingState.boardChangesLength}
                     currentChanges={meetingState.boardChanges}
                     inDrawingMode={inDrawingMode}
                     initialChanges={meetingState.boardInitialChanges}
                     p5Instance={p5Instance}
                     cleanupInitialCallback={boardCleanupInitialCallback}
-                    popChangeCallback={boardPopChange}
                     sendChangesCallback={boardSendChangesCallback}
+                    resetChangesCallback={resetChangesCallback}
                     sendFillEventCallback={boardSendFillEvent}
                     setP5InstanceCallback={(p5: p5Types) => setP5Instance(p5)}
                 />
