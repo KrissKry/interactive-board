@@ -1,4 +1,4 @@
-package com.board.backend.drawing.model;
+package com.board.backend.drawing.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Point {
-    private Short x, y;
+    private short x, y;
 }
 
