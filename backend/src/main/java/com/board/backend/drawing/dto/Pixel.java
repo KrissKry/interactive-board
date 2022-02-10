@@ -1,11 +1,11 @@
 package com.board.backend.drawing.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class ChangedPixelsDTO {
+@Builder
+public class Pixel {
+    Point point;
     Color color;
-    List<Point> points;
 }

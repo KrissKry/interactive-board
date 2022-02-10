@@ -1,0 +1,115 @@
+package com.board.backend.room;
+
+import com.board.backend.config.CustomJsonMapper;
+import com.board.backend.config.PrincipalUtils;
+import com.board.backend.room.cassandra.model.Room;
+import com.board.backend.room.cassandra.repository.RoomRepository;
+import com.board.backend.room.dto.CreateRoomDTO;
+import com.board.backend.room.dto.RoomMapper;
+import com.board.backend.chat.dto.ChatMessageDTO;
+import com.board.backend.chat.dto.ChatMessageMapper;
+import com.board.backend.drawing.dto.ChangedPixelsDTO;
+import com.board.backend.drawing.dto.BoardPixelsMapper;
+import com.board.backend.user.UserDTO;
+import com.board.backend.user.UserStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.security.Principal;
+import java.util.Map;
+import java.util.UUID;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class RoomFacade {
+    private final RoomRepository roomRepository;
+    private final RoomMapper roomMapper;
+    private final ChatMessageMapper chatMessageMapper;
+    private final BoardPixelsMapper changedPixelsMapper;
+    private final PasswordEncoder encoder;
+    private final CustomJsonMapper jsonMapper;
+    private final SimpMessagingTemplate template;
+
+    public ResponseEntity<?> createRoom(String roomDto) {
+        var result = roomRepository
+                .save(new Room(encoder.encode(
+                        jsonMapper.toObject(
+                                roomDto,
+                                CreateRoomDTO.class
+                        ).getPassword()))
+                );
+        if (result == null) {
+            return ResponseEntity.badRequest().body("Error creating room");
+        } else {
+            log.info("Room successfully created, id: " + result.getId());
+            return ResponseEntity.ok(result.getId().toString());
+        }
+    }
+
+    public ResponseEntity<?> connectAndGetRoom(UUID id, Principal principal) {
+        if (addNewUser(id, PrincipalUtils.extractUserNameFromPrincipal(principal))) {
+            var room = roomRepository.findOne(id);
+            if (room == null) {
+                log.error("Could not find room with specified ID: " + id + ", user: " + principal.getName());
+                return ResponseEntity.badRequest().body("Could not find room with specified ID: "
+                        + id + ", user: " + principal.getName());
+            } else {
+                template.convertAndSend("/topic/room.connected." + id.toString(),
+                        new UserDTO(
+                                PrincipalUtils.extractUserNameFromPrincipal(principal),
+                                UserStatus.CONNECTED
+                        )
+                );
+                log.info("User " + PrincipalUtils.extractUserNameFromPrincipal(principal) + " connected to room with ID: " + room.getId());
+                return ResponseEntity.ok(roomMapper.toDTO(room));
+            }
+        }
+        log.error("Current user has no access to room with specified id, user: " + principal.getName());
+        return ResponseEntity.badRequest().body("Current user has no access to room with specified id");
+    }
+
+    public void saveMessage(ChatMessageDTO message, UUID roomId) {
+        saveMessage(roomId, chatMessageMapper.toChatMessage(message));
+    }
+
+    public void savePixels(ChangedPixelsDTO pixels, UUID roomId) {
+        log.debug(pixels.toString());
+        template.convertAndSend("/topic/board.listen." + roomId, pixels);
+        savePixels(roomId, changedPixelsMapper.toModel(pixels));
+    }
+
+    public void disconnectUser(UUID roomId, String username) {
+        var room = roomRepository.findOne(roomId);
+        if (room == null) {
+            log.info("EMPTY");
+            return;
+        }
+        room.getCurrentUsers().remove(username);
+        if (room.getCurrentUsers().isEmpty()) {
+            roomRepository.delete(roomId);
+        } else {
+            roomRepository.removeUser(roomId, username);
+        }
+    }
+
+    public void clearRoom(UUID roomId) {
+        roomRepository.clearRoomPixels(roomId);
+    }
+
+    private boolean addNewUser(UUID id, String username) {
+        return roomRepository.addNewUser(id, username);
+    }
+
+    private void saveMessage(UUID id, String message) {
+        roomRepository.saveMessage(id, message);
+    }
+
+    private void savePixels(UUID id, Map<String, String> pixels) {
+        roomRepository.savePixels(id, pixels);
+    }
+}

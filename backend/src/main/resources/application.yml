@@ -1,0 +1,17 @@
+spring:
+  rabbitmq:
+    host: localhost
+    port: 61613
+    username: admin
+    password: admin
+  data:
+    cassandra:
+      port: 9042
+      contact-points: 127.0.0.1
+      keyspace-name: test
+      username:
+      password:
+      local-datacenter: datacenter1
+      schema-action: CREATE_IF_NOT_EXISTS
+      request.consistency: quorum
+logging.level.root: debug
