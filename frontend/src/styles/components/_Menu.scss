@@ -1,0 +1,107 @@
+.ee-menu {
+    position: absolute;
+    width: 0rem;
+    height: fit-content;
+    
+    box-shadow: 1px 1px 1rem #ccc;
+    flex-wrap: nowrap;
+
+
+
+    &--xbtn {
+        background-color: rgba(0,0,0,0);
+        color: black;
+        font-size: 1.5rem;
+        width: fit-content;
+        height: fit-content;
+    }
+
+    &--icon {
+        transform: rotate(0deg);
+        transition: transform 0.25s ease-in-out;
+
+        &-active {
+            transform: rotate(180deg);
+            transition: transform 0.5s ease-in-out;
+        }
+    }
+
+    &-util {
+        position: fixed;
+        background-color: white;
+        left: -10rem;
+        transition: 0.5s;
+        z-index: 101;
+        @media screen and (min-width: 105rem) {
+            left: 0;
+            width: 15rem;
+        }
+
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
+        &-active {
+            left: 0;
+            width: 15rem;
+        }
+        &-list {
+            padding: 0.5rem;
+        }
+        &-btnpanel {
+            height: 3rem;
+            padding: 0.5rem;
+        }
+        &-toggle {
+            @media screen and (min-width: 105rem) {
+                display: none;
+            }
+        }
+    }
+
+    &-chat {
+        position: fixed;
+        background-color: white;
+        z-index: 100;
+        right: 0;
+        transition: 0.5s;
+
+        @media screen and (min-width: 115rem) {
+            width: 20rem;
+        }
+
+        @media screen and (max-height: 40rem) {
+            top: 3.5rem;
+        }
+
+        &-active {
+            width: 20rem;
+        }
+
+        &-toggle {
+            @media screen and (min-width: 115rem) {
+                display: none;
+            }
+        }
+    }
+    &--wrapper {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.1);
+        z-index: 99;
+        // transition: 0.2s ease-out;
+
+        @media screen and (min-width: 115rem) {
+            display: none;
+        }
+        &-off {
+            z-index: -1;
+            // opacity: 0;
+            display: none;
+        }
+
+        &-on {
+            // opacity: 1;
+        }
+    }
+}

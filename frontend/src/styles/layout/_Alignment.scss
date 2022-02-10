@@ -1,0 +1,20 @@
+/**
+*   Alignment along cross flex axis 
+*/
+.ee-align-cross {
+    &--center       { align-items: center;      }
+    &--fstart       { align-items: flex-start;  }
+    &--fend         { align-items: flex-end;    }
+    &--base         { align-items: baseline;    }
+}
+
+/**
+*   Alignment in main flex axis 
+*/
+.ee-align-main {
+    &--center       { justify-content: center;  }
+    &--left         { justify-content: left;    }
+    &--right        { justify-content: right;   }
+    &--between      { justify-content: space-between; }
+    &--evenly       { justify-content: space-evenly;}
+}
