@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
-public class WebSocketAuthorizationConfig extends AbstractSecurityWebSocketMessageBrokerConfigurer {
+public class WsAuthorizationConfig extends AbstractSecurityWebSocketMessageBrokerConfigurer {
     @Override
     protected void configureInbound(final MessageSecurityMetadataSourceRegistry messages) {
         // You can customize your authorization mapping here.

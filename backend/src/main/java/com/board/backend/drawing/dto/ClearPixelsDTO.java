@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ClearPixelsDTO {
-    private Clear clear;
+    private Clear type = Clear.RESET;
 }
 
 enum Clear {
