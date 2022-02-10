@@ -24,6 +24,9 @@ import '@ionic/react/css/typography.css';
 /* Theme variables */
 import './theme/variables.css';
 
+/* main css */
+import './styles/main.scss';
+
 const App: React.FC = () => (
     <IonApp>
         <IonReactRouter>
