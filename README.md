@@ -5,7 +5,7 @@ Wieloplatformowa aplikacja do komunikacji i spotkań w czasie rzeczywistym ze ws
 <br><br><br>
 
 ## EN
-Cross-platform app for real-time communication using WebRTC API and interactive canvas sync'd between all current users.
+Cross-platform app for real-time communication using WebRTC API with support for interactive canvas exposing several tools to edit it, sync'd between all current users.
 
 <br><br>
 #### Frontend keywords:
